@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `lead` ADD COLUMN `consentAt` DATETIME(3) NULL,
+    ADD COLUMN `consentTextVersion` VARCHAR(191) NULL DEFAULT 'v1',
+    ADD COLUMN `ip` VARCHAR(191) NULL,
+    ADD COLUMN `userAgent` VARCHAR(191) NULL;

@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Clinic {
+  id             String    @id @default(cuid())
+  name           String
+  phone          String?
+  email          String    @unique
+  passwordHash   String
+  isActive       Boolean   @default(true)
+  lastAssignedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coverages        ClinicCoverage[]
+  subscriptions    Subscription[]
+  assignments      LeadAssignment[]
+  distributionLogs LeadDistributionLog[]
+
+  @@map("clinics")
+}
+
+model ClinicCoverage {
+  id       String  @id @default(cuid())
+  clinicId String
+  city     String
+  service  String
+  isActive Boolean @default(true)
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, city, service])
+  @@map("clinic_coverages")
+}
+
+model Subscription {
+  id         String   @id @default(cuid())
+  clinicId   String
+  status     String
+  quotaTotal Int
+  quotaUsed  Int      @default(0)
+  startedAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model LeadAssignment {
+  id        String   @id @default(cuid())
+  leadId    String
+  clinicId  String
+  createdAt DateTime @default(now())
+
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId])
+  @@map("lead_assignments")
+}
+
+model Lead {
+  id               String                @id @default(cuid())
+  city             String
+  service          String
+  fullName         String
+  phone            String
+  email            String?
+  message          String?
+  intent           String
+  source           String?
+  status           String                @default("new")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  clinicNote       String?               @db.Text
+  lastContactAt    DateTime?
+  distributionLogs LeadDistributionLog[]
+  assignments      LeadAssignment[]
+  consentAt          DateTime?
+  consentTextVersion String?  @default("v1")
+  ip                 String?
+  userAgent          String?
+
+
+  @@map("lead")
+}
+
+model LeadDistributionLog {
+  id        String   @id @default(cuid())
+  leadId    String
+  clinicId  String?
+  city      String
+  service   String
+  assigned  Boolean  @default(false)
+  reason    String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  lead   Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([clinicId])
+  @@index([city, service])
+  @@index([assigned])
+  @@map("lead_distribution_logs")
+}
