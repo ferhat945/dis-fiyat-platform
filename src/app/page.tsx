@@ -1,276 +1,462 @@
+// src/app/page.tsx
 import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { cityLabel, normalizeSlug } from "@/lib/seo-data";
 
 export const dynamic = "force-dynamic";
 
-const QUICK_LINKS = [
-  { city: "istanbul", service: "implant", label: "İstanbul • İmplant" },
-  { city: "ankara", service: "zirkonyum", label: "Ankara • Zirkonyum" },
-  { city: "izmir", service: "dis-beyazlatma", label: "İzmir • Diş Beyazlatma" },
-  { city: "bursa", service: "kanal-tedavisi", label: "Bursa • Kanal Tedavisi" },
-];
-
-const SERVICES = [
-  { slug: "implant", title: "İmplant Tedavisi", desc: "Eksik dişler için kalıcı çözümler ve planlama.", icon: "🦷" },
-  { slug: "zirkonyum", title: "Zirkonyum Kaplama", desc: "Doğal görünüm ve dayanıklılık odaklı uygulama.", icon: "✨" },
+const POPULAR_TREATMENTS: ReadonlyArray<{
+  slug: string;
+  title: string;
+  desc: string;
+  icon: string;
+}> = [
+  { slug: "implant", title: "İmplant Tedavisi", desc: "Eksik dişler için planlama ve kalıcı çözümler.", icon: "🦷" },
+  { slug: "zirkonyum", title: "Zirkonyum Kaplama", desc: "Estetik ve dayanıklılık odaklı uygulama.", icon: "✨" },
   { slug: "lamina", title: "Porselen Lamina", desc: "Gülüş estetiği için ince ve estetik kaplamalar.", icon: "😁" },
-  { slug: "ortodonti", title: "Ortodonti / Şeffaf Plak", desc: "Diş dizilimi için tel veya şeffaf plak seçenekleri.", icon: "🧩" },
-  { slug: "dis-beyazlatma", title: "Diş Beyazlatma", desc: "Klinik/ev tipi yöntemlerle daha aydınlık tonlar.", icon: "💎" },
-  { slug: "dis-tasi-temizligi", title: "Diş Taşı Temizliği", desc: "Diş eti sağlığı için düzenli bakım ve kontrol.", icon: "🫧" },
+  { slug: "kanal-tedavisi", title: "Kanal Tedavisi", desc: "Enfekte dişi korumaya yönelik tedavi.", icon: "🧪" },
 ];
 
-export default function HomePage(): JSX.Element {
+function clinicSlug(name: string, id: string): string {
+  const base = normalizeSlug(name).slice(0, 70) || "klinik";
+  return `${base}--${id}`;
+}
+
+function instagramHandleFromValue(value: string): string {
+  const raw = value.trim();
+  if (!raw) return "Instagram";
+
+  // URL ise path'ten kullanıcı adı
+  try {
+    const u = new URL(raw);
+    const p = u.pathname.replace(/^\/+|\/+$/g, "");
+    const firstSeg = (p.split("/")[0] ?? "").trim();
+    return firstSeg ? `@${firstSeg}` : "Instagram";
+  } catch {
+    // Kullanıcı adı olabilir
+    const v = raw.replace(/^@+/, "");
+    return v ? `@${v}` : "Instagram";
+  }
+}
+
+function instagramHrefFromValue(value: string): string {
+  const raw = value.trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const v = raw.replace(/^@+/, "");
+  if (!v) return "";
+  return `https://www.instagram.com/${v}/`;
+}
+
+export default async function HomePage(): Promise<JSX.Element> {
+  // Öne çıkan 6: aktif + en az 1 aktif coverage (şehir etiketi için)
+  const featured = await prisma.clinic.findMany({
+    where: {
+      isActive: true,
+      coverages: { some: { isActive: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 6,
+    select: {
+      id: true,
+      name: true,
+      instagramUrl: true,
+      coverages: {
+        where: { isActive: true },
+        select: { city: true },
+        orderBy: { city: "asc" },
+        take: 1,
+      },
+    },
+  });
+
   return (
-    <main className="home">
+    <main>
       {/* HERO */}
       <section className="hero">
-        <div className="container heroGrid">
-          <div className="heroLeft">
-            <div className="badgeRow">
-              <span className="badge">KVKK Onaylı</span>
-              <span className="badge badgeSoft">Ücretsiz</span>
-              <span className="badge badgeSoft">Hızlı İletişim</span>
-            </div>
-
-            <h1 className="heroTitle">
-              Diş Tedavisi Fiyatlarını Karşılaştır,
-              <br />
-              Kliniklerden Teklif Al
-            </h1>
-
-            <p className="heroDesc">
-              30 saniyelik KVKK onaylı formu doldur. Uygun klinikler seninle iletişime geçsin.
-              <br />
-              <strong>Kesin fiyat muayene sonrası netleşir.</strong>
-            </p>
-
-            <div className="ctaRow">
-              <Link href="/teklif-al" className="btn btnPrimary">
-                Teklif Al
-              </Link>
-              <Link href="/kvkk" className="btn btnGhost">
-                KVKK Metni
-              </Link>
-            </div>
-
-            <div className="quickRow">
-              <div className="quickTitle">Hızlı başlangıç</div>
-              <div className="quickLinks">
-                {QUICK_LINKS.map((x) => (
-                  <Link key={x.label} href={`/sehir/${x.city}/${x.service}`} className="chip">
-                    {x.label} <span aria-hidden>→</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="trustMini">
-              <div className="trustItem">
-                <div className="trustDot" />
-                <div>
-                  <div className="trustTitle">Spam önleme</div>
-                  <div className="trustDesc">Rate limit + honeypot ile korunur.</div>
-                </div>
-              </div>
-              <div className="trustItem">
-                <div className="trustDot" />
-                <div>
-                  <div className="trustTitle">Adil dağıtım</div>
-                  <div className="trustDesc">Kota/uygunluk kontrolü ile yönlendirme.</div>
-                </div>
-              </div>
-              <div className="trustItem">
-                <div className="trustDot" />
-                <div>
-                  <div className="trustTitle">Bilgilendirme</div>
-                  <div className="trustDesc">Tıbbi teşhis/tavsiye değildir.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="heroRight">
-            <div className="heroCard">
-              <div className="heroCardTop">
-                <div className="heroCardTitle">Hemen başla</div>
-                <div className="heroCardSub">Şehir + işlem seç, formu doldur.</div>
-              </div>
-
-              <div className="heroCardGrid">
-                <div className="stat">
-                  <div className="statNum">30 sn</div>
-                  <div className="statLbl">Form doldurma</div>
-                </div>
-                <div className="stat">
-                  <div className="statNum">0 TL</div>
-                  <div className="statLbl">Ücret</div>
-                </div>
-                <div className="stat">
-                  <div className="statNum">KVKK</div>
-                  <div className="statLbl">Zorunlu onay</div>
-                </div>
-                <div className="stat">
-                  <div className="statNum">Hızlı</div>
-                  <div className="statLbl">Klinikler seni arasın</div>
-                </div>
-              </div>
-
-              <div className="heroCardActions">
-                <Link href="/teklif-al" className="btn btnPrimary btnBlock">
-                  Teklif Al
-                </Link>
-                <Link href="/sehir" className="btn btnSoft btnBlock">
-                  Şehirleri Gör
-                </Link>
-              </div>
-            </div>
-
-            {/* Decorative illustration (SVG) */}
-            <div className="illus" aria-hidden>
-              <svg viewBox="0 0 520 420" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="g1" x1="70" y1="30" x2="430" y2="380" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#7C3AED" stopOpacity="0.14" />
-                    <stop offset="1" stopColor="#0EA5E9" stopOpacity="0.10" />
-                  </linearGradient>
-                  <linearGradient id="g2" x1="120" y1="80" x2="380" y2="360" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#111827" stopOpacity="0.06" />
-                    <stop offset="1" stopColor="#111827" stopOpacity="0.02" />
-                  </linearGradient>
-                </defs>
-                <rect x="30" y="30" width="460" height="360" rx="26" fill="url(#g1)" />
-                <rect x="60" y="70" width="400" height="280" rx="22" fill="white" fillOpacity="0.7" />
-                <rect x="88" y="98" width="210" height="16" rx="8" fill="url(#g2)" />
-                <rect x="88" y="128" width="310" height="12" rx="6" fill="url(#g2)" />
-                <rect x="88" y="150" width="280" height="12" rx="6" fill="url(#g2)" />
-                <circle cx="370" cy="205" r="54" fill="#0EA5E9" fillOpacity="0.08" />
-                <path
-                  d="M360 176c-10 0-19 7-19 22 0 18 13 37 29 50 16-13 29-32 29-50 0-15-9-22-19-22-6 0-10 3-11 5-1-2-5-5-9-5z"
-                  fill="#0EA5E9"
-                  fillOpacity="0.35"
-                />
-                <rect x="88" y="198" width="220" height="84" rx="18" fill="#111827" fillOpacity="0.04" />
-                <rect x="108" y="220" width="160" height="12" rx="6" fill="#111827" fillOpacity="0.08" />
-                <rect x="108" y="242" width="190" height="12" rx="6" fill="#111827" fillOpacity="0.07" />
-                <rect x="88" y="298" width="340" height="36" rx="18" fill="#111827" fillOpacity="0.06" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SERVICES */}
-      <section className="section">
         <div className="container">
-          <div className="sectionHead">
-            <div className="sectionKicker">Hizmetler</div>
-            <h2 className="sectionTitle">Popüler işlemler</h2>
-            <p className="sectionDesc">En çok aranan tedaviler için şehir seçip teklif al.</p>
-          </div>
+          <div className="heroShell">
+            <div className="heroInner">
+              <div className="heroGrid">
+                {/* LEFT */}
+                <div>
+                  <div className="kicker">⭐ Türkiye’de en çok aranan diş klinik ağı</div>
 
-          <div className="cards">
-            {SERVICES.map((s) => (
-              <Link key={s.slug} href={`/hizmet/${s.slug}`} className="card">
-                <div className="cardIcon" aria-hidden>
-                  {s.icon}
+                  <h1 className="h1">
+                    Diş Tedavisi Fiyatlarını Karşılaştır, <span className="grad">En İyi Teklifi</span> Al
+                  </h1>
+
+                  <p className="heroDesc">
+                    30 saniyede KVKK onaylı formu doldur. Uygun klinikler seninle iletişime geçsin.
+                    <br />
+                    <strong>Kesin fiyat muayene sonrası netleşir.</strong>
+                  </p>
+
+                  <div className="ctaRow">
+                    <Link href="/teklif-al" className="btn btnPrimary">
+                      Ücretsiz Teklif Al →
+                    </Link>
+                    <Link href="/#nasil-calisir" className="btn btnGhost">
+                      Nasıl Çalışır?
+                    </Link>
+                    <Link href="/hizmetler" className="btn btnSoft">
+                      Hizmetleri İncele
+                    </Link>
+                  </div>
+
+                  <div className="miniRow" aria-label="Güven rozetleri">
+                    <span className="miniItem">✅ Ücretsiz</span>
+                    <span className="miniItem">🔒 KVKK Onaylı</span>
+                    <span className="miniItem">🛡️ Spam korumalı</span>
+                  </div>
                 </div>
-                <div className="cardBody">
-                  <div className="cardTitle">{s.title}</div>
-                  <div className="cardDesc">{s.desc}</div>
+
+                {/* RIGHT */}
+                <div className="heroRight" aria-label="Popüler tedaviler">
+                  <div className="treatGrid">
+                    {POPULAR_TREATMENTS.map((t) => (
+                      <div key={t.slug} className="treatCard">
+                        <div className="treatTop">
+                          <div className="treatIcon" aria-hidden>
+                            {t.icon}
+                          </div>
+                          <div className="treatMeta">
+                            <div className="treatLabel">{t.title}</div>
+                            <div className="treatSub">Fiyatları karşılaştır</div>
+                          </div>
+                        </div>
+
+                        <Link className="treatBtn" href={`/hizmet/${t.slug}`}>
+                          Fiyat Al →
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="cardArrow" aria-hidden>
-                  →
+              </div>
+
+              {/* POPULAR / STEPS BAR */}
+              <div className="section" id="nasil-calisir">
+                <h2 className="sectionTitle">Nasıl Çalışır?</h2>
+                <div className="sectionBox">
+                  <div className="stepsRow">
+                    <div className="stepCard">
+                      <div className="stepNum">1</div>
+                      <div className="stepTitle">Formu Doldur</div>
+                      <div className="stepDesc">Şehir + hizmet seç. Kısa KVKK onaylı formu doldur.</div>
+                    </div>
+
+                    <div className="stepCard">
+                      <div className="stepNum">2</div>
+                      <div className="stepTitle">Klinikler Arasın</div>
+                      <div className="stepDesc">Uygun klinikler hızlıca seni arayıp bilgi versin.</div>
+                    </div>
+
+                    <div className="stepCard">
+                      <div className="stepNum">3</div>
+                      <div className="stepTitle">Uygun Teklifi Seç</div>
+                      <div className="stepDesc">Muayene sonrası netleşen fiyatlar arasından karar ver.</div>
+                    </div>
+                  </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
 
-          <div className="sectionCta">
-            <Link href="/hizmetler" className="btn btnSoft">
-              Tüm Hizmetleri Gör
-            </Link>
-          </div>
-        </div>
-      </section>
+              {/* KLINIKLERI KESFET (modern) */}
+              <div className="section" id="klinikler">
+                <h2 className="sectionTitle">Klinikleri Keşfet</h2>
 
-      {/* HOW IT WORKS */}
-      <section className="section sectionAlt">
-        <div className="container">
-          <div className="sectionHead">
-            <div className="sectionKicker">Nasıl çalışır?</div>
-            <h2 className="sectionTitle">3 adımda teklif al</h2>
-            <p className="sectionDesc">Sade akış: şehir + işlem → form → klinikler iletişime geçsin.</p>
-          </div>
+                <div
+                  style={{
+                    borderRadius: 24,
+                    border: "1px solid rgba(15,23,42,0.10)",
+                    background:
+                      "radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,0.10), transparent 60%), linear-gradient(180deg,#fff, #fafafa)",
+                    padding: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 14,
+                      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                      alignItems: "start",
+                    }}
+                  >
+                    {/* LEFT */}
+                    <div
+                      style={{
+                        borderRadius: 20,
+                        border: "1px solid rgba(15,23,42,0.08)",
+                        background: "rgba(255,255,255,0.8)",
+                        padding: 16,
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            fontWeight: 950,
+                            fontSize: 12,
+                            padding: "6px 10px",
+                            borderRadius: 999,
+                            border: "1px solid rgba(15,23,42,0.10)",
+                            background: "#fff",
+                          }}
+                        >
+                          🏥 Klinik Dizini
+                        </span>
+                        <span style={{ opacity: 0.7, fontWeight: 800, fontSize: 12 }}>
+                          Profil + Instagram rozeti
+                        </span>
+                      </div>
 
-          <div className="steps">
-            <div className="step">
-              <div className="stepNum">1</div>
-              <div className="stepTitle">Şehir + hizmet seç</div>
-              <div className="stepDesc">Örn: İstanbul İmplant sayfasına gir.</div>
-              <Link href="/sehir" className="stepLink">
-                Şehirleri gör →
-              </Link>
+                      <div style={{ marginTop: 10, fontWeight: 950, fontSize: 22 }}>
+                        Klinik dizinine göz at, profilleri incele
+                      </div>
+
+                      <p style={{ marginTop: 10, color: "rgba(15,23,42,0.75)", fontWeight: 750, lineHeight: 1.7 }}>
+                        Şehir ve hizmete göre filtrele. Kliniklerin Instagram profili varsa tek tıkla gör.
+                        <br />
+                        <strong>Teklif gönderimi abonelik kurallarına göre yapılır.</strong>
+                      </p>
+
+                      <div className="ctaRow" style={{ marginTop: 12 }}>
+                        <Link href="/klinikler" className="btn btnPrimary">
+                          Klinik Dizini →
+                        </Link>
+                        <Link href="/teklif-al" className="btn btnSoft">
+                          Teklif Al →
+                        </Link>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                        {["📍 Şehir etiketi", "🧾 Profil detayı", "📸 Instagram rozeti"].map((t) => (
+                          <span
+                            key={t}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 850,
+                              padding: "8px 10px",
+                              borderRadius: 999,
+                              border: "1px solid rgba(15,23,42,0.10)",
+                              background: "rgba(255,255,255,0.9)",
+                            }}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div style={{ marginTop: 12, opacity: 0.7, fontWeight: 800, fontSize: 12 }}>
+                        İpucu: Instagram ekleyen klinikler dizinde daha güven verici görünür.
+                      </div>
+                    </div>
+
+                    {/* RIGHT */}
+                    <div
+                      style={{
+                        borderRadius: 20,
+                        border: "1px solid rgba(15,23,42,0.08)",
+                        background: "rgba(255,255,255,0.8)",
+                        padding: 16,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ fontWeight: 950, fontSize: 16 }}>Öne çıkan klinikler</div>
+                        <Link href="/klinikler" style={{ textDecoration: "none", fontWeight: 950, color: "#111" }}>
+                          Tümünü gör →
+                        </Link>
+                      </div>
+
+                      {featured.length > 0 ? (
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: "grid",
+                            gap: 10,
+                            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                          }}
+                        >
+                          {featured.map((c) => {
+                            const slug = clinicSlug(c.name, c.id);
+                            const city = c.coverages[0]?.city ?? "";
+                            const cityText = city ? cityLabel(city) : "—";
+                            const ig = (c.instagramUrl ?? "").trim();
+                            const igHref = ig ? instagramHrefFromValue(ig) : "";
+
+                            return (
+                              <Link
+                                key={c.id}
+                                href={`/klinikler/${slug}`}
+                                style={{
+                                  textDecoration: "none",
+                                  color: "#111",
+                                  borderRadius: 18,
+                                  border: "1px solid rgba(15,23,42,0.08)",
+                                  background: "#fff",
+                                  padding: 14,
+                                  display: "grid",
+                                  gap: 10,
+                                  boxShadow: "0 10px 30px rgba(2,6,23,0.06)",
+                                }}
+                              >
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                                  <div style={{ fontWeight: 950 }}>{c.name}</div>
+                                  <div style={{ opacity: 0.6, fontWeight: 900 }}>↗</div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                  <span
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: 850,
+                                      padding: "7px 10px",
+                                      borderRadius: 999,
+                                      border: "1px solid rgba(15,23,42,0.10)",
+                                      background: "#fafafa",
+                                    }}
+                                  >
+                                    📍 {cityText}
+                                  </span>
+
+                                  {ig ? (
+                                    <span
+                                      style={{
+                                        fontSize: 12,
+                                        fontWeight: 850,
+                                        padding: "7px 10px",
+                                        borderRadius: 999,
+                                        border: "1px solid rgba(236,72,153,0.20)",
+                                        background: "rgba(236,72,153,0.08)",
+                                      }}
+                                    >
+                                      📸 {instagramHandleFromValue(ig)}
+                                    </span>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        fontSize: 12,
+                                        fontWeight: 850,
+                                        padding: "7px 10px",
+                                        borderRadius: 999,
+                                        border: "1px solid rgba(15,23,42,0.10)",
+                                        background: "#fafafa",
+                                        opacity: 0.7,
+                                      }}
+                                    >
+                                      Instagram yok
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                                  <span style={{ fontWeight: 950, opacity: 0.9 }}>Detay →</span>
+
+                                  {igHref ? (
+                                    <span
+                                      style={{
+                                        fontWeight: 900,
+                                        fontSize: 12,
+                                        opacity: 0.8,
+                                        border: "1px solid rgba(15,23,42,0.10)",
+                                        padding: "6px 10px",
+                                        borderRadius: 999,
+                                        background: "#fff",
+                                      }}
+                                      title={igHref}
+                                    >
+                                      Instagram ↗
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontWeight: 800, fontSize: 12, opacity: 0.6 }}>—</span>
+                                  )}
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 12, opacity: 0.7, fontWeight: 800 }}>
+                          Şu an öne çıkan klinik bulunamadı.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ + CTA ROW */}
+              <div className="section">
+                <h2 className="sectionTitle">Merak Edilenler</h2>
+
+                <div className="sectionBox">
+                  <div className="faqGrid">
+                    <details className="faqItem">
+                      <summary>Teklif almak ücretli mi?</summary>
+                      <div className="faqBody">Hayır. Form ücretsizdir. Uygun klinikler seninle iletişime geçer.</div>
+                    </details>
+
+                    <details className="faqItem">
+                      <summary>Kesin fiyat ne zaman belli olur?</summary>
+                      <div className="faqBody">
+                        Kesin fiyat; muayene bulguları, malzeme seçimi ve vaka zorluğuna göre netleşir.
+                      </div>
+                    </details>
+
+                    <details className="faqItem">
+                      <summary>KVKK onayı neden gerekli?</summary>
+                      <div className="faqBody">İletişim izni olmadan form gönderilemez. Güvenlik için zorunludur.</div>
+                    </details>
+
+                    <details className="faqItem">
+                      <summary>Fiyatlar neden değişir?</summary>
+                      <div className="faqBody">Muayene, görüntüleme, malzeme seçimi ve tedavi planı fiyatı etkiler.</div>
+                    </details>
+                  </div>
+
+                  <div className="finalCta">
+                    <div>
+                      <h3 className="finalTitle">Şimdi teklif al, klinikler seni arasın</h3>
+                      <p className="finalDesc">30 saniyede formu doldur. KVKK onaylıdır.</p>
+                    </div>
+
+                    <Link href="/teklif-al" className="btn btnPrimary">
+                      Teklif Al →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* BOTTOM QUICK LINKS */}
+              <div className="section">
+                <div className="sectionBox">
+                  <div style={{ fontWeight: 950, fontSize: 16 }}>Hızlı Başlangıç</div>
+                  <div style={{ marginTop: 6, color: "rgba(15,23,42,0.70)", fontWeight: 700, lineHeight: 1.7 }}>
+                    Şehir ve hizmet seç → ilgili sayfadan KVKK onaylı teklif formuna git.
+                  </div>
+
+                  <div className="ctaRow" style={{ marginTop: 12 }}>
+                    <Link href="/sehir" className="btn btnSoft">
+                      Şehirleri Gör
+                    </Link>
+                    <Link href="/hizmetler" className="btn btnSoft">
+                      Hizmetler
+                    </Link>
+                    <Link href="/kvkk" className="btn btnGhost">
+                      KVKK Metni
+                    </Link>
+                    <Link href="/teklif-al" className="btn btnPrimary">
+                      Teklif Al →
+                    </Link>
+                  </div>
+
+                  <div style={{ marginTop: 10, color: "rgba(15,23,42,0.60)", fontWeight: 700, fontSize: 12 }}>
+                    Not: Bu site bilgilendirme amaçlıdır; tıbbi teşhis/tavsiye değildir.
+                  </div>
+                </div>
+              </div>
+              {/* END */}
             </div>
-
-            <div className="step">
-              <div className="stepNum">2</div>
-              <div className="stepTitle">KVKK onaylı formu doldur</div>
-              <div className="stepDesc">Ad, telefon, ne zaman bilgisi. Hepsi bu.</div>
-              <Link href="/teklif-al" className="stepLink">
-                Teklif al →
-              </Link>
-            </div>
-
-            <div className="step">
-              <div className="stepNum">3</div>
-              <div className="stepTitle">Uygun klinikler iletişime geçsin</div>
-              <div className="stepDesc">Kota ve uygunluk kontrolü ile adil yönlendirme.</div>
-              <Link href="/kvkk" className="stepLink">
-                KVKK →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="section">
-        <div className="container">
-          <div className="sectionHead">
-            <div className="sectionKicker">Merak edilenler</div>
-            <h2 className="sectionTitle">Kısa ve net cevaplar</h2>
-            <p className="sectionDesc">Bu alan güveni artırır; iddiasız, anlaşılır.</p>
-          </div>
-
-          <div className="faq">
-            <details className="faqItem">
-              <summary>Teklif almak ücretli mi?</summary>
-              <div className="faqBody">Hayır. Form ücretsizdir. Klinikler seninle iletişime geçer.</div>
-            </details>
-
-            <details className="faqItem">
-              <summary>Kesin fiyat ne zaman belli olur?</summary>
-              <div className="faqBody">Kesin fiyat muayene ve vaka değerlendirmesi sonrası netleşir.</div>
-            </details>
-
-            <details className="faqItem">
-              <summary>Neden fiyatlar değişir?</summary>
-              <div className="faqBody">Malzeme seçimi, vaka zorluğu ve muayene bulguları fiyatı etkiler.</div>
-            </details>
-
-            <details className="faqItem">
-              <summary>KVKK onayı neden gerekli?</summary>
-              <div className="faqBody">İletişim izni olmadan form gönderilemez. Güvenlik için zorunludur.</div>
-            </details>
-          </div>
-
-          <div className="finalCta">
-            <div>
-              <div className="finalTitle">Şimdi teklif al, klinikler seni arasın</div>
-              <div className="finalDesc">30 saniyede formu doldur. KVKK onaylıdır.</div>
-            </div>
-            <Link href="/teklif-al" className="btn btnPrimary">
-              Teklif Al
-            </Link>
           </div>
         </div>
       </section>

@@ -1,27 +1,33 @@
+// src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { getAdminCookieName } from "@/lib/admin-auth";
-
-function getSecret(): Uint8Array | null {
-  const raw = process.env.ADMIN_JWT_SECRET ?? "";
-  if (raw.length < 20) return null;
-  return new TextEncoder().encode(raw);
-}
+import { getAdminCookieName, getAdminJwtSecret } from "@/lib/admin-auth";
 
 async function isAdmin(req: NextRequest): Promise<boolean> {
-  const secret = getSecret();
-  if (!secret) return false;
-
   const token = req.cookies.get(getAdminCookieName())?.value ?? "";
   if (!token) return false;
 
   try {
+    const secret = getAdminJwtSecret();
     const { payload } = await jwtVerify(token, secret);
-    return payload.sub === "admin";
+    return payload.role === "admin";
   } catch {
     return false;
   }
+}
+
+function clearAdminCookie(res: NextResponse): NextResponse {
+  const name = getAdminCookieName();
+
+  // ✅ Cookie’yi sil (prod/dev uyumlu)
+  // Not: domain set etme; en güvenlisi path "/" ile expire etmek.
+  res.cookies.set(name, "", {
+    path: "/",
+    maxAge: 0,
+  });
+
+  return res;
 }
 
 export async function middleware(req: NextRequest) {
@@ -31,23 +37,24 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/admin/login") return NextResponse.next();
   if (pathname === "/api/admin/login" || pathname === "/api/admin/logout") return NextResponse.next();
 
-  const needsAdmin =
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/api/admin");
-
+  const needsAdmin = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   if (!needsAdmin) return NextResponse.next();
 
   const ok = await isAdmin(req);
   if (ok) return NextResponse.next();
 
-  // API -> 401, Page -> redirect
+  // ✅ Yetkisizse: eski/bozuk admin cookie varsa otomatik temizle
+  // API -> 401 + cookie clear
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ ok: false, code: "UNAUTHORIZED_ADMIN" }, { status: 401 });
+    const res = NextResponse.json({ ok: false, code: "UNAUTHORIZED_ADMIN" }, { status: 401 });
+    return clearAdminCookie(res);
   }
 
+  // Page -> login redirect + cookie clear
   const url = req.nextUrl.clone();
   url.pathname = "/admin/login";
-  return NextResponse.redirect(url);
+  const res = NextResponse.redirect(url);
+  return clearAdminCookie(res);
 }
 
 export const config = {

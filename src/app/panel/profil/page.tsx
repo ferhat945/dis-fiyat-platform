@@ -1,287 +1,311 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import styles from "./page.module.css";
 
-type Clinic = {
+type ClinicProfile = {
   id: string;
   name: string;
   email: string;
   phone: string | null;
-  isActive: boolean;
-  createdAt: string;
+  instagramUrl: string | null;
   updatedAt: string;
 };
 
-type GetResp =
-  | { ok: true; clinic: Clinic }
-  | { ok: false; code: string };
+type ProfileResponse =
+  | { ok: true; clinic: ClinicProfile }
+  | { ok: false; code?: string };
 
-type PatchProfileResp =
-  | { ok: true; clinic: Pick<Clinic, "id" | "name" | "email" | "phone" | "isActive" | "updatedAt"> }
-  | { ok: false; code: string; issues?: { path: string; message: string }[] };
+function normalizeInstagramInput(value: string): string {
+  const raw = value.trim();
+  if (!raw) return "";
 
-type PatchPasswordResp =
-  | { ok: true }
-  | { ok: false; code: string; issues?: { path: string; message: string }[] };
+  const cleaned = raw.replace(/^@+/, "");
 
-function errText(j: { code: string; issues?: { path: string; message: string }[] }): string {
-  const issues = j.issues?.length ? ` | ${j.issues.map((x) => `${x.path}: ${x.message}`).join(", ")}` : "";
-  return `${j.code}${issues}`;
+  if (/^https?:\/\//i.test(cleaned)) return cleaned;
+
+  return `https://www.instagram.com/${cleaned}/`;
 }
 
-export default function PanelProfilePage(): JSX.Element {
-  const [clinic, setClinic] = useState<Clinic | null>(null);
+function instagramHandle(urlOrUser: string): string {
+  const v = urlOrUser.trim();
+  if (!v) return "";
+
+  try {
+    const u = new URL(v);
+    const path = u.pathname.replace(/^\/+|\/+$/g, "");
+    const first = path.split("/")[0] ?? "";
+    return first ? `@${first}` : "Instagram";
+  } catch {
+    const user = v.replace(/^@+/, "");
+    return user ? `@${user}` : "Instagram";
+  }
+}
+
+export default function ClinicProfilePage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+
+  const [clinic, setClinic] = useState<ClinicProfile | null>(null);
 
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
+  const [instagramInput, setInstagramInput] = useState<string>("");
 
-  const [currentPassword, setCurrentPassword] = useState<string>("");
-  const [newPassword, setNewPassword] = useState<string>("");
+  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const [savingProfile, setSavingProfile] = useState<boolean>(false);
-  const [savingPass, setSavingPass] = useState<boolean>(false);
+  const normalizedInstagram = useMemo<string>(() => normalizeInstagramInput(instagramInput), [instagramInput]);
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const checks = useMemo(() => {
+    const nameOk = name.trim().length >= 2;
+    const phoneOk = phone.trim().length >= 7;
+    const igOk = Boolean(normalizedInstagram);
+    return { nameOk, phoneOk, igOk };
+  }, [name, phone, normalizedInstagram]);
 
-  const load = async (): Promise<void> => {
+  const completion = useMemo<number>(() => {
+    let score = 0;
+    if (checks.nameOk) score += 50;
+    if (checks.phoneOk) score += 25;
+    if (checks.igOk) score += 25;
+    return score;
+  }, [checks]);
+
+  const canSave = useMemo<boolean>(() => name.trim().length >= 2, [name]);
+
+  const loadProfile = useCallback(async (): Promise<void> => {
     setLoading(true);
-    setError(null);
-    setSuccess(null);
+    setMsg(null);
 
     try {
-      const r = await fetch("/api/panel/profile", { cache: "no-store" });
-      const j = (await r.json()) as GetResp;
+      const res = await fetch("/api/panel/profile", { cache: "no-store" });
+      const data: ProfileResponse = await res.json();
 
-      if (!r.ok || !j.ok) {
-        setError(j.ok ? "UNKNOWN" : j.code);
+      if (!res.ok || !data.ok) {
         setClinic(null);
+        setMsg({ type: "err", text: "Profil yüklenemedi." });
+        setLoading(false);
         return;
       }
 
-      setClinic(j.clinic);
-      setName(j.clinic.name);
-      setPhone(j.clinic.phone ?? "");
+      const c = data.clinic;
+      setClinic(c);
+      setName(c.name ?? "");
+      setPhone(c.phone ?? "");
+      setInstagramInput(c.instagramUrl ?? "");
+      setLoading(false);
     } catch {
-      setError("NETWORK_ERROR");
       setClinic(null);
-    } finally {
+      setMsg({ type: "err", text: "Profil yüklenemedi." });
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    void load();
   }, []);
 
-  const saveProfile = async (): Promise<void> => {
-    setSavingProfile(true);
-    setError(null);
-    setSuccess(null);
+  const saveProfile = useCallback(async (): Promise<void> => {
+    if (!canSave) return;
+
+    setSaving(true);
+    setMsg(null);
 
     try {
-      const r = await fetch("/api/panel/profile", {
+      const res = await fetch("/api/panel/profile", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone }),
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          instagramUrl: normalizedInstagram,
+        }),
       });
 
-      const j = (await r.json()) as PatchProfileResp;
+      const data: ProfileResponse = await res.json();
 
-      if (!r.ok || !j.ok) {
-        setError(j.ok ? "UNKNOWN" : errText(j));
+      if (!res.ok || !data.ok) {
+        setMsg({ type: "err", text: "Kaydedilemedi." });
+        setSaving(false);
         return;
       }
 
-      setClinic((prev) =>
-        prev
-          ? {
-              ...prev,
-              name: j.clinic.name,
-              phone: j.clinic.phone,
-              updatedAt: j.clinic.updatedAt,
-            }
-          : null
-      );
-
-      setSuccess("Profil güncellendi.");
+      setClinic(data.clinic);
+      setMsg({ type: "ok", text: "Profil güncellendi." });
+      setSaving(false);
     } catch {
-      setError("NETWORK_ERROR");
-    } finally {
-      setSavingProfile(false);
+      setMsg({ type: "err", text: "Kaydedilemedi." });
+      setSaving(false);
     }
-  };
+  }, [canSave, name, phone, normalizedInstagram]);
 
-  const changePassword = async (): Promise<void> => {
-    setSavingPass(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const r = await fetch("/api/panel/profile/password", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const j = (await r.json()) as PatchPasswordResp;
-
-      if (!r.ok || !j.ok) {
-        setError(j.ok ? "UNKNOWN" : errText(j));
-        return;
-      }
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setSuccess("Şifre güncellendi.");
-    } catch {
-      setError("NETWORK_ERROR");
-    } finally {
-      setSavingPass(false);
-    }
-  };
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>Profil</h1>
+    <div className={styles.wrap}>
+      <div className={styles.topBar}>
+        <div>
+          <div className={styles.pill}>🦷 Klinik Paneli</div>
+          <h1 className={styles.h1}>Profil</h1>
+          <div className={styles.sub}>Klinik dizininde daha güven veren bir profil için bilgilerini güncelle.</div>
+        </div>
 
-      {loading && <div>Yükleniyor...</div>}
+        {clinic ? (
+          <div className={styles.pill} title="Son güncelleme">
+            🕒 {new Date(clinic.updatedAt).toLocaleString("tr-TR")}
+          </div>
+        ) : null}
+      </div>
 
-      {!loading && !clinic && (
-        <div style={{ border: "1px solid #f2c9c9", background: "#fff5f5", borderRadius: 12, padding: 12 }}>
-          Profil yüklenemedi: {error ?? "UNKNOWN"}
-          <div style={{ marginTop: 10 }}>
-            <a href="/panel/login" style={{ fontWeight: 900 }}>
-              /panel/login
-            </a>
+      <div className={styles.grid}>
+        {/* FORM */}
+        <div className={`${styles.card} ${styles.cardGlow}`}>
+          <div className={styles.cardInner}>
+            {loading ? (
+              <div className={styles.sub}>Yükleniyor...</div>
+            ) : !clinic ? (
+              <div className={styles.msgErr}>Profil bulunamadı.</div>
+            ) : (
+              <>
+                {msg ? (
+                  <div className={msg.type === "ok" ? styles.msgOk : styles.msgErr}>{msg.text}</div>
+                ) : null}
+
+                <div className={styles.formGrid}>
+                  <div className={styles.formGrid2}>
+                    <div className={styles.field}>
+                      <div className={styles.labelRow}>
+                        <div className={styles.label}>Klinik Adı</div>
+                        <div className={styles.hint}>Zorunlu</div>
+                      </div>
+
+                      <div className={styles.inputFrame}>
+                        <div className={styles.icon}>🏥</div>
+                        <input
+                          className={styles.input}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Örn: Özel X Ağız ve Diş Sağlığı Polikliniği"
+                        />
+                      </div>
+                    </div>
+
+                    <div className={styles.field}>
+                      <div className={styles.labelRow}>
+                        <div className={styles.label}>Telefon</div>
+                        <div className={styles.hint}>Zorunlu</div>
+                      </div>
+
+                      <div className={styles.inputFrame}>
+                        <div className={styles.icon}>📞</div>
+                        <input
+                          className={styles.input}
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="Örn: 0 (5xx) xxx xx xx"
+                          inputMode="tel"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.field}>
+                    <div className={styles.labelRow}>
+                      <div className={styles.label}>Instagram (opsiyonel)</div>
+                      <div className={styles.hint}>Kullanıcı adı veya link</div>
+                    </div>
+
+                    <div className={styles.inputFrame}>
+                      <div className={styles.icon}>📸</div>
+                      <input
+                        className={styles.input}
+                        value={instagramInput}
+                        onChange={(e) => setInstagramInput(e.target.value)}
+                        placeholder='Örn: https://www.instagram.com/kliniginiz/ veya "kliniginiz"'
+                      />
+                    </div>
+
+                    <div className={styles.badgeRow}>
+                      {normalizedInstagram ? (
+                        <a className={`${styles.badge} ${styles.badgeIg}`} href={normalizedInstagram} target="_blank" rel="noreferrer">
+                          📸 {instagramHandle(normalizedInstagram)} <span aria-hidden>↗</span>
+                        </a>
+                      ) : (
+                        <span className={`${styles.badge} ${styles.badgeMuted}`}>Instagram eklenmedi</span>
+                      )}
+                      <div className={styles.help}>Sadece kullanıcı adı yazarsan otomatik linke çevirir.</div>
+                    </div>
+                  </div>
+
+                  <div className={styles.field}>
+                    <div className={styles.labelRow}>
+                      <div className={styles.label}>E-posta</div>
+                      <div className={styles.hint}>Değiştirilemez</div>
+                    </div>
+
+                    <div className={styles.inputFrame}>
+                      <div className={styles.icon}>✉️</div>
+                      <input className={`${styles.input} ${styles.readonly}`} value={clinic.email} readOnly />
+                    </div>
+                  </div>
+
+                  <div className={styles.actions}>
+                    <button className={styles.btnPrimary} onClick={saveProfile} disabled={!canSave || saving}>
+                      {saving ? "Kaydediliyor..." : "Kaydet"}
+                    </button>
+
+                    <button className={styles.btnGhost} onClick={loadProfile} disabled={saving}>
+                      Yenile
+                    </button>
+
+                    <div className={styles.metaRight}>
+                      Son güncelleme:{" "}
+                      <strong>{new Date(clinic.updatedAt).toLocaleString("tr-TR")}</strong>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      )}
 
-      {!loading && clinic && (
-        <>
-          {(error || success) && (
-            <div
-              style={{
-                marginBottom: 12,
-                border: error ? "1px solid #f2c9c9" : "1px solid #cce9d1",
-                background: error ? "#fff5f5" : "#f2fff5",
-                borderRadius: 12,
-                padding: 12,
-              }}
-            >
-              <strong>{error ? "Hata" : "Başarılı"}:</strong> {error ?? success}
+        {/* SIDE */}
+        <aside className={styles.card}>
+          <div className={styles.cardInner}>
+            <div className={styles.sideTitle}>Profil Tamamlanma</div>
+            <div className={styles.sideSub}>Daha çok güven → daha çok dönüş</div>
+
+            <div className={styles.progressTop}>
+              <div className={styles.percentPill}>⭐ {completion}%</div>
+              <div className={styles.hint}>Hedef: 100%</div>
             </div>
-          )}
 
-          <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, marginBottom: 14 }}>
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>Klinik Bilgileri</div>
+            <div className={styles.bar} aria-label="Profil tamamlanma çubuğu">
+              <div className={styles.barFill} style={{ width: `${completion}%` }} />
+            </div>
 
-            <div style={{ display: "grid", gap: 10 }}>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800 }}>Klinik adı</span>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
-                  placeholder="Klinik adı"
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800 }}>Telefon</span>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
-                  placeholder="05xx..."
-                />
-              </label>
-
-              <div style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800 }}>Email</span>
-                <div style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #eee", background: "#fafafa" }}>
-                  {clinic.email}
-                </div>
+            <div className={styles.checks}>
+              <div className={styles.checkItem}>
+                <span>{checks.nameOk ? "✅" : "⬜"}</span>
+                <span>Klinik adı</span>
               </div>
-
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", opacity: 0.8 }}>
-                <div>
-                  <strong>Aktif:</strong> {clinic.isActive ? "Evet" : "Hayır"}
-                </div>
-                <div>
-                  <strong>Güncellendi:</strong> {new Date(clinic.updatedAt).toLocaleString("tr-TR")}
-                </div>
+              <div className={styles.checkItem}>
+                <span>{checks.phoneOk ? "✅" : "⬜"}</span>
+                <span>Telefon</span>
               </div>
+              <div className={styles.checkItem}>
+                <span>{checks.igOk ? "✅" : "⬜"}</span>
+                <span>Instagram (opsiyonel)</span>
+              </div>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => void saveProfile()}
-                disabled={savingProfile}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  border: "1px solid #111",
-                  background: "#111",
-                  color: "#fff",
-                  fontWeight: 900,
-                  cursor: savingProfile ? "not-allowed" : "pointer",
-                  width: 220,
-                }}
-              >
-                {savingProfile ? "Kaydediliyor..." : "Kaydet"}
-              </button>
+            <div className={styles.tip}>
+              <div className={styles.tipTitle}>İpucu</div>
+              <div className={styles.tipText}>
+                Instagram eklemek dizinde profili daha “güven veren” gösterir. Telefon doğru olursa dönüş hızı artar.
+              </div>
             </div>
           </div>
-
-          <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-            <div style={{ fontWeight: 900, marginBottom: 10 }}>Şifre Değiştir</div>
-
-            <div style={{ display: "grid", gap: 10 }}>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800 }}>Mevcut şifre</span>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
-                  placeholder="Mevcut şifre"
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6 }}>
-                <span style={{ fontWeight: 800 }}>Yeni şifre (min 8)</span>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" }}
-                  placeholder="Yeni şifre"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={() => void changePassword()}
-                disabled={savingPass}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: 10,
-                  border: "1px solid #111",
-                  background: "#111",
-                  color: "#fff",
-                  fontWeight: 900,
-                  cursor: savingPass ? "not-allowed" : "pointer",
-                  width: 220,
-                }}
-              >
-                {savingPass ? "Güncelleniyor..." : "Şifreyi Güncelle"}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+        </aside>
+      </div>
     </div>
   );
 }

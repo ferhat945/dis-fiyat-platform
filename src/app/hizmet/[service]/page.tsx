@@ -1,6 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { CITIES, SERVICES, cityLabel, serviceLabel, normalizeSlug, isKnownService } from "@/lib/seo-data";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CITIES, cityLabel, isKnownService, normalizeSlug, serviceLabel } from "@/lib/seo-data";
+import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -10,63 +12,85 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { service } = await params;
-  const s = normalizeSlug(service);
-  const serviceName = serviceLabel(s);
+
+  const serviceSlug = normalizeSlug(service);
+  const ok = isKnownService(serviceSlug);
+  const serviceName = ok ? serviceLabel(serviceSlug) : "Hizmet";
 
   return {
-    title: `${serviceName} Fiyatları • Şehrinde Teklif Al`,
-    description: `${serviceName} için bulunduğun şehirde kliniklerden teklif al. KVKK onaylı form, hızlı iletişim.`,
-    alternates: { canonical: `/hizmet/${s}` },
+    title: `${serviceName} | Şehir Seç | Diş Fiyat Platform`,
+    description: `${serviceName} için şehir seç, KVKK onaylı form ile kliniklerden teklif al.`,
+    alternates: { canonical: `/hizmet/${serviceSlug}` },
+    robots: ok ? { index: true, follow: true } : { index: false, follow: false },
   };
 }
 
-export default async function ServicePage({ params }: PageProps): Promise<JSX.Element> {
+export default async function ServiceCitiesPage({ params }: PageProps): Promise<JSX.Element> {
   const { service } = await params;
-  const s = normalizeSlug(service);
-  const serviceName = serviceLabel(s);
-  const known = isKnownService(s);
+
+  const serviceSlug = normalizeSlug(service);
+  if (!isKnownService(serviceSlug)) return notFound();
+
+  const serviceName = serviceLabel(serviceSlug);
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4">
-      <section className="mt-8 card p-6 md:p-8">
-        <div className="badge w-fit">{known ? "Hizmet" : "Özel Hizmet"} • {serviceName}</div>
-        <h1 className="mt-3 text-3xl font-black">{serviceName} için Şehir Seç</h1>
-        <p className="mt-2 text-[rgb(var(--subtext))] font-semibold leading-relaxed">
-          Şehri seç → KVKK onaylı formu doldur → uygun klinikler seninle iletişime geçsin.
-        </p>
-
-        {!known && (
-          <div className="mt-4 rounded-3xl border border-red-200 bg-red-50 p-4 font-extrabold text-red-700 leading-relaxed">
-            Not: “{serviceName}” listemizde yok ama sayfa çalışır. SEO için hizmet listesini büyütmek istersen ekleriz.
+    <main className={styles.wrap}>
+      <div className={styles.container}>
+        <div className={styles.head}>
+          <div className={styles.kickerRow}>
+            <span className={styles.kicker}>Hizmet</span>
+            <span className={`${styles.kicker} ${styles.kickerSoft}`}>KVKK Onaylı</span>
+            <span className={`${styles.kicker} ${styles.kickerSoft}`}>Ücretsiz</span>
           </div>
-        )}
-      </section>
 
-      <section className="mt-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {CITIES.map((c) => (
-            <Link key={c} href={`/sehir/${c}/${s}`} className="card p-5 hover:bg-[rgb(var(--muted))]">
-              <div className="text-lg font-black">{cityLabel(c)}</div>
-              <div className="mt-1 text-sm text-[rgb(var(--subtext))] font-semibold">
-                {serviceName} teklif al →
+          <h1 className={styles.title}>{serviceName} için şehir seç</h1>
+          <p className={styles.desc}>
+            Şehri seç → KVKK onaylı formu doldur → uygun klinikler seninle iletişime geçsin.
+          </p>
+
+          <div className={styles.actions}>
+            <Link href="/hizmetler" className={styles.btn}>
+              Hizmetler
+            </Link>
+            <Link href="/sehir" className={styles.btn}>
+              Şehirler
+            </Link>
+            <Link href="/teklif-al" className={`${styles.btn} ${styles.btnPrimary}`}>
+              Teklif Al
+            </Link>
+          </div>
+        </div>
+
+        <div className={styles.grid} aria-label="Şehir listesi">
+          {CITIES.map((city) => (
+            <Link key={city} href={`/sehir/${city}/${serviceSlug}`} className={styles.card}>
+              <div className={styles.cardIcon} aria-hidden>
+                📍
+              </div>
+
+              <div className={styles.cardBody}>
+                <div className={styles.cardTitle}>{cityLabel(city)}</div>
+                <div className={styles.cardDesc}>{serviceName} için devam et →</div>
+              </div>
+
+              <div className={styles.cardArrow} aria-hidden>
+                →
               </div>
             </Link>
           ))}
         </div>
-      </section>
 
-      <section className="mt-10 card-muted p-6">
-        <div className="font-black">Diğer hizmetler</div>
-        <div className="mt-3 flex gap-2 flex-wrap">
-          {SERVICES.filter((x) => x !== s).slice(0, 10).map((ss) => (
-            <Link key={ss} href={`/hizmet/${ss}`} className="badge hover:bg-white">
-              {serviceLabel(ss)}
-            </Link>
-          ))}
+        <div className={styles.cta}>
+          <div>
+            <div className={styles.ctaTitle}>Hazırsan teklif al</div>
+            <div className={styles.ctaDesc}>Kesin fiyat muayene sonrası netleşir.</div>
+          </div>
+
+          <Link href={`/teklif-al?service=${encodeURIComponent(serviceSlug)}`} className={`${styles.btn} ${styles.btnPrimary}`}>
+            Teklif Al
+          </Link>
         </div>
-      </section>
-
-      <div className="h-10" />
+      </div>
     </main>
   );
 }

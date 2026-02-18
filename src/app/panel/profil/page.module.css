@@ -1,0 +1,361 @@
+.wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topBar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 12px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(15,23,42,0.10);
+}
+
+.h1 {
+  margin: 10px 0 0 0;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 950;
+}
+
+.sub {
+  margin-top: 6px;
+  color: rgba(15, 23, 42, 0.68);
+  font-weight: 750;
+  line-height: 1.7;
+  max-width: 72ch;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr 360px;
+    align-items: start;
+  }
+}
+
+.card {
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow2);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.cardInner {
+  padding: 16px;
+}
+
+.cardGlow {
+  position: relative;
+}
+
+.cardGlow:before {
+  content: "";
+  position: absolute;
+  inset: -140px -60px auto -60px;
+  height: 220px;
+  background:
+    radial-gradient(340px 140px at 25% 60%, rgba(124,58,237,0.22), transparent 60%),
+    radial-gradient(340px 160px at 75% 30%, rgba(14,165,233,0.18), transparent 60%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.msgOk, .msgErr {
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-weight: 850;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.msgOk {
+  border: 1px solid rgba(16,185,129,0.25);
+  background: rgba(16,185,129,0.10);
+  color: rgba(6,95,70,0.95);
+}
+
+.msgErr {
+  border: 1px solid rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.10);
+  color: rgba(127,29,29,0.95);
+}
+
+.formGrid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 860px) {
+  .formGrid2 {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.label {
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.hint {
+  font-weight: 850;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.inputFrame {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(15,23,42,0.12);
+  background: rgba(255,255,255,0.86);
+  box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.inputFrame:focus-within {
+  border-color: rgba(124,58,237,0.35);
+  box-shadow: 0 16px 30px rgba(15,23,42,0.10);
+  transform: translateY(-1px);
+}
+
+.icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(124,58,237,0.14), rgba(14,165,233,0.12));
+  border: 1px solid rgba(15,23,42,0.10);
+  font-weight: 950;
+  flex: 0 0 auto;
+}
+
+.input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-weight: 900;
+  font-size: 14px;
+  color: rgba(15,23,42,0.95);
+}
+
+.readonly {
+  color: rgba(15,23,42,0.60);
+}
+
+.help {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+  font-weight: 750;
+  line-height: 1.6;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.80);
+  font-weight: 950;
+  font-size: 12px;
+  color: rgba(15,23,42,0.92);
+  text-decoration: none;
+}
+
+.badgeIg {
+  border-color: rgba(124,58,237,0.20);
+  background: rgba(124,58,237,0.10);
+  color: rgba(124,58,237,0.95);
+}
+
+.badgeMuted {
+  border-color: rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.55);
+  color: rgba(15,23,42,0.55);
+  font-weight: 900;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.btnPrimary, .btnGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 950;
+  cursor: pointer;
+  border: 1px solid rgba(15,23,42,0.12);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, filter 0.12s ease;
+}
+
+.btnPrimary {
+  background: rgba(11,18,32,0.92);
+  color: white;
+}
+
+.btnGhost {
+  background: rgba(255,255,255,0.80);
+  color: rgba(15,23,42,0.92);
+}
+
+.btnPrimary:hover, .btnGhost:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow2);
+}
+
+.btnPrimary:disabled, .btnGhost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.metaRight {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 850;
+  color: rgba(15,23,42,0.55);
+}
+
+.sideTitle {
+  font-weight: 950;
+  font-size: 14px;
+}
+
+.sideSub {
+  margin-top: 6px;
+  font-weight: 750;
+  color: rgba(15,23,42,0.62);
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.percentPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-weight: 950;
+  font-size: 12px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.75);
+}
+
+.bar {
+  margin-top: 10px;
+  height: 10px;
+  background: rgba(15,23,42,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.95), rgba(14,165,233,0.95));
+}
+
+.checks {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 850;
+  color: rgba(15,23,42,0.82);
+}
+
+.checkItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.tip {
+  margin-top: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.65);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.tipTitle {
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.tipText {
+  margin-top: 6px;
+  font-weight: 750;
+  color: rgba(15,23,42,0.68);
+  line-height: 1.6;
+  font-size: 12px;
+}

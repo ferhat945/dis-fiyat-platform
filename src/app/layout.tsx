@@ -11,51 +11,79 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
   return (
     <html lang="tr">
       <body>
-        {/* ÜST MENÜ */}
+        {/* HEADER */}
         <header className="siteHeader">
           <div className="siteHeaderInner">
             <Link href="/" className="brandPill" aria-label="Ana sayfa">
+              <span className="brandIcon" aria-hidden>
+                🦷
+              </span>
               Diş Fiyat Platform
             </Link>
 
             <nav className="siteNav" aria-label="Üst menü">
+              <Link className="navLink" href="/">
+                Ana Sayfa
+              </Link>
               <Link className="navLink" href="/sehir">
                 Şehirler
               </Link>
               <Link className="navLink" href="/hizmetler">
                 Hizmetler
               </Link>
+
+              {/* ✅ Blog */}
+              <Link className="navLink" href="/blog">
+                Blog
+              </Link>
+
               <Link className="navLink" href="/kvkk">
                 KVKK
               </Link>
               <Link className="navCta" href="/teklif-al">
                 Teklif Al
               </Link>
+              <Link className="navLink" href="/login">
+                Dişçi misiniz?
+              </Link>
             </nav>
           </div>
         </header>
 
-        {/* SAYFA */}
+        {/* PAGE */}
         <main className="siteMain">{children}</main>
 
-        {/* ALT MENÜ */}
+        {/* FOOTER */}
         <footer className="siteFooter">
           <div className="siteFooterInner">
-            <div className="footerCol">
-              <div className="footerBrand">Diş Fiyat Platform</div>
+            <div>
+              <div className="footerBrand">
+                <span className="brandIcon" aria-hidden>
+                  🦷
+                </span>
+                Diş Fiyat Platform
+              </div>
               <div className="footerText">
-                KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.
+                KVKK onaylı form ile kliniklerden teklif al. <strong>Kesin fiyat muayene sonrası netleşir.</strong>
               </div>
             </div>
 
-            <div className="footerCol">
+            <div>
               <div className="footerTitle">Bağlantılar</div>
               <div className="footerLinks">
-                <Link href="/kvkk">KVKK Metni</Link>
                 <Link href="/sehir">Şehirler</Link>
                 <Link href="/hizmetler">Hizmetler</Link>
+                <Link href="/blog">Blog</Link>
+                <Link href="/kvkk">KVKK Metni</Link>
                 <Link href="/teklif-al">Teklif Al</Link>
+              </div>
+            </div>
+
+            <div>
+              <div className="footerTitle">Klinikler</div>
+              <div className="footerLinks">
                 <Link href="/panel/login">Klinik Giriş</Link>
+                <Link href="/panel">Klinik Panel</Link>
               </div>
             </div>
           </div>

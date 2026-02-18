@@ -1,3 +1,4 @@
+// src/app/admin/login/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,31 +7,48 @@ export default function AdminLoginPage(): JSX.Element {
   const [key, setKey] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function login(): Promise<void> {
     setErr(null);
     setOk(false);
+    setLoading(true);
+
     try {
       const r = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key }),
       });
+
       const j = (await r.json()) as { ok?: boolean; code?: string };
+
       if (!r.ok || !j.ok) {
         setErr(j.code ?? "LOGIN_FAILED");
         return;
       }
+
+      // ✅ Cookie set edildiyse admin içine geç
       setOk(true);
       setKey("");
+
+      // Tasarımı bozmadan kısa gecikmeyle yönlendirelim
+      window.location.href = "/admin";
     } catch (e) {
       setErr(e instanceof Error ? e.message : "NETWORK_ERROR");
+    } finally {
+      setLoading(false);
     }
   }
 
   async function logout(): Promise<void> {
-    await fetch("/api/admin/logout", { method: "POST" });
-    setOk(false);
+    setLoading(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      setOk(false);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -48,11 +66,11 @@ export default function AdminLoginPage(): JSX.Element {
         {err && <div style={{ color: "crimson", fontWeight: 900 }}>Hata: {err}</div>}
         {ok && <div style={{ color: "green", fontWeight: 900 }}>Giriş başarılı ✅</div>}
 
-        <button onClick={login} disabled={!key} style={btn()}>
-          Giriş Yap
+        <button onClick={login} disabled={!key || loading} style={btn()}>
+          {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
         </button>
 
-        <button onClick={logout} style={{ ...btn(), background: "#fff", color: "#111" }}>
+        <button onClick={logout} disabled={loading} style={{ ...btn(), background: "#fff", color: "#111" }}>
           Çıkış Yap
         </button>
       </div>
@@ -69,5 +87,6 @@ function btn(): React.CSSProperties {
     color: "#fff",
     fontWeight: 900,
     cursor: "pointer",
+    opacity: 1,
   };
 }

@@ -2,33 +2,74 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { CITIES, SERVICES, cityLabel, serviceLabel } from "@/lib/seo-data";
 
-const CITIES = [
-  { slug: "istanbul", label: "İstanbul" },
-  { slug: "ankara", label: "Ankara" },
-  { slug: "izmir", label: "İzmir" },
-  { slug: "bursa", label: "Bursa" },
-  { slug: "antalya", label: "Antalya" },
-];
+type Option = { slug: string; label: string };
 
-const SERVICES = [
-  { slug: "implant", label: "İmplant" },
-  { slug: "zirkonyum", label: "Zirkonyum Kaplama" },
-  { slug: "lamina", label: "Lamina (Yaprak Porselen)" },
-  { slug: "dis-beyazlatma", label: "Diş Beyazlatma" },
-  { slug: "kanal-tedavisi", label: "Kanal Tedavisi" },
-  { slug: "dis-tasi-temizligi", label: "Diş Taşı Temizliği" },
-  { slug: "dolgu", label: "Dolgu" },
-  { slug: "kaplama", label: "Kaplama" },
-  { slug: "ortodonti", label: "Ortodonti (Tel Tedavisi)" },
-];
+function inputStyle(): CSSProperties {
+  return {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 14,
+    border: "1px solid #ddd",
+    background: "#fff",
+    outline: "none",
+    fontWeight: 800,
+  };
+}
+
+function btnPrimary(): CSSProperties {
+  return {
+    textDecoration: "none",
+    fontWeight: 950,
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid #111",
+    background: "#111",
+    color: "#fff",
+    display: "inline-block",
+  };
+}
+
+function btnGhost(): CSSProperties {
+  return {
+    textDecoration: "none",
+    fontWeight: 950,
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: "1px solid #ddd",
+    background: "#fff",
+    color: "#111",
+    display: "inline-block",
+  };
+}
 
 export default function HomeSearch(): JSX.Element {
-  const [city, setCity] = useState<string>(CITIES[0]?.slug ?? "");
-  const [service, setService] = useState<string>(SERVICES[0]?.slug ?? "");
+  // ✅ Tek kaynak: seo-data (slug'lar route ile %100 uyumlu)
+  const cityOptions: Option[] = useMemo(() => {
+    // İstersen burada ilk 5’i gösterebilirsin, ama slug kaynağı yine seo-data
+    const top = ["istanbul", "ankara", "izmir", "bursa", "antalya"];
+    const set = new Set(top);
+
+    const pinned = CITIES.filter((c) => set.has(c));
+    const rest = CITIES.filter((c) => !set.has(c));
+
+    const merged = [...pinned, ...rest].slice(0, 20); // UI şişmesin diye ilk 20
+
+    return merged.map((slug) => ({ slug, label: cityLabel(slug) }));
+  }, []);
+
+  const serviceOptions: Option[] = useMemo(() => {
+    return SERVICES.map((slug) => ({ slug, label: serviceLabel(slug) }));
+  }, []);
+
+  const [city, setCity] = useState<string>(cityOptions[0]?.slug ?? "");
+  const [service, setService] = useState<string>(serviceOptions[0]?.slug ?? "");
 
   const href = useMemo(() => {
-    if (!city || !service) return "#";
+    if (!city || !service) return "/sehir";
+    // ✅ Route: /sehir/[city]/[service]
     return `/sehir/${city}/${service}`;
   }, [city, service]);
 
@@ -46,11 +87,18 @@ export default function HomeSearch(): JSX.Element {
         Şehir ve hizmet seç → ilgili sayfadan KVKK onaylı teklif formuna git.
       </div>
 
-      <div style={{ marginTop: 12, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+      <div
+        style={{
+          marginTop: 12,
+          display: "grid",
+          gap: 10,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        }}
+      >
         <div>
           <div style={{ fontWeight: 900, marginBottom: 6 }}>Şehir</div>
-          <select value={city} onChange={(e) => setCity(e.target.value)} style={inp()}>
-            {CITIES.map((c) => (
+          <select value={city} onChange={(e) => setCity(e.target.value)} style={inputStyle()}>
+            {cityOptions.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {c.label}
               </option>
@@ -60,8 +108,8 @@ export default function HomeSearch(): JSX.Element {
 
         <div>
           <div style={{ fontWeight: 900, marginBottom: 6 }}>Hizmet</div>
-          <select value={service} onChange={(e) => setService(e.target.value)} style={inp()}>
-            {SERVICES.map((s) => (
+          <select value={service} onChange={(e) => setService(e.target.value)} style={inputStyle()}>
+            {serviceOptions.map((s) => (
               <option key={s.slug} value={s.slug}>
                 {s.label}
               </option>
@@ -83,7 +131,8 @@ export default function HomeSearch(): JSX.Element {
           Şehirler
         </Link>
 
-        <Link href="/hizmet" style={btnGhost()}>
+        {/* ✅ /hizmet yerine /hizmetler (sende modern liste burada) */}
+        <Link href="/hizmetler" style={btnGhost()}>
           Hizmetler
         </Link>
       </div>
@@ -93,42 +142,4 @@ export default function HomeSearch(): JSX.Element {
       </div>
     </div>
   );
-}
-
-function inp(): React.CSSProperties {
-  return {
-    width: "100%",
-    padding: "12px 12px",
-    borderRadius: 14,
-    border: "1px solid #ddd",
-    background: "#fff",
-    outline: "none",
-    fontWeight: 800,
-  };
-}
-
-function btnPrimary(): React.CSSProperties {
-  return {
-    textDecoration: "none",
-    fontWeight: 950,
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: "1px solid #111",
-    background: "#111",
-    color: "#fff",
-    display: "inline-block",
-  };
-}
-
-function btnGhost(): React.CSSProperties {
-  return {
-    textDecoration: "none",
-    fontWeight: 950,
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: "1px solid #ddd",
-    background: "#fff",
-    color: "#111",
-    display: "inline-block",
-  };
 }
