@@ -12,39 +12,49 @@ model Clinic {
   name           String
   phone          String?
   email          String    @unique
-  address       String?
-  about         String?
-  website       String?
+  address        String?
+  about          String?
+  website        String?
   passwordHash   String
   isActive       Boolean   @default(true)
   lastAssignedAt DateTime?
-  instagramUrl   String?  @db.VarChar(255)
+  instagramUrl   String?   @db.VarChar(255)
+  trialUsedAt    DateTime?
+  trialEndsAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   coverages        ClinicCoverage[]
+  blogPosts        BlogPost[]
   subscriptions    Subscription[]
   assignments      LeadAssignment[]
   distributionLogs LeadDistributionLog[]
+  priceRanges      ClinicPriceRange[]
+  pageViews        ClinicPageView[]
+  paymentLogs      PaymentLog[]
 
   @@map("clinics")
 }
 
 model BlogPost {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String    @id @default(cuid())
+  clinicId    String? // ✅ EKLE: yazıyı yazan klinik
+  slug        String    @unique
   title       String
-  excerpt     String?  @db.VarChar(320)
-  content     String   @db.LongText
-  isPublished Boolean  @default(false)
+  excerpt     String?   @db.VarChar(320)
+  content     String    @db.LongText
+  isPublished Boolean   @default(false)
   publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("BlogPost")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: SetNull) // ✅ EKLE
+
+  @@index([clinicId]) // ✅ EKLE
   @@index([isPublished, publishedAt])
   @@index([createdAt])
+  @@map("BlogPost")
 }
 
 model ClinicCoverage {
@@ -88,27 +98,26 @@ model LeadAssignment {
 }
 
 model Lead {
-  id               String                @id @default(cuid())
-  city             String
-  service          String
-  fullName         String
-  phone            String
-  email            String?
-  message          String?
-  intent           String
-  source           String?
-  status           String                @default("new")
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  clinicNote       String?               @db.Text
-  lastContactAt    DateTime?
-  distributionLogs LeadDistributionLog[]
-  assignments      LeadAssignment[]
+  id                 String                @id @default(cuid())
+  city               String
+  service            String
+  fullName           String
+  phone              String
+  email              String?
+  message            String?
+  intent             String
+  source             String?
+  status             String                @default("new")
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  clinicNote         String?               @db.Text
+  lastContactAt      DateTime?
+  distributionLogs   LeadDistributionLog[]
+  assignments        LeadAssignment[]
   consentAt          DateTime?
-  consentTextVersion String?  @default("v1")
+  consentTextVersion String?               @default("v1")
   ip                 String?
   userAgent          String?
-
 
   @@map("lead")
 }
@@ -132,4 +141,58 @@ model LeadDistributionLog {
   @@index([city, service])
   @@index([assigned])
   @@map("lead_distribution_logs")
+}
+
+model ClinicPriceRange {
+  id        String   @id @default(cuid())
+  clinicId  String
+  city      String
+  service   String
+  minPrice  Int
+  maxPrice  Int
+  currency  String   @default("TRY")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([city, service])
+  @@map("clinic_price_ranges")
+}
+
+model ClinicPageView {
+  id        String   @id @default(cuid())
+  clinicId  String
+  day       DateTime
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, day])
+  @@index([clinicId])
+  @@index([day])
+  @@map("clinic_page_views")
+}
+
+model PaymentLog {
+  id          String   @id @default(cuid())
+  clinicId    String
+  kind        String // "subscription_base" | "extra_leads"
+  amount      Int
+  currency    String   @default("TRY")
+  status      String // "started" | "success" | "failed" | "canceled"
+  provider    String? // "paytr" | "mock"
+  providerRef String? // PayTR order id / reference
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, createdAt])
+  @@index([status])
+  @@map("payment_logs")
 }

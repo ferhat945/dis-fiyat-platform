@@ -13,7 +13,15 @@ export default async function AdminHomePage(): Promise<JSX.Element> {
 
   return (
     <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          marginBottom: 12,
+        }}
+      >
         <h1 style={{ fontSize: 24, fontWeight: 900 }}>Admin Panel</h1>
 
         <form action="/api/admin/logout" method="post">
@@ -37,6 +45,12 @@ export default async function AdminHomePage(): Promise<JSX.Element> {
         <Link href="/admin/clinics" style={card()}>
           Klinikler →
         </Link>
+
+        {/* ✅ YENİ */}
+        <Link href="/admin/leads" style={card()}>
+          Leadler →
+        </Link>
+
         <Link href="/admin/coverages" style={card()}>
           Coverage (Şehir/Hizmet) →
         </Link>
@@ -48,6 +62,11 @@ export default async function AdminHomePage(): Promise<JSX.Element> {
         </Link>
         <Link href="/admin/logs" style={card()}>
           Dağıtım Logları →
+        </Link>
+
+        {/* ✅ BLOG */}
+        <Link href="/admin/blog" style={card()}>
+          Blog Yönetimi →
         </Link>
       </div>
     </div>

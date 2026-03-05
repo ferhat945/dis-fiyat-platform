@@ -5,7 +5,7 @@ export default function Footer(): JSX.Element {
     <footer className="site-footer">
       <div className="footer-grid">
         <div>
-          <div className="h2">Diş Fiyat Platform</div>
+          <div className="h2">DişFiyat360</div>
           <p className="p">
             KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.
           </p>

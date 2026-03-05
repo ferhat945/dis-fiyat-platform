@@ -26,14 +26,12 @@ function instagramHandleFromValue(value: string): string {
   const raw = value.trim();
   if (!raw) return "Instagram";
 
-  // URL ise path'ten kullanıcı adı
   try {
     const u = new URL(raw);
     const p = u.pathname.replace(/^\/+|\/+$/g, "");
     const firstSeg = (p.split("/")[0] ?? "").trim();
     return firstSeg ? `@${firstSeg}` : "Instagram";
   } catch {
-    // Kullanıcı adı olabilir
     const v = raw.replace(/^@+/, "");
     return v ? `@${v}` : "Instagram";
   }
@@ -49,9 +47,15 @@ function instagramHrefFromValue(value: string): string {
   return `https://www.instagram.com/${v}/`;
 }
 
+type FeaturedClinic = {
+  id: string;
+  name: string;
+  instagramUrl: string | null;
+  coverages: Array<{ city: string }>;
+};
+
 export default async function HomePage(): Promise<JSX.Element> {
-  // Öne çıkan 6: aktif + en az 1 aktif coverage (şehir etiketi için)
-  const featured = await prisma.clinic.findMany({
+  const featuredRaw = await prisma.clinic.findMany({
     where: {
       isActive: true,
       coverages: { some: { isActive: true } },
@@ -70,6 +74,8 @@ export default async function HomePage(): Promise<JSX.Element> {
       },
     },
   });
+
+  const featured: FeaturedClinic[] = featuredRaw;
 
   return (
     <main>
@@ -136,91 +142,116 @@ export default async function HomePage(): Promise<JSX.Element> {
                 </div>
               </div>
 
-              {/* POPULAR / STEPS BAR */}
+              {/* NASIL ÇALIŞIR (PREMIUM) */}
               <div className="section" id="nasil-calisir">
-                <h2 className="sectionTitle">Nasıl Çalışır?</h2>
-                <div className="sectionBox">
+                <div className="homeSectionHead">
+                  <div>
+                    <h2 className="sectionTitle" style={{ margin: 0 }}>
+                      Nasıl Çalışır?
+                    </h2>
+                    <div className="homeSectionSub">30 saniyede formu doldur, uygun klinikler seni arasın.</div>
+                  </div>
+
+                  <Link href="/teklif-al" className="homeMiniCta">
+                    Ücretsiz Teklif Al →
+                  </Link>
+                </div>
+
+                <div className="stepsShell">
                   <div className="stepsRow">
-                    <div className="stepCard">
-                      <div className="stepNum">1</div>
+                    <div className="stepCard stepCardV2">
+                      <div className="stepTop">
+                        <div className="stepBadge">
+                          <span className="stepNum">1</span>
+                        </div>
+                        <div className="stepIcon" aria-hidden>
+                          📝
+                        </div>
+                      </div>
+
                       <div className="stepTitle">Formu Doldur</div>
-                      <div className="stepDesc">Şehir + hizmet seç. Kısa KVKK onaylı formu doldur.</div>
+                      <div className="stepDesc">Şehir + hizmet seç. KVKK onaylı kısa formu gönder.</div>
+
+                      <div className="stepPills">
+                        <span className="pill">✅ Ücretsiz</span>
+                        <span className="pill">🔒 KVKK</span>
+                        <span className="pill">🛡️ Spam koruma</span>
+                      </div>
                     </div>
 
-                    <div className="stepCard">
-                      <div className="stepNum">2</div>
+                    <div className="stepCard stepCardV2">
+                      <div className="stepTop">
+                        <div className="stepBadge">
+                          <span className="stepNum">2</span>
+                        </div>
+                        <div className="stepIcon" aria-hidden>
+                          📞
+                        </div>
+                      </div>
+
                       <div className="stepTitle">Klinikler Arasın</div>
                       <div className="stepDesc">Uygun klinikler hızlıca seni arayıp bilgi versin.</div>
+
+                      <div className="stepPills">
+                        <span className="pill">⚡ Hızlı dönüş</span>
+                        <span className="pill">🏥 Uygun klinik</span>
+                        <span className="pill">🎯 Doğru yönlendirme</span>
+                      </div>
                     </div>
 
-                    <div className="stepCard">
-                      <div className="stepNum">3</div>
+                    <div className="stepCard stepCardV2">
+                      <div className="stepTop">
+                        <div className="stepBadge">
+                          <span className="stepNum">3</span>
+                        </div>
+                        <div className="stepIcon" aria-hidden>
+                          🤝
+                        </div>
+                      </div>
+
                       <div className="stepTitle">Uygun Teklifi Seç</div>
                       <div className="stepDesc">Muayene sonrası netleşen fiyatlar arasından karar ver.</div>
+
+                      <div className="stepPills">
+                        <span className="pill">📌 Şeffaf</span>
+                        <span className="pill">💬 İletişim</span>
+                        <span className="pill">🦷 Doğru tedavi</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* KLINIKLERI KESFET (modern) */}
+              {/* KLINIKLERI KESFET (PREMIUM) */}
               <div className="section" id="klinikler">
-                <h2 className="sectionTitle">Klinikleri Keşfet</h2>
+                <div className="homeSectionHead">
+                  <div>
+                    <h2 className="sectionTitle" style={{ margin: 0 }}>
+                      Klinikleri Keşfet
+                    </h2>
+                    <div className="homeSectionSub">Klinik profillerini incele, Instagram’ı olanları tek tıkla gör.</div>
+                  </div>
 
-                <div
-                  style={{
-                    borderRadius: 24,
-                    border: "1px solid rgba(15,23,42,0.10)",
-                    background:
-                      "radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,0.10), transparent 60%), linear-gradient(180deg,#fff, #fafafa)",
-                    padding: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 14,
-                      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                      alignItems: "start",
-                    }}
-                  >
+                  <Link href="/klinikler" className="homeMiniCta">
+                    Klinik Dizini →
+                  </Link>
+                </div>
+
+                <div className="clinicExploreShell">
+                  <div className="clinicExploreInner">
                     {/* LEFT */}
-                    <div
-                      style={{
-                        borderRadius: 20,
-                        border: "1px solid rgba(15,23,42,0.08)",
-                        background: "rgba(255,255,255,0.8)",
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                        <span
-                          style={{
-                            fontWeight: 950,
-                            fontSize: 12,
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            border: "1px solid rgba(15,23,42,0.10)",
-                            background: "#fff",
-                          }}
-                        >
-                          🏥 Klinik Dizini
-                        </span>
-                        <span style={{ opacity: 0.7, fontWeight: 800, fontSize: 12 }}>
-                          Profil + Instagram rozeti
-                        </span>
-                      </div>
+                    <div className="clinicExploreLeft">
+                      <div className="clinicExploreKicker">🏥 Klinik Dizini • Profil + Instagram rozeti</div>
 
-                      <div style={{ marginTop: 10, fontWeight: 950, fontSize: 22 }}>
-                        Klinik dizinine göz at, profilleri incele
-                      </div>
+                      <div className="clinicExploreTitle">Klinik dizinine göz at, profilleri incele</div>
 
-                      <p style={{ marginTop: 10, color: "rgba(15,23,42,0.75)", fontWeight: 750, lineHeight: 1.7 }}>
+                      <div className="clinicExploreDesc">
                         Şehir ve hizmete göre filtrele. Kliniklerin Instagram profili varsa tek tıkla gör.
                         <br />
                         <strong>Teklif gönderimi abonelik kurallarına göre yapılır.</strong>
-                      </p>
+                      </div>
 
-                      <div className="ctaRow" style={{ marginTop: 12 }}>
+                      <div className="clinicExploreCtas">
                         <Link href="/klinikler" className="btn btnPrimary">
                           Klinik Dizini →
                         </Link>
@@ -229,146 +260,61 @@ export default async function HomePage(): Promise<JSX.Element> {
                         </Link>
                       </div>
 
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-                        {["📍 Şehir etiketi", "🧾 Profil detayı", "📸 Instagram rozeti"].map((t) => (
-                          <span
-                            key={t}
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 850,
-                              padding: "8px 10px",
-                              borderRadius: 999,
-                              border: "1px solid rgba(15,23,42,0.10)",
-                              background: "rgba(255,255,255,0.9)",
-                            }}
-                          >
-                            {t}
-                          </span>
-                        ))}
+                      <div className="clinicExploreBadges">
+                        <span className="clinicBadge">📍 Şehir etiketi</span>
+                        <span className="clinicBadge">🧾 Profil detayı</span>
+                        <span className="clinicBadge">📸 Instagram rozeti</span>
                       </div>
 
-                      <div style={{ marginTop: 12, opacity: 0.7, fontWeight: 800, fontSize: 12 }}>
-                        İpucu: Instagram ekleyen klinikler dizinde daha güven verici görünür.
-                      </div>
+                      <div className="clinicExploreNote">İpucu: Instagram ekleyen klinikler dizinde daha güven verici görünür.</div>
                     </div>
 
                     {/* RIGHT */}
-                    <div
-                      style={{
-                        borderRadius: 20,
-                        border: "1px solid rgba(15,23,42,0.08)",
-                        background: "rgba(255,255,255,0.8)",
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                        <div style={{ fontWeight: 950, fontSize: 16 }}>Öne çıkan klinikler</div>
-                        <Link href="/klinikler" style={{ textDecoration: "none", fontWeight: 950, color: "#111" }}>
+                    <div className="clinicExploreRight">
+                      <div className="clinicExploreTop">
+                        <div className="clinicExploreTopTitle">Öne çıkan klinikler</div>
+                        <Link href="/klinikler" className="clinicExploreTopLink">
                           Tümünü gör →
                         </Link>
                       </div>
 
                       {featured.length > 0 ? (
-                        <div
-                          style={{
-                            marginTop: 12,
-                            display: "grid",
-                            gap: 10,
-                            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                          }}
-                        >
+                        <div className="clinicExploreGrid">
                           {featured.map((c) => {
                             const slug = clinicSlug(c.name, c.id);
                             const city = c.coverages[0]?.city ?? "";
                             const cityText = city ? cityLabel(city) : "—";
+
                             const ig = (c.instagramUrl ?? "").trim();
                             const igHref = ig ? instagramHrefFromValue(ig) : "";
+                            const igLabel = ig ? instagramHandleFromValue(ig) : "";
 
                             return (
-                              <Link
-                                key={c.id}
-                                href={`/klinikler/${slug}`}
-                                style={{
-                                  textDecoration: "none",
-                                  color: "#111",
-                                  borderRadius: 18,
-                                  border: "1px solid rgba(15,23,42,0.08)",
-                                  background: "#fff",
-                                  padding: 14,
-                                  display: "grid",
-                                  gap: 10,
-                                  boxShadow: "0 10px 30px rgba(2,6,23,0.06)",
-                                }}
-                              >
-                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                                  <div style={{ fontWeight: 950 }}>{c.name}</div>
-                                  <div style={{ opacity: 0.6, fontWeight: 900 }}>↗</div>
+                              <Link key={c.id} href={`/klinikler/${slug}`} className="clinicExploreCard">
+                                <div className="clinicExploreCardHead">
+                                  <div className="clinicExploreCardName">{c.name}</div>
+                                  <div className="clinicExploreCardArrow">↗</div>
                                 </div>
 
-                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                  <span
-                                    style={{
-                                      fontSize: 12,
-                                      fontWeight: 850,
-                                      padding: "7px 10px",
-                                      borderRadius: 999,
-                                      border: "1px solid rgba(15,23,42,0.10)",
-                                      background: "#fafafa",
-                                    }}
-                                  >
-                                    📍 {cityText}
-                                  </span>
+                                <div className="clinicExploreCardMeta">
+                                  <span className="clinicChip">📍 {cityText}</span>
 
                                   {ig ? (
-                                    <span
-                                      style={{
-                                        fontSize: 12,
-                                        fontWeight: 850,
-                                        padding: "7px 10px",
-                                        borderRadius: 999,
-                                        border: "1px solid rgba(236,72,153,0.20)",
-                                        background: "rgba(236,72,153,0.08)",
-                                      }}
-                                    >
-                                      📸 {instagramHandleFromValue(ig)}
-                                    </span>
+                                    <span className="clinicChip clinicChipIg">📸 {igLabel}</span>
                                   ) : (
-                                    <span
-                                      style={{
-                                        fontSize: 12,
-                                        fontWeight: 850,
-                                        padding: "7px 10px",
-                                        borderRadius: 999,
-                                        border: "1px solid rgba(15,23,42,0.10)",
-                                        background: "#fafafa",
-                                        opacity: 0.7,
-                                      }}
-                                    >
-                                      Instagram yok
-                                    </span>
+                                    <span className="clinicChip clinicChipMuted">Instagram yok</span>
                                   )}
                                 </div>
 
-                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                                  <span style={{ fontWeight: 950, opacity: 0.9 }}>Detay →</span>
+                                <div className="clinicExploreCardFoot">
+                                  <div className="clinicExploreCardCta">Detay →</div>
 
                                   {igHref ? (
-                                    <span
-                                      style={{
-                                        fontWeight: 900,
-                                        fontSize: 12,
-                                        opacity: 0.8,
-                                        border: "1px solid rgba(15,23,42,0.10)",
-                                        padding: "6px 10px",
-                                        borderRadius: 999,
-                                        background: "#fff",
-                                      }}
-                                      title={igHref}
-                                    >
+                                    <span className="clinicExploreIgLink" title={igHref}>
                                       Instagram ↗
                                     </span>
                                   ) : (
-                                    <span style={{ fontWeight: 800, fontSize: 12, opacity: 0.6 }}>—</span>
+                                    <span className="clinicExploreIgLinkDisabled">—</span>
                                   )}
                                 </div>
                               </Link>
@@ -376,9 +322,7 @@ export default async function HomePage(): Promise<JSX.Element> {
                           })}
                         </div>
                       ) : (
-                        <div style={{ marginTop: 12, opacity: 0.7, fontWeight: 800 }}>
-                          Şu an öne çıkan klinik bulunamadı.
-                        </div>
+                        <div className="clinicExploreEmpty">Şu an öne çıkan klinik bulunamadı.</div>
                       )}
                     </div>
                   </div>
@@ -398,9 +342,7 @@ export default async function HomePage(): Promise<JSX.Element> {
 
                     <details className="faqItem">
                       <summary>Kesin fiyat ne zaman belli olur?</summary>
-                      <div className="faqBody">
-                        Kesin fiyat; muayene bulguları, malzeme seçimi ve vaka zorluğuna göre netleşir.
-                      </div>
+                      <div className="faqBody">Kesin fiyat; muayene bulguları, malzeme seçimi ve vaka zorluğuna göre netleşir.</div>
                     </details>
 
                     <details className="faqItem">
@@ -429,11 +371,15 @@ export default async function HomePage(): Promise<JSX.Element> {
 
               {/* BOTTOM QUICK LINKS */}
               <div className="section">
-                <div className="sectionBox">
-                  <div style={{ fontWeight: 950, fontSize: 16 }}>Hızlı Başlangıç</div>
-                  <div style={{ marginTop: 6, color: "rgba(15,23,42,0.70)", fontWeight: 700, lineHeight: 1.7 }}>
-                    Şehir ve hizmet seç → ilgili sayfadan KVKK onaylı teklif formuna git.
+                <div className="sectionBox quickStartBox">
+                  <div className="quickStartHead">
+                    <div className="quickStartTitle">Hızlı Başlangıç</div>
+                    <Link href="/teklif-al" className="quickStartCta">
+                      Teklif Al →
+                    </Link>
                   </div>
+
+                  <div className="quickStartDesc">Şehir ve hizmet seç → ilgili sayfadan KVKK onaylı teklif formuna git.</div>
 
                   <div className="ctaRow" style={{ marginTop: 12 }}>
                     <Link href="/sehir" className="btn btnSoft">
@@ -450,11 +396,10 @@ export default async function HomePage(): Promise<JSX.Element> {
                     </Link>
                   </div>
 
-                  <div style={{ marginTop: 10, color: "rgba(15,23,42,0.60)", fontWeight: 700, fontSize: 12 }}>
-                    Not: Bu site bilgilendirme amaçlıdır; tıbbi teşhis/tavsiye değildir.
-                  </div>
+                  <div className="quickStartNote">Not: Bu site bilgilendirme amaçlıdır; tıbbi teşhis/tavsiye değildir.</div>
                 </div>
               </div>
+
               {/* END */}
             </div>
           </div>

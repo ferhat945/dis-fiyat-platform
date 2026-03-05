@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { verifyClinicSession } from "@/lib/auth";
+import { requireClinic } from "@/lib/clinic-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +16,6 @@ type Row = {
   clinicNote: string | null;
   lastContactAt: Date | null;
   createdAt: Date;
-};
-
-type QuotaInfo = {
-  quotaTotal: number;
-  quotaUsed: number;
 };
 
 type SearchParams = {
@@ -45,26 +39,36 @@ function normalizeStatus(v: string | undefined): LeadStatus | "all" {
   return "all";
 }
 
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
+
+function formatTR(d: Date): string {
+  return d.toLocaleString("tr-TR");
+}
+
+function isNewRow(r: Row, now: Date): boolean {
+  const diff = now.getTime() - r.createdAt.getTime();
+  const sixHours = 6 * 60 * 60 * 1000;
+  return r.status === "new" && diff >= 0 && diff <= sixHours;
+}
+
+function statusBadgeClass(s: LeadStatus): string {
+  if (s === "new") return "panelLeadStatus panelLeadStatusNew";
+  if (s === "contacted") return "panelLeadStatus panelLeadStatusContacted";
+  if (s === "won") return "panelLeadStatus panelLeadStatusWon";
+  return "panelLeadStatus panelLeadStatusLost";
+}
+
 export default async function PanelLeadsPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }): Promise<JSX.Element> {
   const sp = await searchParams;
+  const session = await requireClinic();
 
-  const token = (await cookies()).get("clinic_session")?.value ?? "";
-  const session = token ? await verifyClinicSession(token) : null;
-
-  if (!session) {
-    return (
-      <div style={{ padding: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Yetkisiz</h1>
-        <div>
-          Lütfen <a href="/login">/login</a> üzerinden giriş yap.
-        </div>
-      </div>
-    );
-  }
+  const now = new Date();
 
   const activeSub = await prisma.subscription.findFirst({
     where: {
@@ -73,14 +77,13 @@ export default async function PanelLeadsPage({
       expiresAt: { gt: new Date() },
     },
     orderBy: { startedAt: "desc" },
-    select: { quotaTotal: true, quotaUsed: true },
+    select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
   });
 
-  const quota: QuotaInfo | null = activeSub
-    ? { quotaTotal: activeSub.quotaTotal, quotaUsed: activeSub.quotaUsed }
-    : null;
-
-  const remaining = quota ? Math.max(0, quota.quotaTotal - quota.quotaUsed) : 0;
+  const quotaTotal = activeSub?.quotaTotal ?? 0;
+  const quotaUsed = activeSub?.quotaUsed ?? 0;
+  const remaining = Math.max(0, quotaTotal - quotaUsed);
+  const quotaPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
 
   const q = normalizeQuery(sp.q);
   const statusFilter = normalizeStatus(sp.status);
@@ -135,160 +138,170 @@ export default async function PanelLeadsPage({
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 12,
-        }}
-      >
-        <h1 style={{ fontSize: 22, fontWeight: 700 }}>Leadler</h1>
-        <div style={{ opacity: 0.8 }}>Klinik: {session.name}</div>
-      </div>
-
-      <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, marginBottom: 14, display: "grid", gap: 6 }}>
-        <div style={{ fontWeight: 700 }}>Kota Durumu</div>
-        {!quota && <div style={{ opacity: 0.75 }}>Aktif abonelik/kota bulunamadı.</div>}
-        {quota && (
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <div>
-              <strong>Kullanılan:</strong> {quota.quotaUsed}
-            </div>
-            <div>
-              <strong>Toplam:</strong> {quota.quotaTotal}
-            </div>
-            <div>
-              <strong>Kalan:</strong> {remaining}
-            </div>
+    <div className="panelWrap">
+      {/* Header */}
+      <div className="panelHeader">
+        <div className="panelHeaderLeft">
+          <div className="panelKicker">📥 Leadler</div>
+          <h1 className="panelTitle">Lead Yönetimi</h1>
+          <div className="panelSub">
+            Klinik: <strong>{session.name}</strong> • Toplam: <strong>{rows.length}</strong>
           </div>
-        )}
-      </div>
-
-      <div style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, marginBottom: 14, display: "grid", gap: 10 }}>
-        <div style={{ fontWeight: 800 }}>Filtre</div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link href={buildHref({ status: "" })} style={pill(statusFilter === "all")}>
-            Tümü
-          </Link>
-
-          {(["new", "contacted", "won", "lost"] as LeadStatus[]).map((s) => (
-            <Link key={s} href={buildHref({ status: s })} style={pill(statusFilter === s)}>
-              {STATUS_LABEL[s]}
-            </Link>
-          ))}
         </div>
 
-        <form action="/panel/leadler" method="GET" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {statusFilter !== "all" && <input type="hidden" name="status" value={statusFilter} />}
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Ad veya telefon ara…"
-            style={{ flex: "1 1 260px", padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", outline: "none" }}
-          />
-          <button type="submit" style={btn()}>
-            Ara
-          </button>
-
-          <Link href="/panel/leadler" style={btnSecondary()}>
-            Sıfırla
+        <div className="panelHeaderRight">
+          <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel">
+            Dashboard →
           </Link>
-        </form>
+          <Link className="panelQuickBtn" href="/panel/abonelik">
+            Kota / Abonelik →
+          </Link>
+        </div>
       </div>
 
-      {rows.length === 0 && <div>Bu filtrede lead yok.</div>}
-
-      {rows.length > 0 && (
-        <div style={{ display: "grid", gap: 10 }}>
-          {rows.map((r) => (
-            <div key={r.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ fontWeight: 700 }}>
-                  {r.fullName} — {r.phone}
-                </div>
-                <div style={{ opacity: 0.7 }}>{new Date(r.createdAt).toLocaleString("tr-TR")}</div>
-              </div>
-
-              <div style={{ marginTop: 6 }}>
-                <strong>Şehir:</strong> {r.city} &nbsp; | &nbsp; <strong>Hizmet:</strong> {r.service}
-              </div>
-
-              <div style={{ marginTop: 6 }}>
-                <strong>Durum:</strong> {STATUS_LABEL[r.status]}
-              </div>
-
-              <div style={{ marginTop: 6, opacity: 0.85, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <div>
-                  <strong>Son arama:</strong> {r.lastContactAt ? new Date(r.lastContactAt).toLocaleString("tr-TR") : "—"}
-                </div>
-                <div>
-                  <strong>Not:</strong> {r.clinicNote && r.clinicNote.trim().length > 0 ? "📝 Var" : "—"}
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <Link href={`/panel/leadler/${r.id}`} style={detailBtn()}>
-                  Detay →
-                </Link>
-              </div>
+      {/* Quota card */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">💎 Kota Durumu</div>
+            <div className="panelCardSub">
+              {activeSub ? (
+                <>
+                  Kullanılan <strong>{quotaUsed}</strong> / <strong>{quotaTotal}</strong> • Kalan{" "}
+                  <strong>{remaining}</strong>
+                </>
+              ) : (
+                <>Aktif abonelik/kota bulunamadı. Lead almak için abonelik gerekli.</>
+              )}
             </div>
-          ))}
+          </div>
+
+          {activeSub ? (
+            <div className="panelCardHeadRight">
+              <span className="panelPill">Aktif</span>
+              <span className="panelPill panelPillSoft">%{quotaPct}</span>
+            </div>
+          ) : (
+            <div className="panelCardHeadRight">
+              <span className="panelPill">Pasif</span>
+            </div>
+          )}
+        </div>
+
+        <div className="panelProgress" style={{ marginTop: 10 }}>
+          <div className="panelProgressBar" style={{ width: `${activeSub ? quotaPct : 0}%` }} />
+        </div>
+
+        {activeSub ? (
+          <div style={{ marginTop: 10 }} className="panelStatHint">
+            Bitiş: <strong>{activeSub.expiresAt ? formatTR(activeSub.expiresAt) : "—"}</strong>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Filters */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">🔎 Filtrele & Ara</div>
+            <div className="panelCardSub">Duruma göre filtrele veya ad/telefon ile ara.</div>
+          </div>
+        </div>
+
+        <div className="panelFilterShell">
+          <div className="panelFilterPills">
+            <Link
+              href={buildHref({ status: "" })}
+              className={statusFilter === "all" ? "panelFilterPill panelFilterPillActive" : "panelFilterPill"}
+            >
+              Tümü
+            </Link>
+
+            {(["new", "contacted", "won", "lost"] as LeadStatus[]).map((s) => (
+              <Link
+                key={s}
+                href={buildHref({ status: s })}
+                className={statusFilter === s ? "panelFilterPill panelFilterPillActive" : "panelFilterPill"}
+              >
+                {STATUS_LABEL[s]}
+              </Link>
+            ))}
+          </div>
+
+          <form action="/panel/leadler" method="GET" className="panelSearchRow">
+            {statusFilter !== "all" && <input type="hidden" name="status" value={statusFilter} />}
+
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Ad veya telefon ara…"
+              className="panelInput"
+              autoComplete="off"
+            />
+
+            <button type="submit" className="panelBtnSoft">
+              Ara
+            </button>
+
+            <Link href="/panel/leadler" className="panelBtnGhost">
+              Sıfırla
+            </Link>
+          </form>
+        </div>
+      </div>
+
+      {/* List */}
+      {rows.length === 0 ? (
+        <div className="panelEmpty">Bu filtrede lead yok.</div>
+      ) : (
+        <div className="panelCard">
+          <div className="panelCardHead">
+            <div>
+              <div className="panelCardTitle">📋 Lead Listesi</div>
+              <div className="panelCardSub">Detaya girip durum güncelleyebilir ve not ekleyebilirsin.</div>
+            </div>
+          </div>
+
+          <div className="panelLeadList">
+            {rows.map((r) => (
+              <div key={r.id} className="panelLeadRow">
+                <div className="panelLeadMain">
+                  <div className="panelLeadTop">
+                    <div className="panelLeadName">
+                      {r.fullName} <span className="panelLeadSep">•</span> {r.phone}
+                    </div>
+
+                    <div className="panelLeadRight">
+                      {isNewRow(r, now) ? <span className="panelNewBadge">Yeni</span> : null}
+                      <span className={statusBadgeClass(r.status)}>{STATUS_LABEL[r.status]}</span>
+                      <span className="panelLeadTime">{formatTR(r.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="panelLeadMeta">
+                    <span className="panelChip">📍 {r.city}</span>
+                    <span className="panelChip panelChipSoft">🦷 {r.service}</span>
+
+                    <span className="panelChip panelChipMuted">
+                      Son arama: {r.lastContactAt ? formatTR(r.lastContactAt) : "—"}
+                    </span>
+
+                    <span className="panelChip panelChipMuted">
+                      Not: {r.clinicNote && r.clinicNote.trim().length > 0 ? "📝 Var" : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="panelLeadActions">
+                  <Link href={`/panel/leadler/${r.id}`} className="panelBtn">
+                    Detay →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
-}
-
-function pill(active: boolean): React.CSSProperties {
-  return {
-    textDecoration: "none",
-    fontWeight: 900,
-    padding: "8px 10px",
-    borderRadius: 999,
-    border: "1px solid #ddd",
-    background: active ? "#111" : "#fff",
-    color: active ? "#fff" : "#111",
-  };
-}
-
-function btn(): React.CSSProperties {
-  return {
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #111",
-    background: "#111",
-    color: "#fff",
-    fontWeight: 900,
-    cursor: "pointer",
-  };
-}
-
-function btnSecondary(): React.CSSProperties {
-  return {
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #ddd",
-    background: "#fff",
-    fontWeight: 900,
-    textDecoration: "none",
-    color: "#111",
-  };
-}
-
-function detailBtn(): React.CSSProperties {
-  return {
-    display: "inline-block",
-    textDecoration: "none",
-    fontWeight: 800,
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid #111",
-    background: "#111",
-    color: "#fff",
-  };
 }

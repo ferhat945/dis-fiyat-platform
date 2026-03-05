@@ -17,7 +17,7 @@ export async function GET(): Promise<NextResponse> {
     const sub = await prisma.subscription.findFirst({
       where: {
         clinicId: session.clinicId,
-        status: "active",
+        status: { in: ["active", "trial"] },
         expiresAt: { gt: now },
       },
       orderBy: { startedAt: "desc" },
@@ -32,10 +32,7 @@ export async function GET(): Promise<NextResponse> {
     });
 
     if (!sub) {
-      return NextResponse.json(
-        { ok: true, hasSubscription: false, subscription: null },
-        { status: 200 }
-      );
+      return NextResponse.json({ ok: true, hasSubscription: false, subscription: null }, { status: 200 });
     }
 
     return NextResponse.json(

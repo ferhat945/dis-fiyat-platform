@@ -2,29 +2,39 @@ import Link from "next/link";
 
 export default function Header(): JSX.Element {
   return (
-    <header className="site-header">
-      <div className="header-row">
-        <Link href="/" className="brand">
-          <span className="brand-badge" aria-hidden>
+    <header className="siteHeader">
+      <div className="siteHeaderInner">
+        <Link href="/" className="brandPill">
+          <span className="brandIcon" aria-hidden>
             D
           </span>
-          <span>Diş Fiyat Platform</span>
+          <span>DişFiyat360</span>
         </Link>
 
-        <nav className="nav">
-          <Link href="/#sehirler">Şehirler</Link>
-          <Link href="/#hizmetler">Hizmetler</Link>
-          <Link href="/kvkk">KVKK</Link>
-        </nav>
-
-        <div className="header-actions">
-          <Link href="/panel" className="btn btn-soft">
-            Dişçi misiniz?
+        <nav className="siteNav">
+          <Link href="/#sehirler" className="navLink">
+            Şehirler
           </Link>
-          <Link href="/#teklif" className="btn btn-primary">
+          <Link href="/#hizmetler" className="navLink">
+            Hizmetler
+          </Link>
+          <Link href="/blog" className="navLink">
+            Blog
+          </Link>
+          <Link href="/kvkk" className="navLink">
+            KVKK
+          </Link>
+
+          {/* ✅ Renkli Klinik Başvurusu */}
+          <Link href="/panel" className="navCta navCtaClinic">
+            Klinik Başvurusu
+          </Link>
+
+          {/* ✅ Teklif Al */}
+          <Link href="/teklif-al" className="navCta">
             Teklif Al
           </Link>
-        </div>
+        </nav>
       </div>
     </header>
   );

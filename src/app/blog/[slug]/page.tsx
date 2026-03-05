@@ -1,13 +1,110 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { normalizeSlug } from "@/lib/seo-data";
+import { absUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+/* -----------------------------------
+   Yardımcı Fonksiyonlar
+------------------------------------*/
+
+function clinicSlug(name: string, id: string): string {
+  const base = normalizeSlug(name).slice(0, 70) || "klinik";
+  return `${base}--${id}`;
+}
+
+function wordCount(s: string): number {
+  return (s ?? "").trim().split(/\s+/).filter(Boolean).length;
+}
+
+function readingMinutes(text: string): number {
+  return Math.max(1, Math.round(wordCount(text) / 200));
+}
+
+function detectCategory(title: string, content: string): string {
+  const t = (title + content).toLowerCase();
+  if (t.includes("implant")) return "İmplant";
+  if (t.includes("kanal")) return "Kanal";
+  if (t.includes("dolgu")) return "Dolgu";
+  if (t.includes("zirkonyum")) return "Zirkonyum";
+  if (t.includes("lamina")) return "Lamina";
+  if (t.includes("ortodont")) return "Ortodonti";
+  return "Genel";
+}
+
+function extractHeadings(content: string): string[] {
+  const lines = content.split("\n");
+  return lines.filter((l) => l.trim().startsWith("##")).map((l) =>
+    l.replace(/^#+\s*/, "").trim()
+  );
+}
+
+function renderContent(content: string): JSX.Element[] {
+  const lines = content.split("\n");
+
+  const elements: JSX.Element[] = [];
+  let listBuffer: string[] = [];
+
+  function flushList() {
+    if (listBuffer.length > 0) {
+      elements.push(
+        <ul key={Math.random()} className="blogUl">
+          {listBuffer.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      );
+      listBuffer = [];
+    }
+  }
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList();
+      return;
+    }
+
+    if (trimmed.startsWith("##")) {
+      flushList();
+      const text = trimmed.replace(/^#+\s*/, "");
+      const id = text.toLowerCase().replace(/\s+/g, "-");
+      elements.push(
+        <h2 key={i} id={id} className="blogH2">
+          {text}
+        </h2>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith("- ")) {
+      listBuffer.push(trimmed.replace("- ", ""));
+      return;
+    }
+
+    flushList();
+    elements.push(
+      <p key={i} className="blogP">
+        {trimmed}
+      </p>
+    );
+  });
+
+  flushList();
+  return elements;
+}
+
+/* -----------------------------------
+   Metadata
+------------------------------------*/
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -17,129 +114,135 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     select: { title: true, excerpt: true, isPublished: true },
   });
 
-  const canonical = `/blog/${encodeURIComponent(slug)}`;
-
   if (!post || !post.isPublished) {
-    return {
-      title: "Yazı bulunamadı • Diş Fiyat Platform",
-      description: "Aradığınız blog yazısı bulunamadı.",
-      alternates: { canonical },
-      robots: { index: false, follow: false },
-    };
+    return { title: "Yazı bulunamadı", robots: { index: false } };
   }
 
   return {
-    title: `${post.title} • Blog`,
-    description: post.excerpt ?? "Diş tedavileri ve fiyatları hakkında blog içeriği.",
-    alternates: { canonical },
-    robots: { index: true, follow: true },
-    openGraph: {
-      title: post.title,
-      description: post.excerpt ?? "Diş tedavileri ve fiyatları hakkında blog içeriği.",
-      url: canonical,
-      locale: "tr_TR",
-      type: "article",
-    },
+    title: `${post.title} | Blog | DişFiyat360`,
+    description: post.excerpt ?? "",
+    alternates: { canonical: absUrl(`/blog/${slug}`) },
   };
 }
 
-export default async function BlogDetailPage({ params }: PageProps): Promise<JSX.Element> {
+/* -----------------------------------
+   Ana Sayfa
+------------------------------------*/
+
+export default async function BlogDetail({ params }: PageProps) {
   const { slug } = await params;
 
   const post = await prisma.blogPost.findUnique({
     where: { slug },
     select: {
+      id: true,
+      slug: true,
       title: true,
       excerpt: true,
       content: true,
-      isPublished: true,
       publishedAt: true,
-      updatedAt: true,
+      isPublished: true,
+      clinic: { select: { id: true, name: true, isActive: true } },
     },
   });
 
   if (!post || !post.isPublished) notFound();
 
+  const clinic = post.clinic?.isActive ? post.clinic : null;
+  const clinicHref = clinic ? `/klinikler/${clinicSlug(clinic.name, clinic.id)}` : null;
+
+  const minutes = readingMinutes(post.content);
+  const category = detectCategory(post.title, post.content);
+  const headings = extractHeadings(post.content);
+
+  const faqItems = [
+    {
+      q: "Diş tedavisi fiyatı neye göre değişir?",
+      a: "Muayene bulguları, kullanılan malzeme ve tedavi planına göre değişir.",
+    },
+    {
+      q: "Kesin fiyat ne zaman belli olur?",
+      a: "Kesin fiyat muayene sonrası netleşir.",
+    },
+  ];
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.a,
+      },
+    })),
+  };
+
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 16 }}>
-      <div style={{ opacity: 0.75, fontWeight: 900 }}>
-        <Link href="/blog" style={{ textDecoration: "none", color: "#111" }}>
-          Blog
-        </Link>{" "}
-        / Yazı
-      </div>
+    <main className="blogWrap">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
-      <h1 style={{ fontSize: 32, fontWeight: 950, margin: "10px 0 0 0", lineHeight: 1.15 }}>
-        {post.title}
-      </h1>
-
-      <div style={{ marginTop: 8, opacity: 0.75, fontWeight: 800, fontSize: 12 }}>
-        {new Date(post.publishedAt ?? post.updatedAt).toLocaleDateString("tr-TR")}
-      </div>
-
-      {post.excerpt ? (
-        <div
-          style={{
-            marginTop: 12,
-            border: "1px solid rgba(15,23,42,0.10)",
-            background: "rgba(255,255,255,0.72)",
-            borderRadius: 20,
-            padding: 14,
-            fontWeight: 800,
-            lineHeight: 1.7,
-            opacity: 0.9,
-          }}
-        >
-          {post.excerpt}
-        </div>
-      ) : null}
-
-      <article
-        style={{
-          marginTop: 14,
-          border: "1px solid rgba(15,23,42,0.10)",
-          background: "rgba(255,255,255,0.82)",
-          borderRadius: 22,
-          padding: 16,
-          lineHeight: 1.8,
-          fontWeight: 650,
-          color: "rgba(15,23,42,0.92)",
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {post.content}
-      </article>
-
-      <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Link
-          href="/teklif-al"
-          style={{
-            textDecoration: "none",
-            fontWeight: 950,
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "1px solid #111",
-            background: "#111",
-            color: "#fff",
-          }}
-        >
+      <div className="blogTopBar">
+        <Link href="/blog">← Blog</Link>
+        <Link href="/teklif-al" className="blogPrimaryBtn">
           Teklif Al →
         </Link>
+      </div>
 
-        <Link
-          href="/klinikler"
-          style={{
-            textDecoration: "none",
-            fontWeight: 950,
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "1px solid #ddd",
-            background: "#fff",
-            color: "#111",
-          }}
-        >
-          Klinik Dizini →
+      <div className="blogHeader">
+        <div className="blogBadges">
+          <span>{category}</span>
+          <span>⏱ {minutes} dk</span>
+        </div>
+
+        <h1>{post.title}</h1>
+
+        {post.excerpt && <p className="blogExcerpt">{post.excerpt}</p>}
+      </div>
+
+      {headings.length > 0 && (
+        <div className="blogToc">
+          <div className="blogTocTitle">İçindekiler</div>
+          {headings.map((h, i) => (
+            <a key={i} href={`#${h.toLowerCase().replace(/\s+/g, "-")}`}>
+              {h}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <article className="blogContentArea">
+        {renderContent(post.content)}
+      </article>
+
+      <div className="blogCtaInline">
+        <div>
+          <strong>Diş tedavisi için teklif almak ister misin?</strong>
+          <div>KVKK onaylı formu doldur, klinikler seni arasın.</div>
+        </div>
+        <Link href="/teklif-al" className="blogPrimaryBtn">
+          Teklif Al →
         </Link>
+      </div>
+
+      {clinic && clinicHref && (
+        <div className="blogClinicBox">
+          <div>
+            Bu yazı <strong>{clinic.name}</strong> tarafından yayınlandı.
+          </div>
+          <Link href={clinicHref}>Klinik Profili →</Link>
+        </div>
+      )}
+
+      <div className="blogFaq">
+        <h2>Sık Sorulan Sorular</h2>
+        {faqItems.map((f, i) => (
+          <details key={i}>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
       </div>
     </main>
   );

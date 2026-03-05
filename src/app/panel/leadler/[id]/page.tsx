@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { verifyClinicSession } from "@/lib/auth";
+import { requireClinic } from "@/lib/clinic-auth";
 import StatusActions from "./status-actions";
 import NoteEditor from "./note-editor";
 
@@ -16,26 +15,37 @@ function statusLabel(s: LeadStatus): string {
   return "Kaybedildi";
 }
 
+function formatTR(d: Date): string {
+  return d.toLocaleString("tr-TR");
+}
+
+function normalizePhoneTR(phone: string): string {
+  // wa.me için 90 + (başındaki 0 atılır) + sadece rakam
+  const onlyDigits = phone.replace(/\D/g, "");
+  const noLeadingZero = onlyDigits.replace(/^0+/, "");
+  return `90${noLeadingZero}`;
+}
+
+function whatsappHref(fullName: string, phone: string, city: string, service: string): string {
+  const p = normalizePhoneTR(phone);
+  const txt = `Merhaba ${fullName}, ${city} / ${service} için talebinizi aldık. Size yardımcı olalım mı?`;
+  return `https://wa.me/${p}?text=${encodeURIComponent(txt)}`;
+}
+
+function statusBadgeClass(s: LeadStatus): string {
+  if (s === "new") return "panelLeadStatus panelLeadStatusNew";
+  if (s === "contacted") return "panelLeadStatus panelLeadStatusContacted";
+  if (s === "won") return "panelLeadStatus panelLeadStatusWon";
+  return "panelLeadStatus panelLeadStatusLost";
+}
+
 export default async function LeadDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<JSX.Element> {
   const { id } = await params;
-
-  const token = (await cookies()).get("clinic_session")?.value ?? "";
-  const session = token ? await verifyClinicSession(token) : null;
-
-  if (!session) {
-    return (
-      <div style={{ padding: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900 }}>Yetkisiz</h1>
-        <div>
-          Lütfen <a href="/panel/login">/panel/login</a> üzerinden giriş yap.
-        </div>
-      </div>
-    );
-  }
+  const session = await requireClinic();
 
   // Lead bu kliniğe atanmış mı?
   const assigned = await prisma.leadAssignment.findFirst({
@@ -45,12 +55,24 @@ export default async function LeadDetailPage({
 
   if (!assigned) {
     return (
-      <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>Lead Detay</h1>
-        <div style={{ marginBottom: 12 }}>Hata: NOT_FOUND</div>
-        <Link href="/panel/leadler" style={{ fontWeight: 900, textDecoration: "none" }}>
-          ← Leadlere dön
-        </Link>
+      <div className="panelWrap">
+        <div className="panelHeader">
+          <div className="panelHeaderLeft">
+            <div className="panelKicker">🧾 Lead Detay</div>
+            <h1 className="panelTitle">Bulunamadı</h1>
+            <div className="panelSub">Bu lead sana atanmış görünmüyor.</div>
+          </div>
+          <div className="panelHeaderRight">
+            <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/leadler">
+              ← Leadlere dön
+            </Link>
+          </div>
+        </div>
+
+        <div className="panelAlert">
+          <div className="panelAlertTitle">Hata: NOT_FOUND</div>
+          <div className="panelAlertDesc">Lead erişimin yok veya lead silinmiş olabilir.</div>
+        </div>
       </div>
     );
   }
@@ -74,12 +96,24 @@ export default async function LeadDetailPage({
 
   if (!lead) {
     return (
-      <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 8 }}>Lead Detay</h1>
-        <div style={{ marginBottom: 12 }}>Hata: NOT_FOUND</div>
-        <Link href="/panel/leadler" style={{ fontWeight: 900, textDecoration: "none" }}>
-          ← Leadlere dön
-        </Link>
+      <div className="panelWrap">
+        <div className="panelHeader">
+          <div className="panelHeaderLeft">
+            <div className="panelKicker">🧾 Lead Detay</div>
+            <h1 className="panelTitle">Bulunamadı</h1>
+            <div className="panelSub">Lead kayıt bulunamadı.</div>
+          </div>
+          <div className="panelHeaderRight">
+            <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/leadler">
+              ← Leadlere dön
+            </Link>
+          </div>
+        </div>
+
+        <div className="panelAlert">
+          <div className="panelAlertTitle">Hata: NOT_FOUND</div>
+          <div className="panelAlertDesc">Lead silinmiş veya erişilemiyor olabilir.</div>
+        </div>
       </div>
     );
   }
@@ -87,75 +121,120 @@ export default async function LeadDetailPage({
   const st = lead.status as LeadStatus;
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto", display: "grid", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900 }}>Lead Detay</h1>
-        <Link href="/panel/leadler" style={{ fontWeight: 900, textDecoration: "none" }}>
-          ← Leadlere dön
-        </Link>
-      </div>
-
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, display: "grid", gap: 8 }}>
-        <div style={{ fontWeight: 900 }}>
-          {lead.fullName} — {lead.phone}
+    <div className="panelWrap">
+      <div className="panelHeader">
+        <div className="panelHeaderLeft">
+          <div className="panelKicker">🧾 Lead Detay</div>
+          <h1 className="panelTitle">
+            {lead.fullName} <span style={{ opacity: 0.55, fontWeight: 900 }}>•</span> {lead.phone}
+          </h1>
+          <div className="panelSub">
+            <span className="panelChip">📍 {lead.city}</span>{" "}
+            <span className="panelChip panelChipSoft">🦷 {lead.service}</span>{" "}
+            <span className={statusBadgeClass(st)}>{statusLabel(st)}</span>
+          </div>
         </div>
 
-        <div style={{ opacity: 0.85 }}>
-          <strong>Şehir:</strong> {lead.city} &nbsp; | &nbsp; <strong>Hizmet:</strong> {lead.service}
-        </div>
-
-        <div style={{ opacity: 0.85 }}>
-          <strong>Durum:</strong> {statusLabel(st)} ({st})
-        </div>
-
-        <div style={{ opacity: 0.85 }}>
-          <strong>Email:</strong> {lead.email ?? "—"}
-        </div>
-
-        <div style={{ opacity: 0.85 }}>
-          <strong>Mesaj:</strong> {lead.message ?? "—"}
-        </div>
-
-        <div style={{ opacity: 0.75 }}>
-          <strong>Oluşturma:</strong> {new Date(lead.createdAt).toLocaleString("tr-TR")}
+        <div className="panelHeaderRight">
+          <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/leadler">
+            ← Leadlere dön
+          </Link>
+          <a className="panelQuickBtn" href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)} target="_blank" rel="noreferrer">
+            WhatsApp →
+          </a>
         </div>
       </div>
 
-      {/* Status butonları */}
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Durum Güncelle</div>
-        <StatusActions leadId={lead.id} currentStatus={st} />
+      {/* Lead info */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">📌 Lead Bilgileri</div>
+            <div className="panelCardSub">Oluşturma: {formatTR(lead.createdAt)}</div>
+          </div>
+        </div>
+
+        <div className="panelDetailGrid">
+          <div className="panelDetailItem">
+            <div className="panelDetailLabel">Telefon</div>
+            <div className="panelDetailValue">{lead.phone}</div>
+          </div>
+
+          <div className="panelDetailItem">
+            <div className="panelDetailLabel">Email</div>
+            <div className="panelDetailValue">{lead.email ?? "—"}</div>
+          </div>
+
+          <div className="panelDetailItem">
+            <div className="panelDetailLabel">Şehir</div>
+            <div className="panelDetailValue">{lead.city}</div>
+          </div>
+
+          <div className="panelDetailItem">
+            <div className="panelDetailLabel">Hizmet</div>
+            <div className="panelDetailValue">{lead.service}</div>
+          </div>
+
+          <div className="panelDetailItem panelDetailWide">
+            <div className="panelDetailLabel">Mesaj</div>
+            <div className="panelDetailValue panelDetailNote">{lead.message ?? "—"}</div>
+          </div>
+        </div>
       </div>
 
-      {/* Not + Son arama */}
-      <NoteEditor
-        leadId={lead.id}
-        initialNote={lead.clinicNote}
-        initialLastContactAt={lead.lastContactAt ? lead.lastContactAt.toISOString() : null}
-      />
+      {/* Status actions */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">✅ Durum Güncelle</div>
+            <div className="panelCardSub">Lead ile iletişim durumuna göre güncelle.</div>
+          </div>
+        </div>
 
-      {/* WhatsApp hızlı aksiyon */}
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ fontWeight: 900, marginBottom: 10 }}>Hızlı Aksiyon</div>
-        <a
-          href={`https://wa.me/90${lead.phone.replace(/\D/g, "").replace(/^0/, "")}?text=${encodeURIComponent(
-            `Merhaba ${lead.fullName}, ${lead.city} / ${lead.service} için teklif talebinizi aldık. Size yardımcı olalım mı?`
-          )}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            display: "inline-block",
-            padding: "10px 12px",
-            borderRadius: 10,
-            border: "1px solid #111",
-            background: "#111",
-            color: "#fff",
-            fontWeight: 900,
-            textDecoration: "none",
-          }}
-        >
-          WhatsApp’a yaz →
-        </a>
+        <div className="panelActionsShell">
+          <StatusActions leadId={lead.id} currentStatus={st} />
+        </div>
+      </div>
+
+      {/* Note + last contact */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">📝 Not & Son Arama</div>
+            <div className="panelCardSub">Kısa not ekle, son arama zamanını işaretle.</div>
+          </div>
+        </div>
+
+        <NoteEditor
+          leadId={lead.id}
+          initialNote={lead.clinicNote}
+          initialLastContactAt={lead.lastContactAt ? lead.lastContactAt.toISOString() : null}
+        />
+      </div>
+
+      {/* Quick actions */}
+      <div className="panelCard">
+        <div className="panelCardHead">
+          <div>
+            <div className="panelCardTitle">⚡ Hızlı Aksiyon</div>
+            <div className="panelCardSub">Tek tıkla WhatsApp üzerinden dönüş yap.</div>
+          </div>
+        </div>
+
+        <div className="panelQuickActions">
+          <a
+            className="panelBtn"
+            href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            WhatsApp’a yaz →
+          </a>
+
+          <Link className="panelBtnGhost" href="/panel/leadler">
+            Listeye dön
+          </Link>
+        </div>
       </div>
     </div>
   );

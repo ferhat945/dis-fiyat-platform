@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import styles from "./page.module.css";
 
 type Coverage = {
   id: string;
@@ -9,27 +10,35 @@ type Coverage = {
   isActive: boolean;
 };
 
-type GetResp =
-  | { ok: true; coverages: Coverage[] }
-  | { ok: false; code: string };
+type GetResp = { ok: true; coverages: Coverage[] } | { ok: false; code: string };
 
 type PostResp =
-  | { ok: true; coverage: Coverage }
+  | { ok: true } // API şu an sadece { ok: true } dönüyor
   | { ok: false; code: string; issues?: { path: string; message: string }[] };
 
-type PatchResp =
-  | { ok: true; coverage: Coverage }
-  | { ok: false; code: string };
+type PatchResp = { ok: true } | { ok: false; code: string };
 
 function norm(v: string): string {
   return v.toLowerCase().trim();
 }
 
+function labelize(v: string): string {
+  const s = v.trim();
+  if (!s) return s;
+  return s
+    .split("-")
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
 export default function PanelServicesPage(): JSX.Element {
   const [coverages, setCoverages] = useState<Coverage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
   const [city, setCity] = useState<string>("istanbul");
   const [service, setService] = useState<string>("implant");
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
 
@@ -41,17 +50,21 @@ export default function PanelServicesPage(): JSX.Element {
     });
   }, [coverages]);
 
+  const activeCount = useMemo(() => coverages.filter((c) => c.isActive).length, [coverages]);
+
   const load = async (): Promise<void> => {
     setLoading(true);
     setError(null);
     try {
       const r = await fetch("/api/panel/coverages", { cache: "no-store" });
       const j = (await r.json()) as GetResp;
+
       if (!r.ok || !j.ok) {
         setError(j.ok ? "UNKNOWN" : j.code);
         setCoverages([]);
         return;
       }
+
       setCoverages(j.coverages);
     } catch {
       setError("NETWORK_ERROR");
@@ -68,12 +81,9 @@ export default function PanelServicesPage(): JSX.Element {
   const addCoverage = async (): Promise<void> => {
     setSaving(true);
     setError(null);
+
     try {
-      const payload = {
-        city: norm(city),
-        service: norm(service),
-        isActive: true,
-      };
+      const payload = { city: norm(city), service: norm(service) };
 
       const r = await fetch("/api/panel/coverages", {
         method: "POST",
@@ -92,16 +102,8 @@ export default function PanelServicesPage(): JSX.Element {
         return;
       }
 
-      // listeyi güncelle (upsert olduğu için replace)
-      setCoverages((prev) => {
-        const idx = prev.findIndex((x) => x.id === j.coverage.id);
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = j.coverage;
-          return next;
-        }
-        return [j.coverage, ...prev];
-      });
+      // API coverage döndürmüyor -> doğru yöntem: yeniden yükle
+      await load();
     } catch {
       setError("NETWORK_ERROR");
     } finally {
@@ -111,126 +113,174 @@ export default function PanelServicesPage(): JSX.Element {
 
   const toggle = async (c: Coverage): Promise<void> => {
     setError(null);
+
+    const nextValue = !c.isActive;
+
+    // Optimistic UI
+    setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: nextValue } : x)));
+
     try {
-      const r = await fetch(`/api/panel/coverages/${c.id}`, {
+      const r = await fetch("/api/panel/coverages", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !c.isActive }),
+        body: JSON.stringify({ id: c.id, isActive: nextValue }),
       });
 
       const j = (await r.json()) as PatchResp;
 
       if (!r.ok || !j.ok) {
+        // geri al
+        setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: c.isActive } : x)));
         setError(j.ok ? "UNKNOWN" : j.code);
         return;
       }
-
-      setCoverages((prev) => prev.map((x) => (x.id === j.coverage.id ? j.coverage : x)));
     } catch {
+      // geri al
+      setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: c.isActive } : x)));
       setError("NETWORK_ERROR");
     }
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 12 }}>Hizmetlerim</h1>
-
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, marginBottom: 14 }}>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Yeni Kapsam Ekle</div>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="şehir (örn: istanbul)"
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", flex: "1 1 220px" }}
-          />
-          <input
-            value={service}
-            onChange={(e) => setService(e.target.value)}
-            placeholder="hizmet (örn: implant)"
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", flex: "1 1 220px" }}
-          />
-          <button
-            type="button"
-            onClick={() => void addCoverage()}
-            disabled={saving}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #111",
-              background: "#111",
-              color: "#fff",
-              fontWeight: 900,
-              cursor: saving ? "not-allowed" : "pointer",
-            }}
-          >
-            {saving ? "Ekleniyor..." : "Ekle"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void load()}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              background: "#fff",
-              fontWeight: 900,
-              cursor: "pointer",
-            }}
-          >
-            Yenile
-          </button>
+    <div className={styles.wrap}>
+      <div className={styles.top}>
+        <div>
+          <div className={styles.pill}>🧩 Kapsam Yönetimi</div>
+          <h1 className={styles.h1}>Hizmetlerim</h1>
+          <div className={styles.sub}>
+            Şehir + hizmet eşleşmelerini ekle. Aktif olanlar lead eşleşmesinde kullanılabilir.
+          </div>
         </div>
 
-        {error && (
-          <div style={{ marginTop: 10, border: "1px solid #f2c9c9", background: "#fff5f5", borderRadius: 10, padding: 10 }}>
-            <strong>Hata:</strong> {error}
+        <div className={styles.statsRow}>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Toplam Kapsam</div>
+            <div className={styles.statValue}>{coverages.length}</div>
           </div>
-        )}
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Aktif</div>
+            <div className={styles.statValue}>{activeCount}</div>
+          </div>
+        </div>
       </div>
 
-      {loading && <div>Yükleniyor...</div>}
+      <div className={styles.grid}>
+        {/* ADD CARD */}
+        <section className={`${styles.card} ${styles.cardGlow}`}>
+          <div className={styles.cardInner}>
+            <div className={styles.cardHead}>
+              <div>
+                <div className={styles.cardTitle}>Yeni Kapsam Ekle</div>
+                <div className={styles.cardSub}>Örn: istanbul + implant</div>
+              </div>
 
-      {!loading && sorted.length === 0 && <div>Henüz kapsam eklenmedi.</div>}
+              <button className={styles.btnGhost} type="button" onClick={() => void load()} disabled={saving}>
+                Yenile
+              </button>
+            </div>
 
-      {!loading && sorted.length > 0 && (
-        <div style={{ display: "grid", gap: 10 }}>
-          {sorted.map((c) => (
-            <div key={c.id} style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ fontWeight: 900 }}>
-                  {c.city} / {c.service}
+            {error ? <div className={styles.msgErr}>⚠️ Hata: {error}</div> : null}
+
+            <div className={styles.formRow}>
+              <div className={styles.field}>
+                <div className={styles.labelRow}>
+                  <div className={styles.label}>Şehir</div>
+                  <div className={styles.hint}>küçük harf önerilir</div>
                 </div>
-                <div style={{ opacity: 0.8 }}>
-                  Aktif: <strong>{c.isActive ? "Evet" : "Hayır"}</strong>
+                <div className={styles.inputFrame}>
+                  <div className={styles.icon}>📍</div>
+                  <input
+                    className={styles.input}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="istanbul"
+                    autoComplete="off"
+                  />
                 </div>
               </div>
 
-              <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={() => void toggle(c)}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: "1px solid #111",
-                    background: c.isActive ? "#fff" : "#111",
-                    color: c.isActive ? "#111" : "#fff",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                  }}
-                >
-                  {c.isActive ? "Pasif Yap" : "Aktif Yap"}
-                </button>
+              <div className={styles.field}>
+                <div className={styles.labelRow}>
+                  <div className={styles.label}>Hizmet</div>
+                  <div className={styles.hint}>slug olabilir</div>
+                </div>
+                <div className={styles.inputFrame}>
+                  <div className={styles.icon}>🦷</div>
+                  <input
+                    className={styles.input}
+                    value={service}
+                    onChange={(e) => setService(e.target.value)}
+                    placeholder="implant"
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
 
-                <div style={{ opacity: 0.65, alignSelf: "center" }}>ID: {c.id}</div>
+              <button className={styles.btnPrimary} type="button" onClick={() => void addCoverage()} disabled={saving}>
+                {saving ? "Ekleniyor..." : "Ekle"}
+              </button>
+            </div>
+
+            <div className={styles.help}>
+              İpucu: Şehir/hizmet aynıysa API “upsert” gibi davranır. Ekledikten sonra liste güncellenir.
+            </div>
+          </div>
+        </section>
+
+        {/* LIST CARD */}
+        <section className={styles.card}>
+          <div className={styles.cardInner}>
+            <div className={styles.cardHead}>
+              <div>
+                <div className={styles.cardTitle}>Mevcut Kapsamlar</div>
+                <div className={styles.cardSub}>Aktif/pasif yönet</div>
+              </div>
+
+              <div className={styles.badgeRow}>
+                <span className={styles.badge}>Toplam: {sorted.length}</span>
+                <span className={`${styles.badge} ${styles.badgeOk}`}>Aktif: {activeCount}</span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {loading ? <div className={styles.loading}>Yükleniyor...</div> : null}
+
+            {!loading && sorted.length === 0 ? (
+              <div className={styles.empty}>Henüz kapsam eklenmedi.</div>
+            ) : null}
+
+            {!loading && sorted.length > 0 ? (
+              <div className={styles.list}>
+                {sorted.map((c) => (
+                  <div key={c.id} className={styles.item}>
+                    <div className={styles.itemTop}>
+                      <div className={styles.itemTitle}>
+                        <span className={styles.chip}>📍 {labelize(c.city)}</span>
+                        <span className={styles.chip}>🦷 {labelize(c.service)}</span>
+                      </div>
+
+                      <span className={`${styles.statusPill} ${c.isActive ? styles.statusOn : styles.statusOff}`}>
+                        {c.isActive ? "Aktif" : "Pasif"}
+                      </span>
+                    </div>
+
+                    <div className={styles.itemBottom}>
+                      <button
+                        type="button"
+                        onClick={() => void toggle(c)}
+                        className={c.isActive ? styles.btnDangerSoft : styles.btnPrimarySoft}
+                      >
+                        {c.isActive ? "Pasif Yap" : "Aktif Yap"}
+                      </button>
+
+                      <div className={styles.meta}>ID: {c.id}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

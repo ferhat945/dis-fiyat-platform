@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function PanelLoginPage(): JSX.Element {
   const [email, setEmail] = useState<string>("");
@@ -21,7 +22,7 @@ export default function PanelLoginPage(): JSX.Element {
       });
 
       if (!r.ok) {
-        setErr("Email/şifre hatalı.");
+        setErr("Email/şifre hatalı veya hesabın henüz onaylanmadı.");
         return;
       }
 
@@ -35,7 +36,12 @@ export default function PanelLoginPage(): JSX.Element {
 
   return (
     <div style={{ maxWidth: 420, margin: "60px auto", padding: 16 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>Klinik Girişi</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Klinik Girişi</h1>
+        <Link href="/register" style={{ textDecoration: "none", fontWeight: 800 }}>
+          Kayıt Ol →
+        </Link>
+      </div>
 
       <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
         <input
@@ -70,6 +76,10 @@ export default function PanelLoginPage(): JSX.Element {
 
         {err && <div style={{ color: "crimson" }}>{err}</div>}
       </form>
+
+      <div style={{ marginTop: 12, opacity: 0.75 }}>
+        Hesabın onay bekliyorsa admin panelden aktif edilince giriş yapabilirsin.
+      </div>
     </div>
   );
 }

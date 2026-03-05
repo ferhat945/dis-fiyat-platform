@@ -13,12 +13,13 @@ export default async function PanelLayout({
   const token = (await cookies()).get("clinic_session")?.value ?? "";
   const session = token ? await verifyClinicSession(token) : null;
 
-  // ✅ Artık login route'u /login
   if (!session) {
     return (
-      <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 10 }}>Yetkisiz</h1>
-        <div style={{ marginBottom: 12, opacity: 0.85 }}>
+      <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 14 }}>
+          Yetkisiz
+        </h1>
+        <div style={{ marginBottom: 16, opacity: 0.85, fontSize: 15 }}>
           Paneli görmek için giriş yapmalısın.
         </div>
 
@@ -26,13 +27,14 @@ export default async function PanelLayout({
           href="/login"
           style={{
             display: "inline-block",
-            padding: "10px 12px",
-            borderRadius: 10,
+            padding: "12px 16px",
+            borderRadius: 12,
             border: "1px solid #111",
             background: "#111",
             color: "#fff",
             fontWeight: 900,
             textDecoration: "none",
+            fontSize: 15,
           }}
         >
           Giriş Yap →
@@ -42,7 +44,15 @@ export default async function PanelLayout({
   }
 
   return (
-    <div style={{ padding: 16, maxWidth: 1100, margin: "0 auto" }}>
+    <div
+      style={{
+        padding: 24,
+        maxWidth: 1200,
+        margin: "0 auto",
+        fontSize: 16,            // 🔥 TÜM PANEL YAZILARI BÜYÜDÜ
+        lineHeight: 1.7,
+      }}
+    >
       <div
         style={{
           display: "flex",
@@ -50,11 +60,14 @@ export default async function PanelLayout({
           alignItems: "baseline",
           gap: 12,
           flexWrap: "wrap",
-          marginBottom: 14,
+          marginBottom: 20,
         }}
       >
-        <div style={{ fontSize: 18, fontWeight: 900 }}>Klinik Panel</div>
-        <div style={{ opacity: 0.75 }}>
+        <div style={{ fontSize: 22, fontWeight: 900 }}>
+          Klinik Panel
+        </div>
+
+        <div style={{ opacity: 0.8, fontSize: 15 }}>
           {session.name}
         </div>
       </div>
@@ -62,16 +75,19 @@ export default async function PanelLayout({
       <nav
         style={{
           display: "flex",
-          gap: 10,
+          gap: 12,
           flexWrap: "wrap",
-          marginBottom: 14,
+          marginBottom: 20,
         }}
       >
         <NavLink href="/panel">Dashboard</NavLink>
         <NavLink href="/panel/leadler">Leadler</NavLink>
         <NavLink href="/panel/hizmetler">Hizmetler</NavLink>
+        <NavLink href="/panel/fiyatlar">Fiyatlar</NavLink>
         <NavLink href="/panel/profil">Profil</NavLink>
         <NavLink href="/panel/abonelik">Abonelik</NavLink>
+        <NavLink href="/panel/istatistik">İstatistikler</NavLink>
+        <NavLink href="/panel/blog">Blog</NavLink>
       </nav>
 
       {children}
@@ -86,10 +102,13 @@ function NavLink({ href, children }: { href: string; children: ReactNode }): JSX
       style={{
         textDecoration: "none",
         fontWeight: 900,
-        padding: "8px 10px",
-        borderRadius: 10,
+        padding: "10px 14px",
+        borderRadius: 12,
         border: "1px solid #ddd",
         color: "#111",
+        fontSize: 15,      // 🔥 Menü yazıları büyüdü
+        background: "rgba(255,255,255,0.8)",
+        transition: "all .15s ease",
       }}
     >
       {children}

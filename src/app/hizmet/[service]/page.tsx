@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const serviceName = ok ? serviceLabel(serviceSlug) : "Hizmet";
 
   return {
-    title: `${serviceName} | Şehir Seç | Diş Fiyat Platform`,
+    title: `${serviceName} | Şehir Seç | DişFiyat360`,
     description: `${serviceName} için şehir seç, KVKK onaylı form ile kliniklerden teklif al.`,
     alternates: { canonical: `/hizmet/${serviceSlug}` },
     robots: ok ? { index: true, follow: true } : { index: false, follow: false },

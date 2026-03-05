@@ -19,6 +19,54 @@ type PageProps = {
   params: Promise<{ city: string; service: string }>;
 };
 
+function webPageJsonLd(opts: {
+  urlPath: string;
+  name: string;
+  description: string;
+}): Record<string, unknown> {
+  // metadataBase sayesinde "/" ile başlayan URL’ler absolute’a dönüşür
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: opts.name,
+    description: opts.description,
+    url: opts.urlPath,
+    inLanguage: "tr-TR",
+  };
+}
+
+function howToJsonLd(opts: {
+  name: string;
+  description: string;
+  urlPath: string;
+}): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: opts.name,
+    description: opts.description,
+    url: opts.urlPath,
+    inLanguage: "tr-TR",
+    step: [
+      {
+        "@type": "HowToStep",
+        name: "Şehir ve işlemi seç",
+        text: "Şehir ve işlem seçimini yaparak uygun kliniklerle eşleş.",
+      },
+      {
+        "@type": "HowToStep",
+        name: "KVKK onaylı formu doldur",
+        text: "İletişim bilgilerini gir ve KVKK onayı ver.",
+      },
+      {
+        "@type": "HowToStep",
+        name: "Klinikler dönüş yapsın",
+        text: "Uygun klinikler sırayla seninle iletişime geçer.",
+      },
+    ],
+  };
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { city, service } = await params;
 
@@ -27,14 +75,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const ok = isKnownCity(citySlug) && isKnownService(serviceSlug);
   if (!ok) {
-    return { title: "Sayfa bulunamadı | Diş Fiyat Platform", robots: { index: false, follow: false } };
+    return {
+      title: "Sayfa bulunamadı | DişFiyat360",
+      robots: { index: false, follow: false },
+    };
   }
 
   const c = cityLabel(citySlug);
   const s = serviceLabel(serviceSlug);
 
   return {
-    title: `${c} ${s} Fiyatları | Teklif Al | Diş Fiyat Platform`,
+    title: `${c} ${s} Fiyatları | Teklif Al | DişFiyat360`,
     description: `${c} içinde ${s} fiyatları hakkında bilgi al. KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.`,
     alternates: { canonical: `/sehir/${citySlug}/${serviceSlug}` },
     robots: { index: true, follow: true },
@@ -52,7 +103,11 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
   const c = cityLabel(citySlug);
   const s = serviceLabel(serviceSlug);
 
-  const teklifHref = `/teklif-al?city=${encodeURIComponent(citySlug)}&service=${encodeURIComponent(serviceSlug)}`;
+  const urlPath = `/sehir/${citySlug}/${serviceSlug}`;
+
+  const teklifHref = `/teklif-al?city=${encodeURIComponent(citySlug)}&service=${encodeURIComponent(
+    serviceSlug
+  )}`;
 
   const faq = cityServiceFaq(citySlug, serviceSlug);
 
@@ -60,17 +115,33 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
     { name: "Anasayfa", path: "/" },
     { name: "Şehirler", path: "/sehir" },
     { name: c, path: `/sehir/${citySlug}` },
-    { name: s, path: `/sehir/${citySlug}/${serviceSlug}` },
+    { name: s, path: urlPath },
   ]);
 
   const faqLd = faqJsonLd(faq);
+
+  // ✅ Ek rich result: WebPage + HowTo
+  const pageLd = webPageJsonLd({
+    urlPath,
+    name: `${c} ${s} fiyatları`,
+    description: `${c} içinde ${s} hakkında bilgi al ve KVKK onaylı form ile kliniklerden teklif iste.`,
+  });
+
+  const howToLd = howToJsonLd({
+    urlPath,
+    name: `${c} için ${s} teklifi nasıl alınır?`,
+    description: "3 adımda KVKK onaylı form ile kliniklerden teklif al.",
+  });
 
   const otherServices = SERVICES.filter((x) => x !== serviceSlug).slice(0, 6);
 
   return (
     <main className={styles.wrap}>
+      {/* JSON-LD */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
 
       <div className={styles.container}>
         <div className={styles.topGrid}>

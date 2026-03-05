@@ -1,10 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { absUrl, getBaseUrl } from "@/lib/site-url";
+
+const SITE_NAME = "DişFiyat360";
+const SITE_DESC = "KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.";
 
 export const metadata: Metadata = {
-  title: "Diş Fiyat Platform",
-  description: "KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.",
+  metadataBase: new URL(getBaseUrl()),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESC,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESC,
+    url: absUrl("/"),
+    locale: "tr_TR",
+  },
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {
@@ -18,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
               <span className="brandIcon" aria-hidden>
                 🦷
               </span>
-              Diş Fiyat Platform
+              {SITE_NAME}
             </Link>
 
             <nav className="siteNav" aria-label="Üst menü">
@@ -32,7 +51,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
                 Hizmetler
               </Link>
 
-              {/* ✅ Blog */}
               <Link className="navLink" href="/blog">
                 Blog
               </Link>
@@ -43,8 +61,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
               <Link className="navCta" href="/teklif-al">
                 Teklif Al
               </Link>
-              <Link className="navLink" href="/login">
-                Dişçi misiniz?
+              <Link className="navClinic" href="/login">
+                Klinik Başvurusu
               </Link>
             </nav>
           </div>
@@ -61,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
                 <span className="brandIcon" aria-hidden>
                   🦷
                 </span>
-                Diş Fiyat Platform
+                {SITE_NAME}
               </div>
               <div className="footerText">
                 KVKK onaylı form ile kliniklerden teklif al. <strong>Kesin fiyat muayene sonrası netleşir.</strong>
@@ -82,7 +100,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
             <div>
               <div className="footerTitle">Klinikler</div>
               <div className="footerLinks">
-                <Link href="/panel/login">Klinik Giriş</Link>
+                {/* ✅ /panel/login yerine /login */}
+                <Link href="/login">Klinik Giriş</Link>
                 <Link href="/panel">Klinik Panel</Link>
               </div>
             </div>

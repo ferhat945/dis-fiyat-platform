@@ -4,7 +4,7 @@ export const KVKK_TITLE = "KVKK Aydınlatma Metni";
 
 export const KVKK_TEXT = `
 Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) kapsamında,
-Diş Fiyat Platformu üzerinden “teklif al” formunu dolduran kullanıcıların kişisel verilerinin
+DişFiyat360  üzerinden “teklif al” formunu dolduran kullanıcıların kişisel verilerinin
 işlenmesine ilişkin olarak bilgilendirme amacıyla hazırlanmıştır.
 
 1) Veri Sorumlusu

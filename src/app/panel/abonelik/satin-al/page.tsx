@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 type PackageCode = "base" | "extra";
 
 type StartResp =
-  | { ok: true; mode: "created" | "updated"; package: PackageCode }
+  | { ok: true; mode: "trial" | "created" | "updated"; package: PackageCode }
   | { ok: false; code: string };
 
 function isPackageCode(v: string | null): v is PackageCode {
@@ -21,16 +21,18 @@ export default function BuyPage(): JSX.Element {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const title = useMemo(() => {
     return pkg === "base"
-      ? "Başlangıç Paketi (10 Lead / 800 TL)"
-      : "Ek Lead Paketi (+10 Lead / 600 TL)";
+      ? "Aylık Abonelik (10 Lead / 2000 TL) — İlk 1 hafta ücretsiz deneme"
+      : "Ek Lead Paketi (+10 Lead / 1000 TL)";
   }, [pkg]);
 
   const startMockPayment = async (): Promise<void> => {
     setLoading(true);
     setErr(null);
+    setInfo(null);
 
     try {
       const r = await fetch("/api/payments/start", {
@@ -42,9 +44,13 @@ export default function BuyPage(): JSX.Element {
       const j = (await r.json()) as StartResp;
 
       if (!r.ok || !j.ok) {
-        setErr("Ödeme başlatılamadı: " + (j.ok ? "" : j.code));
+        setErr("İşlem başarısız: " + (j.ok ? "" : j.code));
         return;
       }
+
+      if (j.mode === "trial") setInfo("✅ Trial başlatıldı (1 hafta). Kota yüklendi.");
+      if (j.mode === "created") setInfo("✅ Abonelik başlatıldı. Kota yüklendi.");
+      if (j.mode === "updated") setInfo("✅ Kota güncellendi.");
 
       window.location.href = "/panel/abonelik";
     } catch {
@@ -66,7 +72,7 @@ export default function BuyPage(): JSX.Element {
       <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, marginBottom: 12 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>{title}</div>
         <div style={{ opacity: 0.75 }}>
-          Şu an PayTR kurulmadığı için test modunda “mock ödeme” ile kota yüklenecektir.
+          PayTR henüz kurulmadığı için test modunda “mock işlem” ile kota yüklenecek ve PaymentLog kaydı tutulacak.
         </div>
       </div>
 
@@ -84,10 +90,11 @@ export default function BuyPage(): JSX.Element {
           cursor: loading ? "not-allowed" : "pointer",
         }}
       >
-        {loading ? "İşleniyor..." : "Test Ödemesi Yap (+10 Lead)"}
+        {loading ? "İşleniyor..." : "İşlemi Başlat"}
       </button>
 
-      {err && <div style={{ marginTop: 12, color: "crimson" }}>{err}</div>}
+      {info && <div style={{ marginTop: 12, fontWeight: 800 }}>{info}</div>}
+      {err && <div style={{ marginTop: 12, color: "crimson", fontWeight: 800 }}>{err}</div>}
 
       <div style={{ marginTop: 14 }}>
         <Link href="/panel/leadler" style={{ textDecoration: "none", fontWeight: 900 }}>

@@ -35,7 +35,10 @@ export async function GET(req: Request): Promise<NextResponse> {
         phone: true,
         isActive: true,
         lastAssignedAt: true,
+        trialUsedAt: true,
+        trialEndsAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -64,7 +67,17 @@ export async function POST(req: Request): Promise<NextResponse> {
         passwordHash,
         isActive: true,
       },
-      select: { id: true, name: true, email: true, isActive: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        isActive: true,
+        trialUsedAt: true,
+        trialEndsAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     return NextResponse.json({ ok: true, clinic }, { status: 201 });
@@ -89,7 +102,17 @@ export async function PATCH(req: Request): Promise<NextResponse> {
         ...(data.phone !== undefined ? { phone: data.phone ?? null } : {}),
         ...(typeof data.isActive === "boolean" ? { isActive: data.isActive } : {}),
       },
-      select: { id: true, name: true, email: true, phone: true, isActive: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        isActive: true,
+        trialUsedAt: true,
+        trialEndsAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     return NextResponse.json({ ok: true, clinic: updated }, { status: 200 });

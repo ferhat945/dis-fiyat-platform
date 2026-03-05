@@ -1,6 +1,7 @@
+// src/app/teklif-al/OfferForm.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { CITIES, SERVICES, cityLabel, serviceLabel, normalizeSlug } from "@/lib/seo-data";
 import styles from "./OfferForm.module.css";
@@ -15,9 +16,19 @@ const INTENT_OPTIONS: Array<{ value: LeadIntent; label: string }> = [
   { value: "bilinmiyor", label: "Kararsızım" },
 ];
 
-type ApiErrorShape = { message?: string };
+type DirectClinicData = {
+  id: string;
+  name: string;
+  coverages: Array<{ city: string; service: string }>;
+};
 
-export default function OfferForm(): JSX.Element {
+type Props = {
+  directClinic?: DirectClinicData | null;
+};
+
+type ApiErrorShape = { message?: string; code?: string };
+
+export default function OfferForm({ directClinic }: Props): JSX.Element {
   const [city, setCity] = useState<string>("");
   const [service, setService] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -34,18 +45,68 @@ export default function OfferForm(): JSX.Element {
   const [ok, setOk] = useState<boolean>(false);
   const [err, setErr] = useState<string>("");
 
+  const isDirect = Boolean(directClinic?.id);
+
+  // ✅ Direct clinic: sadece o kliniğin şehirleri
+  const directCities = useMemo(() => {
+    if (!directClinic) return [];
+    const s = new Set<string>();
+    for (const c of directClinic.coverages) s.add(c.city);
+    return Array.from(s.values()).sort((a, b) => a.localeCompare(b));
+  }, [directClinic]);
+
+  // city -> services
+  const directServicesByCity = useMemo(() => {
+    const map = new Map<string, string[]>();
+    if (!directClinic) return map;
+
+    for (const c of directClinic.coverages) {
+      const arr = map.get(c.city) ?? [];
+      if (!arr.includes(c.service)) arr.push(c.service);
+      map.set(c.city, arr);
+    }
+
+    for (const [k, arr] of map.entries()) {
+      arr.sort((a, b) => a.localeCompare(b));
+      map.set(k, arr);
+    }
+
+    return map;
+  }, [directClinic]);
+
+  // ✅ Direct mode ilk seçimleri otomatik doldur
+  useEffect(() => {
+    if (!directClinic) return;
+
+    const firstCity = directCities[0] ?? "";
+    const services = firstCity ? directServicesByCity.get(firstCity) ?? [] : [];
+    const firstService = services[0] ?? "";
+
+    if (firstCity) setCity(firstCity);
+    if (firstService) setService(firstService);
+  }, [directClinic, directCities, directServicesByCity]);
+
   const cityOptions = useMemo(() => {
+    if (isDirect) {
+      return directCities.map((c) => ({ slug: c, label: cityLabel(c) }));
+    }
     return (CITIES as readonly string[]).map((c) => ({ slug: c, label: cityLabel(c) }));
-  }, []);
+  }, [isDirect, directCities]);
 
   const serviceOptions = useMemo(() => {
+    if (isDirect) {
+      const arr = city ? directServicesByCity.get(city) ?? [] : [];
+      return arr.map((s) => ({ slug: s, label: serviceLabel(s) }));
+    }
     return (SERVICES as readonly string[]).map((s) => ({ slug: s, label: serviceLabel(s) }));
-  }, []);
+  }, [isDirect, city, directServicesByCity]);
 
   function readApiError(data: unknown): string | null {
     if (typeof data !== "object" || data === null) return null;
     const d = data as ApiErrorShape;
-    return typeof d.message === "string" ? d.message : null;
+    if (typeof d.message === "string" && d.message.trim()) return d.message.trim();
+    if (typeof d.code === "string" && d.code.trim()) return d.code.trim();
+    return null;
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -54,6 +115,7 @@ export default function OfferForm(): JSX.Element {
     setOk(false);
 
     const payload = {
+      clinicId: directClinic?.id ?? undefined,
       city: normalizeSlug(city),
       service: normalizeSlug(service),
       fullName: fullName.trim(),
@@ -62,8 +124,9 @@ export default function OfferForm(): JSX.Element {
       message: message.trim() || undefined,
       intent,
       website, // honeypot
-      consent: consent ? "on" : "",
-      when: intent, // mevcut API'nin bekleyebileceği alan
+      consent, // ✅ boolean
+      consentTextVersion: "v1",
+      when: intent,
     };
 
     if (!payload.city || !payload.service) {
@@ -106,6 +169,12 @@ export default function OfferForm(): JSX.Element {
       setIntent("hemen");
       setConsent(false);
       setWebsite("");
+
+      // direct modda şehir/işlem sabit kalsın; sıfırlamayalım
+      if (!isDirect) {
+        setCity("");
+        setService("");
+      }
     } catch (e2: unknown) {
       setErr(e2 instanceof Error ? e2.message : "Beklenmeyen hata oluştu.");
     } finally {
@@ -115,7 +184,12 @@ export default function OfferForm(): JSX.Element {
 
   return (
     <>
-      {ok ? <div className={styles.alertOk}>Form alındı ✅ Klinikler en kısa sürede iletişime geçecek.</div> : null}
+      {ok ? (
+        <div className={styles.alertOk}>
+          Form alındı ✅{" "}
+          {isDirect ? "Seçtiğiniz kliniğe iletildi." : "Uygun klinikler en kısa sürede iletişime geçecek."}
+        </div>
+      ) : null}
       {err ? <div className={styles.alertErr}>{err}</div> : null}
 
       <form className={styles.form} onSubmit={onSubmit}>
@@ -136,26 +210,57 @@ export default function OfferForm(): JSX.Element {
         <div className={styles.grid2}>
           <div className={styles.field}>
             <label htmlFor="city">Şehir</label>
-            <select id="city" className={styles.select} value={city} onChange={(e) => setCity(e.target.value)}>
-              <option value="">Şehir seç</option>
+            <select
+              id="city"
+              className={styles.select}
+              value={city}
+              onChange={(e) => {
+                const v = e.target.value;
+                setCity(v);
+
+                // direct modda şehir değişince service'i resetle
+                if (isDirect) {
+                  const nextServices = directServicesByCity.get(v) ?? [];
+                  setService(nextServices[0] ?? "");
+                }
+              }}
+              disabled={isDirect && cityOptions.length <= 1}
+            >
+              <option value="">{isDirect ? "Şehir" : "Şehir seç"}</option>
               {cityOptions.map((c) => (
                 <option key={c.slug} value={c.slug}>
                   {c.label}
                 </option>
               ))}
             </select>
+
+            {isDirect ? (
+              <div className={styles.help}>
+                Bu form, seçtiğiniz kliniğin şehirlerine göre gönderilir.
+              </div>
+            ) : null}
           </div>
 
           <div className={styles.field}>
             <label htmlFor="service">İşlem</label>
-            <select id="service" className={styles.select} value={service} onChange={(e) => setService(e.target.value)}>
-              <option value="">İşlem seç</option>
+            <select
+              id="service"
+              className={styles.select}
+              value={service}
+              onChange={(e) => setService(e.target.value)}
+              disabled={isDirect && serviceOptions.length <= 1}
+            >
+              <option value="">{isDirect ? "İşlem" : "İşlem seç"}</option>
               {serviceOptions.map((s) => (
                 <option key={s.slug} value={s.slug}>
                   {s.label}
                 </option>
               ))}
             </select>
+
+            {isDirect ? (
+              <div className={styles.help}>Bu form sadece seçtiğiniz kliniğe iletilir.</div>
+            ) : null}
           </div>
         </div>
 

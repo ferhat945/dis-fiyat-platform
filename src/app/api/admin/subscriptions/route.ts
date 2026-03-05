@@ -3,12 +3,31 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdminApi } from "@/lib/admin-api";
 
-const GrantSchema = z.object({
-  clinicId: z.string().min(10),
-  quotaAdd: z.number().int().min(1).max(1000),
-  days: z.number().int().min(1).max(365).optional(),
-  note: z.string().max(200).optional(),
-});
+const GrantSchema = z
+  .object({
+    clinicId: z.string().min(10),
+
+    // ✅ Eski / yeni body isimlerini aynı anda destekle
+    quotaAdd: z.number().int().min(1).max(1000).optional(),
+    addQuota: z.number().int().min(1).max(1000).optional(),
+
+    days: z.number().int().min(1).max(365).optional(),
+    extendDays: z.number().int().min(1).max(365).optional(),
+
+    note: z.string().max(200).optional(),
+  })
+  .transform((v) => {
+    const quota = v.quotaAdd ?? v.addQuota ?? 0;
+    const days = v.days ?? v.extendDays ?? 30;
+    return {
+      clinicId: v.clinicId,
+      quotaAdd: quota,
+      days,
+      note: v.note,
+    };
+  })
+  .refine((v) => v.quotaAdd >= 1, { message: "quotaAdd/addQuota gerekli" })
+  .refine((v) => v.days >= 1, { message: "days/extendDays gerekli" });
 
 type GrantInput = z.infer<typeof GrantSchema>;
 
@@ -41,19 +60,15 @@ export async function GET(req: Request): Promise<NextResponse> {
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    await requireAdminApi(req);
+    requireAdminApi(req);
 
     const json: unknown = await req.json();
     const data: GrantInput = GrantSchema.parse(json);
 
     const now = new Date();
-    const days = data.days ?? 30;
     const expiresAt = new Date(now);
-    expiresAt.setDate(expiresAt.getDate() + days);
+    expiresAt.setDate(expiresAt.getDate() + data.days);
 
-    // Aynı clinic için aktif subscription varsa onu artırmak daha mantıklı;
-    // ama “admin manuel yükleme” için yeni kayıt da olur.
-    // Biz basit ve güvenli kalsın diye: aktif varsa update, yoksa create yapacağız.
     const active = await prisma.subscription.findFirst({
       where: { clinicId: data.clinicId, status: "active", expiresAt: { gt: now } },
       orderBy: { startedAt: "desc" },
@@ -81,7 +96,10 @@ export async function POST(req: Request): Promise<NextResponse> {
         },
       });
 
-      return NextResponse.json({ ok: true, mode: "created", subscription: created, note: data.note ?? null }, { status: 201 });
+      return NextResponse.json(
+        { ok: true, mode: "created", subscription: created, note: data.note ?? null },
+        { status: 201 }
+      );
     }
 
     const updated = await prisma.subscription.update({
@@ -101,7 +119,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       },
     });
 
-    return NextResponse.json({ ok: true, mode: "updated", subscription: updated, note: data.note ?? null }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, mode: "updated", subscription: updated, note: data.note ?? null },
+      { status: 200 }
+    );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "UNKNOWN";
     const status = msg === "UNAUTHORIZED_ADMIN" ? 401 : 500;

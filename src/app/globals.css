@@ -221,11 +221,17 @@ img { max-width: 100%; height: auto; }
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
 
-.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow2); }
-.btnPrimary {
-  border-color: rgba(15,23,42,0.12);
-  background: rgba(11,18,32,0.92);
-  color: white;
+.btnPrimary{
+  color: #fff;
+  background: linear-gradient(135deg, rgba(124,58,237,0.92), rgba(14,165,233,0.92));
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 14px 32px rgba(2,6,23,0.14);
+}
+
+.btnPrimary:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.18);
 }
 .btnGhost { background: rgba(255,255,255,0.55); }
 .btnSoft { background: rgba(255,255,255,0.86); }
@@ -900,4 +906,1539 @@ img { max-width: 100%; height: auto; }
   padding: 12px;
   font-weight: 850;
   color: rgba(127,29,29,0.95);
+}
+
+
+/* =========================
+   WIDE DESKTOP CONTAINER TUNING
+   Amaç: 1440/1920 ekranlarda sağ-sol boşluğu azaltmak
+   ========================= */
+
+/* Varsayılan container genişliği */
+:root {
+  --site-max: 1200px;
+  --site-pad: 16px;
+}
+
+/* 1280+ ekranlarda biraz genişlet */
+@media (min-width: 1280px) {
+  :root {
+    --site-max: 1280px;
+    --site-pad: 18px;
+  }
+}
+
+/* 1536+ (2xl) ekranlarda daha geniş */
+@media (min-width: 1536px) {
+  :root {
+    --site-max: 1400px;
+    --site-pad: 20px;
+  }
+}
+
+/* 1800+ gibi dev ekranlarda biraz daha */
+@media (min-width: 1800px) {
+  :root {
+    --site-max: 1480px;
+    --site-pad: 22px;
+  }
+}
+
+/* Header / Footer inner wrapper'lar */
+.siteHeaderInner,
+.siteFooterInner {
+  max-width: var(--site-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--site-pad);
+  padding-right: var(--site-pad);
+}
+
+/* Sayfa ana wrapper */
+.siteMain {
+  max-width: var(--site-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--site-pad);
+  padding-right: var(--site-pad);
+}
+
+/* HomePage içinde kullandığın container class'ı */
+.container {
+  max-width: var(--site-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--site-pad);
+  padding-right: var(--site-pad);
+}
+
+
+/* =========================
+   HERO TREAT GRID IMPROVEMENT
+   ========================= */
+
+/* Varsayılan zaten 2x2 grid (dokunmuyoruz) */
+
+@media (min-width: 1400px) {
+  .treatGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .treatCard {
+    padding: 20px;
+    border-radius: 20px;
+    transition: all 0.25s ease;
+  }
+
+  .treatCard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(2, 6, 23, 0.08);
+  }
+}
+
+/* Ultra wide ekran */
+@media (min-width: 1700px) {
+  .treatGrid {
+    gap: 22px;
+  }
+
+  .treatCard {
+    padding: 24px;
+  }
+}
+
+.blogContent h2 {
+  font-size: 24px;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  font-weight: 900;
+}
+
+.blogContent h3 {
+  font-size: 20px;
+  margin-top: 26px;
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+
+.blogContent p {
+  margin-bottom: 18px;
+}
+
+.blogContent ul {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.blogContent li {
+  margin-bottom: 8px;
+}
+
+.blogContent a {
+  color: #7c3aed;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.blogWrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px 18px 80px;
+}
+
+.blogTopBar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.blogPrimaryBtn {
+  background: #0b1220;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.blogHeader h1 {
+  font-size: 38px;
+  font-weight: 950;
+  margin-top: 10px;
+}
+
+.blogExcerpt {
+  font-size: 18px;
+  margin-top: 14px;
+  opacity: 0.8;
+}
+
+.blogBadges span {
+  font-size: 12px;
+  font-weight: 900;
+  background: rgba(124,58,237,0.1);
+  padding: 6px 10px;
+  border-radius: 999px;
+  margin-right: 6px;
+}
+
+.blogToc {
+  margin-top: 30px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.03);
+}
+
+.blogTocTitle {
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.blogToc a {
+  display: block;
+  margin-bottom: 6px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.blogContentArea {
+  margin-top: 30px;
+  line-height: 1.9;
+  font-size: 17px;
+}
+
+.blogH2 {
+  margin-top: 32px;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.blogP {
+  margin-bottom: 18px;
+}
+
+.blogUl {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.blogCtaInline {
+  margin-top: 40px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(124,58,237,0.08);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.blogClinicBox {
+  margin-top: 30px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.blogFaq {
+  margin-top: 40px;
+}
+
+.blogFaq details {
+  margin-bottom: 12px;
+}
+
+/* =========================
+   HOME: SECTION HEAD (mini başlık + sağ CTA)
+   ========================= */
+.homeSectionHead{
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.homeSectionSub{
+  margin-top: 6px;
+  color: rgba(15,23,42,0.70);
+  font-weight: 750;
+  line-height: 1.65;
+  max-width: 70ch;
+}
+
+.homeMiniCta{
+  text-decoration:none;
+  font-weight: 950;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.78);
+  box-shadow: 0 10px 22px rgba(15,23,42,0.05);
+}
+.homeMiniCta:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15,23,42,0.10);
+}
+
+/* =========================
+   HOME: STEPS (Nasıl Çalışır) PREMIUM
+   ========================= */
+.stepsShell{
+  border-radius: 26px;
+  overflow: hidden;
+  border: 1px solid rgba(15,23,42,0.10);
+  background:
+    radial-gradient(900px 420px at 15% 30%, rgba(124,58,237,0.14), transparent 60%),
+    radial-gradient(900px 520px at 85% 10%, rgba(14,165,233,0.12), transparent 55%),
+    rgba(255,255,255,0.72);
+  box-shadow: 0 18px 55px rgba(15,23,42,0.10);
+  padding: 14px;
+}
+
+.stepCardV2{
+  border-radius: 22px !important;
+  padding: 16px !important;
+  background: rgba(255,255,255,0.86) !important;
+  box-shadow: 0 12px 26px rgba(15,23,42,0.06);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.stepCardV2:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.10);
+  border-color: rgba(124,58,237,0.22);
+}
+
+.stepTop{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stepBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width: 44px;
+  height: 44px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(14,165,233,0.14));
+  border: 1px solid rgba(15,23,42,0.10);
+}
+
+.stepNum{
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.stepIcon{
+  width: 44px;
+  height: 44px;
+  border-radius: 18px;
+  display:grid;
+  place-items:center;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(15,23,42,0.10);
+  font-size: 18px;
+}
+
+.stepPills{
+  margin-top: 12px;
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.85);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+/* Mobilde daha ferah */
+@media (max-width: 980px){
+  .stepsShell{ padding: 12px; }
+  .stepCardV2{ padding: 14px !important; }
+}
+
+/* =========================
+   HOME: CLINIC EXPLORE (Kartlar daha premium)
+   (Bu class'lar sende zaten vardı; burada küçük “polish” ekliyoruz.)
+   ========================= */
+.clinicExploreCard{
+  position: relative;
+}
+
+.clinicExploreCard:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 18px;
+  pointer-events:none;
+  background: linear-gradient(135deg, rgba(124,58,237,0.10), rgba(14,165,233,0.08));
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+
+.clinicExploreCard:hover:before{
+  opacity: 1;
+}
+
+.clinicExploreCardArrow{
+  transition: transform .12s ease;
+}
+
+.clinicExploreCard:hover .clinicExploreCardArrow{
+  transform: rotate(-6deg) scale(1.02);
+}
+
+.siteNav .navClinic{
+  display:inline-flex;
+  align-items:center;
+  padding:10px 16px;
+  border-radius:14px;
+  text-decoration:none;
+  font-weight:950;
+  color:#0b1220 !important;
+  background: linear-gradient(135deg, #5eead4, #22d3ee);
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 10px 25px rgba(34,211,238,0.25);
+  transition: all .2s ease;
+}
+
+.siteNav .navClinic:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 35px rgba(34,211,238,0.35);
+}
+
+/* PANEL MODERN DESIGN */
+
+.panelCard {
+  border-radius: 20px;
+  padding: 18px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(15,23,42,0.1);
+  box-shadow: 0 15px 35px rgba(2,6,23,0.08);
+  transition: all .2s ease;
+}
+
+.panelCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 45px rgba(2,6,23,0.12);
+}
+
+.highlightCard {
+  background: linear-gradient(135deg, rgba(94,234,212,0.2), rgba(34,211,238,0.1));
+}
+
+.panelCardTop {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 900;
+}
+
+.panelIcon {
+  font-size: 18px;
+}
+
+.panelNumber {
+  font-size: 34px;
+  font-weight: 950;
+  margin-top: 10px;
+}
+
+.panelSub {
+  margin-top: 4px;
+  opacity: 0.7;
+  font-weight: 800;
+}
+
+.panelBox {
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(15,23,42,0.1);
+  box-shadow: 0 15px 35px rgba(2,6,23,0.07);
+}
+
+.panelBoxHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.panelBoxHead h2 {
+  margin: 0;
+  font-weight: 950;
+}
+
+.panelBoxHead a {
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.panelLeadList {
+  display: grid;
+  gap: 12px;
+}
+
+.panelLeadCard {
+  padding: 14px;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid rgba(15,23,42,0.1);
+  box-shadow: 0 10px 25px rgba(2,6,23,0.05);
+}
+
+.panelLeadTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statusPill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.panelLeadMeta {
+  margin-top: 6px;
+  opacity: 0.75;
+  font-weight: 800;
+}
+
+.panelLeadBottom {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 800;
+}
+
+.panelEmpty {
+  padding: 16px;
+  opacity: 0.7;
+  font-weight: 800;
+}
+
+/* =========================
+   PANEL PREMIUM THEME
+   ========================= */
+
+.panelWrap{
+  display:grid;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.panelHeader{
+  border: 1px solid rgba(15,23,42,0.10);
+  background:
+    radial-gradient(900px 420px at 15% 20%, rgba(124,58,237,0.16), transparent 60%),
+    radial-gradient(900px 520px at 85% 10%, rgba(14,165,233,0.12), transparent 55%),
+    rgba(255,255,255,0.72);
+  border-radius: 22px;
+  padding: 14px;
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.08);
+}
+
+.panelKicker{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.70);
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.panelTitle{
+  margin: 10px 0 0 0;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  font-size: 22px;
+}
+
+.panelSub{
+  margin-top: 6px;
+  opacity: .78;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.panelHeaderRight{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panelQuickBtn{
+  text-decoration:none;
+  font-weight: 950;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(11,18,32,0.92);
+  color: #fff;
+}
+
+.panelQuickBtnSoft{
+  background: rgba(255,255,255,0.78);
+  color: rgba(15,23,42,0.92);
+}
+
+.panelGrid3{
+  display:grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 980px){
+  .panelGrid3{ grid-template-columns: 1fr; }
+}
+
+.panelStatCard{
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.80);
+  border-radius: 22px;
+  padding: 14px;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.06);
+  display:grid;
+  gap: 10px;
+}
+
+.panelStatCardAccent{
+  background:
+    radial-gradient(520px 240px at 10% 20%, rgba(124,58,237,0.14), transparent 60%),
+    radial-gradient(520px 240px at 90% 10%, rgba(14,165,233,0.10), transparent 60%),
+    rgba(255,255,255,0.82);
+}
+
+.panelStatTop{
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.panelStatLabel{
+  font-weight: 950;
+  opacity: .78;
+}
+
+.panelStatIcon{
+  width: 38px;
+  height: 38px;
+  border-radius: 16px;
+  display:grid;
+  place-items:center;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: linear-gradient(135deg, rgba(124,58,237,0.14), rgba(14,165,233,0.12));
+  font-weight: 950;
+}
+
+.panelStatValue{
+  font-weight: 950;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+}
+
+.panelStatRow{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panelStatValueSmall{
+  font-weight: 950;
+  font-size: 18px;
+}
+
+.panelStatBadge{
+  display:inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.72);
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.panelStatHint{
+  opacity: .70;
+  font-weight: 800;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.panelStatFoot{
+  display:flex;
+  justify-content: flex-end;
+}
+
+.panelLink{
+  text-decoration:none;
+  font-weight: 950;
+  color: rgba(15,23,42,0.92);
+}
+
+.panelLinkStrong{
+  color: rgba(124,58,237,0.98);
+}
+
+.panelProgress{
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.62);
+  overflow: hidden;
+}
+
+.panelProgressBar{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.92), rgba(14,165,233,0.92));
+}
+
+.panelCard{
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.78);
+  border-radius: 22px;
+  padding: 14px;
+  box-shadow: 0 14px 32px rgba(15,23,42,0.06);
+}
+
+.panelCardHead{
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.panelCardTitle{
+  font-weight: 950;
+  font-size: 16px;
+}
+
+.panelCardSub{
+  margin-top: 4px;
+  opacity: .72;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.panelCardHeadRight{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panelPill{
+  display:inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.72);
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.panelPillSoft{
+  background: rgba(124,58,237,0.10);
+  border-color: rgba(124,58,237,0.18);
+  color: rgba(124,58,237,0.98);
+}
+
+.panelMiniCta{
+  text-decoration:none;
+  font-weight: 950;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.80);
+  color: rgba(15,23,42,0.92);
+}
+
+.panelEmpty{
+  margin-top: 10px;
+  opacity: .72;
+  font-weight: 850;
+}
+
+.panelLeadList{
+  margin-top: 12px;
+  display:grid;
+  gap: 10px;
+}
+
+.panelLeadRow{
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.86);
+  border-radius: 18px;
+  padding: 12px;
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panelLeadTop{
+  display:flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panelLeadName{
+  font-weight: 950;
+}
+
+.panelLeadSep{
+  opacity: .45;
+  margin: 0 6px;
+}
+
+.panelLeadRight{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  flex-wrap: wrap;
+}
+
+.panelLeadTime{
+  opacity: .72;
+  font-weight: 850;
+  font-size: 12px;
+}
+
+.panelLeadMeta{
+  margin-top: 8px;
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panelChip{
+  display:inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.70);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.panelChipSoft{
+  background: rgba(14,165,233,0.10);
+  border-color: rgba(14,165,233,0.18);
+  color: rgba(2,132,199,0.98);
+}
+
+.panelChipMuted{
+  opacity: .72;
+}
+
+.panelBtn{
+  text-decoration:none;
+  font-weight: 950;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(11,18,32,0.92);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.panelNewBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(239,68,68,0.22);
+  background: rgba(239,68,68,0.10);
+  color: rgba(153,27,27,0.98);
+  font-weight: 950;
+  font-size: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes panelPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(239,68,68,0.0); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(239,68,68,0.05); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(239,68,68,0.0); }
+}
+
+.panelNewBadge{
+  animation: panelPulse 1.4s ease-in-out infinite;
+}
+
+.panelChartShell{
+  margin-top: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background:
+    radial-gradient(600px 200px at 15% 20%, rgba(124,58,237,0.12), transparent 60%),
+    radial-gradient(600px 200px at 85% 0%, rgba(14,165,233,0.10), transparent 60%),
+    rgba(255,255,255,0.70);
+  padding: 12px;
+  color: rgba(15,23,42,0.92);
+}
+
+.panelChartLabels{
+  margin-top: 8px;
+  display:grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 6px;
+  opacity: .70;
+  font-weight: 850;
+  font-size: 10px;
+}
+
+.panelChartTick{
+  text-align:center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panelChartLegend{
+  margin-top: 10px;
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panelLegendItem{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  font-weight: 900;
+  font-size: 12px;
+  opacity: .85;
+}
+
+.panelLegendDot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.92), rgba(14,165,233,0.92));
+}
+
+.panelLegendMuted{
+  opacity: .68;
+  font-weight: 850;
+}
+
+.panelAlert{
+  border: 1px solid rgba(245,158,11,0.22);
+  background: rgba(245,158,11,0.08);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.panelAlertTitle{
+  font-weight: 950;
+}
+
+.panelAlertDesc{
+  margin-top: 6px;
+  font-weight: 850;
+  opacity: .82;
+  line-height: 1.7;
+}
+
+/* =========================
+   PANEL LEADS UI (List + Detail)
+   ========================= */
+
+.panelFilterShell{
+  margin-top: 10px;
+  display:grid;
+  gap: 12px;
+}
+
+.panelFilterPills{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.panelFilterPill{
+  text-decoration:none;
+  font-weight: 950;
+  font-size: 12px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.72);
+  color: rgba(15,23,42,0.92);
+}
+
+.panelFilterPill:hover{
+  background: rgba(255,255,255,0.86);
+}
+
+.panelFilterPillActive{
+  background: rgba(11,18,32,0.92);
+  color: #fff;
+  border-color: rgba(11,18,32,0.22);
+}
+
+.panelSearchRow{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.panelInput{
+  flex: 1 1 260px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.78);
+  outline: none;
+  font-weight: 850;
+}
+
+.panelInput:focus{
+  border-color: rgba(124,58,237,0.28);
+  box-shadow: 0 0 0 6px rgba(124,58,237,0.08);
+}
+
+.panelBtnSoft{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.86);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.panelBtnGhost{
+  text-decoration:none;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.70);
+  font-weight: 950;
+  color: rgba(15,23,42,0.92);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.panelLeadStatus{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 12px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.72);
+  color: rgba(15,23,42,0.92);
+}
+
+.panelLeadStatusNew{
+  border-color: rgba(59,130,246,0.22);
+  background: rgba(59,130,246,0.10);
+  color: rgba(30,64,175,0.98);
+}
+
+.panelLeadStatusContacted{
+  border-color: rgba(245,158,11,0.22);
+  background: rgba(245,158,11,0.10);
+  color: rgba(146,64,14,0.98);
+}
+
+.panelLeadStatusWon{
+  border-color: rgba(34,197,94,0.22);
+  background: rgba(34,197,94,0.10);
+  color: rgba(22,101,52,0.98);
+}
+
+.panelLeadStatusLost{
+  border-color: rgba(239,68,68,0.22);
+  background: rgba(239,68,68,0.10);
+  color: rgba(153,27,27,0.98);
+}
+
+/* Detail grid */
+.panelDetailGrid{
+  margin-top: 12px;
+  display:grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 860px){
+  .panelDetailGrid{ grid-template-columns: 1fr; }
+}
+
+.panelDetailItem{
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.82);
+  border-radius: 18px;
+  padding: 12px;
+  display:grid;
+  gap: 6px;
+}
+
+.panelDetailWide{
+  grid-column: 1 / -1;
+}
+
+.panelDetailLabel{
+  font-weight: 950;
+  font-size: 12px;
+  opacity: .72;
+}
+
+.panelDetailValue{
+  font-weight: 950;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.panelDetailNote{
+  font-weight: 850;
+  opacity: .92;
+  white-space: pre-wrap;
+}
+
+.panelActionsShell{
+  margin-top: 6px;
+}
+
+.panelQuickActions{
+  margin-top: 8px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================
+   PANEL: StatusActions + NoteEditor Premium UI
+   (Mevcut mantığı BOZMADAN sadece görünümü iyileştirir)
+   ========================= */
+
+/* Ortak: panel içindeki form elemanları */
+.panelWrap :is(button, input, textarea, select) {
+  font-family: inherit;
+}
+
+/* StatusActions bulunduğu alan */
+.panelActionsShell {
+  display: grid;
+  gap: 10px;
+}
+
+/* Status butonları (StatusActions içindeki button/a) */
+.panelActionsShell :is(button, a) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: rgba(15, 23, 42, 0.92) !important;
+  font-weight: 950 !important;
+  border-radius: 16px !important;
+  padding: 12px 14px !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease !important;
+}
+
+.panelActionsShell :is(button, a):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.10) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(124, 58, 237, 0.22) !important;
+}
+
+.panelActionsShell :is(button, a):active {
+  transform: translateY(0px) !important;
+  box-shadow: none !important;
+}
+
+/* StatusActions içindeki aktif/primary buton gibi görünenler için:
+   (inline background siyah olsa bile daha premium görünsün) */
+.panelActionsShell :is(button, a)[style*="background: #111"],
+.panelActionsShell :is(button, a)[style*="background:#111"] {
+  background: rgba(11, 18, 32, 0.92) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.16) !important;
+}
+
+/* NoteEditor bloğu: input/textarea premium */
+.panelWrap textarea,
+.panelWrap input[type="text"],
+.panelWrap input[type="datetime-local"],
+.panelWrap input[type="date"],
+.panelWrap input[type="number"] {
+  width: 100% !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+  padding: 12px 12px !important;
+  outline: none !important;
+  font-weight: 850 !important;
+  color: rgba(15, 23, 42, 0.92) !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05) !important;
+}
+
+.panelWrap textarea {
+  min-height: 120px !important;
+  line-height: 1.7 !important;
+  resize: vertical !important;
+}
+
+.panelWrap textarea:focus,
+.panelWrap input:focus {
+  border-color: rgba(124, 58, 237, 0.30) !important;
+  box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.10), 0 14px 26px rgba(2, 6, 23, 0.08) !important;
+}
+
+/* NoteEditor içindeki kaydet/güncelle butonları (genel) */
+.panelWrap form :is(button, a) {
+  border-radius: 16px !important;
+}
+
+/* Panel içi "Kaydet" gibi koyu butonlar premium */
+.panelWrap :is(button, a)[style*="background: #111"],
+.panelWrap :is(button, a)[style*="background:#111"] {
+  background: rgba(11, 18, 32, 0.92) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Uyarı/Hata kutularını premium yap (NoteEditor hata gösterebilir) */
+.panelWrap [style*="background: #fff5f5"],
+.panelWrap [style*="background:#fff5f5"] {
+  border-color: rgba(239, 68, 68, 0.22) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-radius: 16px !important;
+  font-weight: 850 !important;
+}
+
+/* Küçük yardımcı metinler */
+.panelWrap :is(label, small) {
+  font-weight: 850 !important;
+  opacity: 0.78 !important;
+}
+
+/* Mobilde butonlar daha rahat */
+@media (max-width: 720px) {
+  .panelActionsShell :is(button, a) {
+    width: 100% !important;
+  }
+}
+
+/* =========================
+   HOME: QUICK START Modern
+   ========================= */
+
+.quickStartBox{
+  position: relative;
+  overflow: hidden;
+}
+
+.quickStartBox:before{
+  content:"";
+  position:absolute;
+  inset:-140px -60px auto -60px;
+  height: 220px;
+  background:
+    radial-gradient(360px 180px at 15% 60%, rgba(124,58,237,0.16), transparent 60%),
+    radial-gradient(360px 200px at 80% 30%, rgba(14,165,233,0.14), transparent 60%);
+  filter: blur(10px);
+  pointer-events:none;
+}
+
+.quickStartHead{
+  position: relative;
+  z-index: 1;
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quickStartTitle{
+  font-weight: 950;
+  font-size: 16px;
+}
+
+.quickStartCta{
+  position: relative;
+  z-index: 1;
+  text-decoration:none;
+  font-weight: 950;
+  padding: 9px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.78);
+  box-shadow: 0 10px 22px rgba(15,23,42,0.05);
+}
+
+.quickStartCta:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15,23,42,0.10);
+}
+
+.quickStartDesc{
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  color: rgba(15,23,42,0.70);
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.quickStartNote{
+  position: relative;
+  z-index: 1;
+  margin-top: 10px;
+  color: rgba(15,23,42,0.60);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* =========================
+   HOME: FAQ (Merak Edilenler) Modern
+   ========================= */
+
+.faqGrid{
+  gap: 12px;
+}
+
+.faqItem{
+  border-radius: 18px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255,255,255,0.86);
+  box-shadow: 0 12px 26px rgba(15,23,42,0.06);
+}
+
+.faqItem summary{
+  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+}
+
+.faqItem summary:after{
+  content: "＋";
+  font-weight: 950;
+  opacity: 0.7;
+}
+
+.faqItem[open] summary:after{
+  content: "−";
+  opacity: 0.9;
+}
+
+.faqBody{
+  margin: 0;
+  padding: 12px 14px 14px 14px;
+}
+
+/* =======================================
+   TEKLIF AL SAYFASI - YAZI BÜYÜTME & VURGU
+   Çalışan hiçbir yapıya dokunmaz
+   ======================================= */
+
+/* Ana başlık büyütme */
+.teklifHero h1,
+.teklifPage h1 {
+  font-size: 42px !important;
+  line-height: 1.1;
+  font-weight: 950;
+}
+
+/* Alt açıklama büyütme */
+.teklifHero p,
+.teklifPage p {
+  font-size: 17px !important;
+  line-height: 1.8;
+  font-weight: 600;
+  color: rgba(15,23,42,0.75);
+}
+
+/* Form başlığı */
+.teklifFormTitle {
+  font-size: 20px !important;
+  font-weight: 900;
+}
+
+/* Label yazıları biraz büyüsün */
+.teklifPage label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Input yazıları */
+.teklifPage input,
+.teklifPage select,
+.teklifPage textarea {
+  font-size: 15px;
+}
+
+/* Sağ taraftaki bilgi kutuları */
+.teklifInfoBox {
+  border-radius: 18px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+  padding: 18px;
+}
+
+/* Sağ panel başlıkları renkli olsun */
+.teklifInfoBox h3 {
+  font-size: 18px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #7c3aed, #0ea5e9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Küçük rozetler */
+.teklifBadge {
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(124,58,237,0.08);
+  color: #7c3aed;
+}
+
+/* Gönder butonu biraz daha güçlü gözüksün */
+.teklifPage button[type="submit"] {
+  font-size: 15px;
+  font-weight: 900;
+  padding: 12px 16px;
+}
+
+/* =========================
+   PANEL: NEW LEAD BOOST (row highlight)
+   ========================= */
+
+.panelLeadRowNew {
+  border: 1px solid rgba(124,58,237,0.35) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(124,58,237,0.06),
+    rgba(14,165,233,0.05)
+  ) !important;
+
+  box-shadow:
+    0 0 0 2px rgba(124,58,237,0.12),
+    0 18px 45px rgba(2,6,23,0.08);
+
+  animation: newLeadPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes newLeadPulse {
+  0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.18), 0 18px 45px rgba(2,6,23,0.08); }
+  50% { box-shadow: 0 0 0 10px rgba(124,58,237,0.05), 0 20px 55px rgba(2,6,23,0.10); }
+  100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.18), 0 18px 45px rgba(2,6,23,0.08); }
+}
+
+/* =========================
+   PANEL: QUOTA WARNING (aggressive renewal card)
+   ========================= */
+
+.panelQuotaAlert {
+  border: 1px solid rgba(239,68,68,0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(239,68,68,0.10),
+    rgba(245,158,11,0.08)
+  );
+  border-radius: 22px;
+  padding: 16px;
+  box-shadow: 0 20px 50px rgba(239,68,68,0.15);
+
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.panelQuotaTitle {
+  font-weight: 950;
+  font-size: 16px;
+  color: rgba(127,29,29,0.95);
+}
+
+.panelQuotaDesc {
+  margin-top: 6px;
+  font-weight: 800;
+  color: rgba(127,29,29,0.85);
+  line-height: 1.6;
+}
+
+.panelQuotaBtn {
+  text-decoration: none;
+  font-weight: 950;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 15px 40px rgba(239,68,68,0.25);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  white-space: nowrap;
+}
+
+.panelQuotaBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 55px rgba(239,68,68,0.32);
+  filter: brightness(1.02);
 }

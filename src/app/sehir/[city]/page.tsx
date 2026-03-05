@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const titleCity = ok ? cityLabel(citySlug) : "Şehir";
 
   return {
-    title: `${titleCity} | Hizmetler | Diş Fiyat Platform`,
+    title: `${titleCity} | Hizmetler | DişFiyat360`,
     description: `${titleCity} için hizmet seç, KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.`,
     alternates: { canonical: `/sehir/${citySlug}` },
     robots: ok ? { index: true, follow: true } : { index: false, follow: false },
