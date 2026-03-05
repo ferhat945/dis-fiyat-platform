@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `blogpost` ADD COLUMN `clinicId` VARCHAR(191) NULL;
+ALTER TABLE `BlogPost` ADD COLUMN `clinicId` VARCHAR(191) NULL;
 
 -- AlterTable
 ALTER TABLE `clinics` ADD COLUMN `trialEndsAt` DATETIME(3) NULL,
