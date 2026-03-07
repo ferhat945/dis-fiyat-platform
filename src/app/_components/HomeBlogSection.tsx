@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { normalizeSlug } from "@/lib/seo-data";
 import styles from "./HomeBlogSection.module.css";
+import type { JSX } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,6 @@ function clinicSlug(name: string, id: string): string {
 }
 
 function estimateReadingTimeTR(text: string): string {
-  // Ortalama 200 kelime/dk
   const words = (text || "")
     .replace(/\s+/g, " ")
     .trim()
@@ -40,6 +40,7 @@ function guessCategoryFromText(title: string, excerpt?: string, content?: string
   for (const r of rules) {
     if (r.keys.some((k) => hay.includes(k))) return r.label;
   }
+
   return null;
 }
 
@@ -88,7 +89,6 @@ export default async function HomeBlogSection(): Promise<JSX.Element | null> {
           const reading = estimateReadingTimeTR(p.content ?? p.excerpt ?? "");
           const cat = guessCategoryFromText(p.title, p.excerpt ?? undefined, p.content ?? undefined);
 
-          // Basit kapak: kategoriye göre emoji/gradient (görsel dosyası gerekmesin)
           const coverIcon =
             cat === "İmplant"
               ? "🦷"
@@ -116,7 +116,11 @@ export default async function HomeBlogSection(): Promise<JSX.Element | null> {
                 </div>
                 <div className={styles.coverText}>
                   <div className={styles.badgeRow}>
-                    {cat ? <span className={styles.badge}>{cat}</span> : <span className={styles.badgeMuted}>Genel</span>}
+                    {cat ? (
+                      <span className={styles.badge}>{cat}</span>
+                    ) : (
+                      <span className={styles.badgeMuted}>Genel</span>
+                    )}
                     <span className={styles.badgeMuted}>⏱ {reading}</span>
                   </div>
                 </div>
