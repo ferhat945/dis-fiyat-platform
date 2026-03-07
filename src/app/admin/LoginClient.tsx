@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { useState } from "react";
 
 export default function AdminLoginClient(): JSX.Element {
@@ -10,6 +11,7 @@ export default function AdminLoginClient(): JSX.Element {
   async function submit(): Promise<void> {
     setErr(null);
     setLoading(true);
+
     try {
       const r = await fetch("/api/admin/login", {
         method: "POST",
@@ -18,12 +20,12 @@ export default function AdminLoginClient(): JSX.Element {
       });
 
       const j = (await r.json()) as { ok?: boolean; code?: string };
+
       if (!r.ok || !j.ok) {
         setErr(j.code ?? `HTTP_${r.status}`);
         return;
       }
 
-      // cookie set edildi, sayfayı yenile
       window.location.href = "/admin";
     } catch (e) {
       setErr(e instanceof Error ? e.message : "NETWORK_ERROR");
