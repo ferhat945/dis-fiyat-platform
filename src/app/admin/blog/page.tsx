@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-guard";
 import { prisma } from "@/lib/db";
+import React from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminBlogListPage(): Promise<JSX.Element> {
+export default async function AdminBlogListPage(): Promise<React.ReactElement> {
   await requireAdmin();
 
   const posts = await prisma.blogPost.findMany({

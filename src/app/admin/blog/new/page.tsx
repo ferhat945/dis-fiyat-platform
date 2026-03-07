@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-guard";
 import AdminBlogEditor from "../ui/AdminBlogEditor";
+import React from "react";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminBlogNewPage(): Promise<JSX.Element> {
+export default async function AdminBlogNewPage(): Promise<React.ReactElement> {
   await requireAdmin();
 
   return (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-guard";
 import AdminBlogEditor from "../ui/AdminBlogEditor";
+import React from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function AdminBlogEditPage({ params }: PageProps): Promise<JSX.Element> {
+export default async function AdminBlogEditPage({ params }: PageProps): Promise<React.ReactElement> {
   await requireAdmin();
   const { id } = await params;
 
