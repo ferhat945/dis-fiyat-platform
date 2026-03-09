@@ -30,48 +30,89 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
   return (
     <html lang="tr">
       <body>
-        {/* HEADER */}
         <header className="siteHeader">
           <div className="siteHeaderInner">
-            <Link href="/" className="brandPill" aria-label="Ana sayfa">
-              <span className="brandIcon" aria-hidden>
-                🦷
-              </span>
-              {SITE_NAME}
-            </Link>
-
-            <nav className="siteNav" aria-label="Üst menü">
-              <Link className="navLink" href="/">
-                Ana Sayfa
-              </Link>
-              <Link className="navLink" href="/sehir">
-                Şehirler
-              </Link>
-              <Link className="navLink" href="/hizmetler">
-                Hizmetler
+            {/* DESKTOP HEADER */}
+            <div className="desktopHeaderBar">
+              <Link href="/" className="brandPill" aria-label="Ana sayfa">
+                <span className="brandIcon" aria-hidden>
+                  🦷
+                </span>
+                {SITE_NAME}
               </Link>
 
-              <Link className="navLink" href="/blog">
-                Blog
+              <nav className="siteNav" aria-label="Üst menü">
+                <Link className="navLink" href="/">
+                  Ana Sayfa
+                </Link>
+                <Link className="navLink" href="/sehir">
+                  Şehirler
+                </Link>
+                <Link className="navLink" href="/hizmetler">
+                  Hizmetler
+                </Link>
+                <Link className="navLink" href="/blog">
+                  Blog
+                </Link>
+                <Link className="navLink" href="/kvkk">
+                  KVKK
+                </Link>
+                <Link className="navCta" href="/teklif-al">
+                  Teklif Al
+                </Link>
+                <Link className="navClinic" href="/login">
+                  Klinik Başvurusu
+                </Link>
+              </nav>
+            </div>
+
+            {/* MOBILE HEADER */}
+            <div className="mobileHeaderBar">
+              <Link href="/" className="brandPill mobileBrandPill" aria-label="Ana sayfa">
+                <span className="brandIcon" aria-hidden>
+                  🦷
+                </span>
+                {SITE_NAME}
               </Link>
 
-              <Link className="navLink" href="/kvkk">
-                KVKK
-              </Link>
-              <Link className="navCta" href="/teklif-al">
-                Teklif Al
-              </Link>
-              <Link className="navClinic" href="/login">
-                Klinik Başvurusu
-              </Link>
-            </nav>
+              <div className="mobileHeaderActions">
+                <Link className="mobileTopCta" href="/teklif-al">
+                  Teklif Al
+                </Link>
+
+                <details className="mobileMenu">
+                  <summary className="mobileMenuBtn" aria-label="Menüyü aç">
+                    ☰
+                  </summary>
+
+                  <div className="mobileMenuPanel">
+                    <Link className="mobileMenuLink" href="/">
+                      Ana Sayfa
+                    </Link>
+                    <Link className="mobileMenuLink" href="/sehir">
+                      Şehirler
+                    </Link>
+                    <Link className="mobileMenuLink" href="/hizmetler">
+                      Hizmetler
+                    </Link>
+                    <Link className="mobileMenuLink" href="/blog">
+                      Blog
+                    </Link>
+                    <Link className="mobileMenuLink" href="/kvkk">
+                      KVKK
+                    </Link>
+                    <Link className="mobileMenuLink mobileMenuClinic" href="/login">
+                      Klinik Başvurusu
+                    </Link>
+                  </div>
+                </details>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* PAGE */}
         <main className="siteMain">{children}</main>
 
-        {/* FOOTER */}
         <footer className="siteFooter">
           <div className="siteFooterInner">
             <div>
@@ -100,7 +141,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
             <div>
               <div className="footerTitle">Klinikler</div>
               <div className="footerLinks">
-                {/* ✅ /panel/login yerine /login */}
                 <Link href="/login">Klinik Giriş</Link>
                 <Link href="/panel">Klinik Panel</Link>
               </div>
