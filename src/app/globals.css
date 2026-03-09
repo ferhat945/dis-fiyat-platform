@@ -2748,3 +2748,131 @@ img { max-width: 100%; height: auto; }
     font-size: 25px;
   }
 }
+
+/* =======================================
+   MOBILE FULL WIDTH LAYOUT FIX
+   Sadece mobilde sağ-sol boşluğu azaltır
+   Web görünümünü bozmaz
+   ======================================= */
+
+@media (max-width: 860px) {
+  :root {
+    --site-pad: 8px;
+  }
+
+  .siteMain,
+  .container,
+  .siteHeaderInner,
+  .siteFooterInner {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .hero,
+  .section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .heroShell,
+  .sectionBox,
+  .clinicShell,
+  .clinicExploreShell,
+  .stepsShell,
+  .finalCta,
+  .panelHeader,
+  .panelCard,
+  .panelBox,
+  .panelStatCard,
+  .faqItem,
+  .clinicInfoCard,
+  .clinicMiniCard,
+  .clinicExploreCard,
+  .treatCard,
+  .stepCard,
+  .stepCardV2 {
+    border-radius: 16px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --site-pad: 6px;
+  }
+
+  .siteMain,
+  .container,
+  .siteHeaderInner,
+  .siteFooterInner {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .heroInner,
+  .sectionBox,
+  .stepsShell,
+  .panelHeader,
+  .panelCard,
+  .panelBox,
+  .clinicExploreInner,
+  .clinicInfoCard,
+  .clinicMiniCard,
+  .clinicExploreCard,
+  .treatCard,
+  .faqBody,
+  .faqItem summary {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --site-pad: 4px;
+  }
+
+  .siteMain,
+  .container,
+  .siteHeaderInner,
+  .siteFooterInner {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+
+  .heroInner,
+  .sectionBox,
+  .stepsShell,
+  .panelHeader,
+  .panelCard,
+  .panelBox,
+  .clinicExploreInner,
+  .clinicInfoCard,
+  .clinicMiniCard,
+  .clinicExploreCard,
+  .treatCard,
+  .faqBody,
+  .faqItem summary {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .heroShell,
+  .sectionBox,
+  .clinicShell,
+  .clinicExploreShell,
+  .stepsShell,
+  .finalCta,
+  .panelHeader,
+  .panelCard,
+  .panelBox,
+  .panelStatCard,
+  .faqItem,
+  .clinicInfoCard,
+  .clinicMiniCard,
+  .clinicExploreCard,
+  .treatCard,
+  .stepCard,
+  .stepCardV2 {
+    border-radius: 14px !important;
+  }
+}
