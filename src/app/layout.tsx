@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { absUrl, getBaseUrl } from "@/lib/site-url";
+import MobileHeaderMenu from "@/components/site/MobileHeaderMenu";
 
 const SITE_NAME = "DişFiyat360";
 const SITE_DESC = "KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.";
@@ -67,47 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
             </div>
 
             {/* MOBILE HEADER */}
-            <div className="mobileHeaderBar">
-              <Link href="/" className="brandPill mobileBrandPill" aria-label="Ana sayfa">
-                <span className="brandIcon" aria-hidden>
-                  🦷
-                </span>
-                {SITE_NAME}
-              </Link>
-
-              <div className="mobileHeaderActions">
-                <Link className="mobileTopCta" href="/teklif-al">
-                  Teklif Al
-                </Link>
-
-                <details className="mobileMenu">
-                  <summary className="mobileMenuBtn" aria-label="Menüyü aç">
-                    ☰
-                  </summary>
-
-                  <div className="mobileMenuPanel">
-                    <Link className="mobileMenuLink" href="/">
-                      Ana Sayfa
-                    </Link>
-                    <Link className="mobileMenuLink" href="/sehir">
-                      Şehirler
-                    </Link>
-                    <Link className="mobileMenuLink" href="/hizmetler">
-                      Hizmetler
-                    </Link>
-                    <Link className="mobileMenuLink" href="/blog">
-                      Blog
-                    </Link>
-                    <Link className="mobileMenuLink" href="/kvkk">
-                      KVKK
-                    </Link>
-                    <Link className="mobileMenuLink mobileMenuClinic" href="/login">
-                      Klinik Başvurusu
-                    </Link>
-                  </div>
-                </details>
-              </div>
-            </div>
+            <MobileHeaderMenu siteName={SITE_NAME} />
           </div>
         </header>
 
