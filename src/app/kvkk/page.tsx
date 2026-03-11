@@ -5,44 +5,84 @@ import { KVKK_TEXT_VERSION } from "@/lib/kvkk";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `KVKK Aydınlatma Metni (${KVKK_TEXT_VERSION}) • Diş Fiyat Platform`,
+  title: `KVKK Aydınlatma Metni (${KVKK_TEXT_VERSION}) | DişFiyat360`,
   description:
     "Teklif formu üzerinden paylaşılan kişisel verilerin işlenmesine ilişkin KVKK aydınlatma metni.",
   alternates: { canonical: "/kvkk" },
 };
 
-type Block = { title: string; items?: string[]; text?: string };
+type Block = {
+  title: string;
+  items?: string[];
+  text?: string;
+};
 
 const BLOCKS: Block[] = [
   {
-    title: "1) İşlenen Veriler",
-    items: [
-      "Ad-soyad",
-      "Telefon",
-      "Opsiyonel e-posta",
-      "Talep edilen hizmet ve şehir bilgisi",
-      "Spam önleme ve güvenlik amaçlı teknik kayıtlar (ör. IP, user-agent)",
-    ],
-  },
-  {
-    title: "2) Amaç",
-    items: [
-      "Talebinize uygun kliniklerin sizinle iletişime geçebilmesi",
-      "Hizmet kalitesi ve operasyon süreçlerinin iyileştirilmesi",
-      "Kötüye kullanım/spam önleme ve sistem güvenliğinin sağlanması",
-    ],
-  },
-  {
-    title: "3) Saklama",
+    title: "1) Veri Sorumlusu",
     text:
-      "Kayıtlar hizmet kalitesi ve operasyon amacıyla saklanabilir. Kesin süreler ürün ve süreçlere göre güncellenebilir.",
+      "Bu aydınlatma metni kapsamında veri sorumlusu Ferhat Menekşe’dir. Vergi No: 6150625779. Adres: Dumlupınar Mahallesi 38007 Sokak No:4. E-posta: ferhatmenekse945@gmail.com. Telefon: 0531 917 17 39.",
   },
   {
-    title: "4) Güvenlik",
+    title: "2) İşlenen Kişisel Veriler",
     items: [
-      "Spam önleme (honeypot), rate limit ve loglama mekanizmaları kullanılır.",
-      "Erişimler rol bazlı kontrol edilir; sadece yetkili kullanıcılar erişebilir.",
+      "Ad ve soyad",
+      "Telefon numarası",
+      "Opsiyonel e-posta adresi",
+      "Talep edilen hizmet, şehir ve kullanıcı mesajı",
+      "Spam önleme ve güvenlik amaçlı teknik kayıtlar (ör. IP adresi, user-agent, log kayıtları)",
     ],
+  },
+  {
+    title: "3) Kişisel Verilerin İşlenme Amaçları",
+    items: [
+      "Teklif talebinize uygun kliniklerin sizinle iletişime geçebilmesini sağlamak",
+      "Talep ve yönlendirme sürecini yürütmek",
+      "Platform hizmet kalitesini ve operasyon süreçlerini geliştirmek",
+      "Kötüye kullanım, spam ve güvenlik ihlallerini önlemek",
+      "Yasal yükümlülükleri yerine getirmek",
+    ],
+  },
+  {
+    title: "4) Kişisel Verilerin Aktarılması",
+    text:
+      "Kişisel verileriniz, talebinize uygun kliniklerle paylaşılabilir. Ayrıca teknik altyapı sağlayıcıları ve yasal zorunluluk halinde yetkili kamu kurumları ile sınırlı olarak paylaşım yapılabilir. Kişisel verileriniz üçüncü kişilere pazarlama amacıyla satılmaz.",
+  },
+  {
+    title: "5) Hukuki Sebep ve Toplama Yöntemi",
+    text:
+      "Kişisel verileriniz, teklif formu, iletişim formları, teknik log kayıtları ve benzeri dijital kanallar aracılığıyla elektronik ortamda toplanır. Veriler; açık rızanızın gerektiği durumlarda açık rıza, sözleşmenin kurulması veya ifası, veri sorumlusunun meşru menfaati ve hukuki yükümlülüklerin yerine getirilmesi sebeplerine dayanılarak işlenebilir.",
+  },
+  {
+    title: "6) Saklama Süresi",
+    text:
+      "Kişisel veriler, hizmetin sunulması, operasyonel süreçlerin yürütülmesi, kayıt düzeninin sağlanması, olası uyuşmazlıkların çözümü ve yasal yükümlülüklerin yerine getirilmesi amacıyla gerekli süre boyunca saklanır. Süre sonunda veriler silinir, yok edilir veya anonim hale getirilir.",
+  },
+  {
+    title: "7) Veri Güvenliği",
+    items: [
+      "SSL ve güvenli iletişim katmanları",
+      "Spam önleme (honeypot), rate limit ve loglama mekanizmaları",
+      "Rol bazlı erişim kontrolü",
+      "Yetkisiz erişimi engellemeye yönelik teknik ve idari tedbirler",
+    ],
+  },
+  {
+    title: "8) KVKK Kapsamındaki Haklarınız",
+    items: [
+      "Kişisel verilerinizin işlenip işlenmediğini öğrenme",
+      "İşlenmişse buna ilişkin bilgi talep etme",
+      "Amacına uygun kullanılıp kullanılmadığını öğrenme",
+      "Eksik veya yanlış işlenmişse düzeltilmesini isteme",
+      "Kanuni şartlar kapsamında silinmesini veya yok edilmesini isteme",
+      "İşlenen verilerin aktarıldığı üçüncü kişileri bilme",
+      "Kanuna aykırı işleme nedeniyle zarara uğramanız halinde tazminat talep etme",
+    ],
+  },
+  {
+    title: "9) Önemli Bilgilendirme",
+    text:
+      "DişFiyat360, kullanıcıların teklif taleplerini ilgili kliniklere ileten bir platformdur. Platform sağlık hizmeti sağlayıcısı değildir; tıbbi teşhis veya tedavi sunmaz. Kesin fiyat ve tedavi planı muayene sonrası ilgili klinik tarafından belirlenir.",
   },
 ];
 
@@ -53,7 +93,6 @@ export default function KvkkPage(): JSX.Element {
         <div className="container">
           <div className="heroShell">
             <div className="heroInner">
-              {/* TOP */}
               <div
                 style={{
                   display: "flex",
@@ -72,15 +111,16 @@ export default function KvkkPage(): JSX.Element {
                     KVKK <span className="grad">Bilgilendirme</span>
                   </h1>
 
-                  <p className="heroDesc" style={{ marginTop: 8, maxWidth: 70 * 10 }}>
-                    Bu metin, teklif formu üzerinden paylaştığınız kişisel verilerin işlenmesine ilişkin
-                    bilgilendirme amaçlıdır. <strong>Kesin fiyat muayene sonrası netleşir.</strong>
+                  <p className="heroDesc" style={{ marginTop: 8, maxWidth: 700 }}>
+                    Bu metin, teklif formu ve platform kullanımı kapsamında paylaştığınız kişisel verilerin
+                    işlenmesine ilişkin bilgilendirme amaçlıdır.{" "}
+                    <strong>Kesin fiyat muayene sonrası netleşir.</strong>
                   </p>
 
                   <div className="miniRow" style={{ marginTop: 10 }}>
-                    <span className="miniItem">✅ Ücretsiz</span>
+                    <span className="miniItem">✅ Ücretsiz teklif formu</span>
                     <span className="miniItem">🛡️ Spam korumalı</span>
-                    <span className="miniItem">🔒 KVKK onaylı</span>
+                    <span className="miniItem">🔒 KVKK uyumlu süreç</span>
                   </div>
                 </div>
 
@@ -94,7 +134,6 @@ export default function KvkkPage(): JSX.Element {
                 </div>
               </div>
 
-              {/* SUMMARY BOX */}
               <div className="section" style={{ paddingTop: 16, paddingBottom: 0 }}>
                 <div
                   className="sectionBox"
@@ -106,13 +145,14 @@ export default function KvkkPage(): JSX.Element {
                 >
                   <div style={{ fontWeight: 950, fontSize: 16 }}>Özet</div>
                   <div style={{ color: "rgba(15,23,42,0.70)", fontWeight: 750, lineHeight: 1.7 }}>
-                    Form gönderimi için iletişime geçilmesine izin gereklidir. Onay olmadan form
-                    gönderilemez. Güvenlik için honeypot ve rate limit uygulanır.
+                    Form gönderimi için iletişime geçilmesine ilişkin gerekli onay alınır. Güvenlik amacıyla
+                    honeypot, rate limit ve loglama mekanizmaları uygulanır. Platform, yalnızca teklif
+                    yönlendirme hizmeti sunar; tedavi hizmeti sunmaz.
                   </div>
 
                   <div className="ctaRow" style={{ marginTop: 4 }}>
-                    <Link href="/kvkk" className="btn btnSoft">
-                      Bu sayfanın linki
+                    <Link href="/gizlilik-politikasi" className="btn btnSoft">
+                      Gizlilik Politikası
                     </Link>
                     <Link href="/teklif-al" className="btn btnPrimary">
                       Formu Aç →
@@ -121,7 +161,6 @@ export default function KvkkPage(): JSX.Element {
                 </div>
               </div>
 
-              {/* CONTENT */}
               <div className="section">
                 <h2 className="sectionTitle">Detaylar</h2>
 
@@ -175,7 +214,6 @@ export default function KvkkPage(): JSX.Element {
                 </div>
               </div>
 
-              {/* NOTE */}
               <div className="section" style={{ paddingTop: 0 }}>
                 <div
                   className="finalCta"
@@ -189,8 +227,8 @@ export default function KvkkPage(): JSX.Element {
                       Not
                     </h3>
                     <p className="finalDesc">
-                      Bu site bilgilendirme amaçlıdır; tıbbi teşhis/tavsiye değildir. Kesin fiyat muayene sonrası
-                      netleşir.
+                      Bu site bilgilendirme ve teklif yönlendirme amaçlıdır; tıbbi teşhis/tavsiye değildir.
+                      Kesin fiyat muayene sonrası ilgili klinik tarafından belirlenir.
                     </p>
                   </div>
 
@@ -200,19 +238,17 @@ export default function KvkkPage(): JSX.Element {
                 </div>
 
                 <div className="miniRow" style={{ marginTop: 10 }}>
-                  <Link href="/sehir" className="btn btnSoft">
-                    Şehirler →
+                  <Link href="/gizlilik-politikasi" className="btn btnSoft">
+                    Gizlilik →
                   </Link>
-                  <Link href="/hizmetler" className="btn btnSoft">
-                    Hizmetler →
+                  <Link href="/kullanim-kosullari" className="btn btnSoft">
+                    Kullanım Koşulları →
                   </Link>
-                  <Link href="/blog" className="btn btnGhost">
-                    Blog →
+                  <Link href="/iletisim" className="btn btnGhost">
+                    İletişim →
                   </Link>
                 </div>
               </div>
-
-              {/* END */}
             </div>
           </div>
         </div>

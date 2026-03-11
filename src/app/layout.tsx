@@ -5,7 +5,8 @@ import { absUrl, getBaseUrl } from "@/lib/site-url";
 import MobileHeaderMenu from "@/components/site/MobileHeaderMenu";
 
 const SITE_NAME = "DişFiyat360";
-const SITE_DESC = "KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.";
+const SITE_DESC =
+  "KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
@@ -27,7 +28,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}): JSX.Element {
   return (
     <html lang="tr">
       <body>
@@ -84,7 +89,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
                 {SITE_NAME}
               </div>
               <div className="footerText">
-                KVKK onaylı form ile kliniklerden teklif al. <strong>Kesin fiyat muayene sonrası netleşir.</strong>
+                KVKK onaylı form ile kliniklerden teklif al.{" "}
+                <strong>Kesin fiyat muayene sonrası netleşir.</strong>
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  color: "rgba(15,23,42,0.72)",
+                  fontWeight: 700,
+                }}
+              >
+                İşletme Sahibi: <strong>Ferhat Menekşe</strong>
+                <br />
+                Vergi No: <strong>6150625779</strong>
+                <br />
+                Adres: Dumlupınar Mahallesi 38007 Sokak No:4
+                <br />
+                Telefon: <a href="tel:05319171739">0531 917 17 39</a>
+                <br />
+                E-posta:{" "}
+                <a href="mailto:ferhatmenekse945@gmail.com">
+                  ferhatmenekse945@gmail.com
+                </a>
               </div>
             </div>
 
@@ -94,16 +122,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
                 <Link href="/sehir">Şehirler</Link>
                 <Link href="/hizmetler">Hizmetler</Link>
                 <Link href="/blog">Blog</Link>
-                <Link href="/kvkk">KVKK Metni</Link>
                 <Link href="/teklif-al">Teklif Al</Link>
+                <Link href="/klinikler">Klinik Dizini</Link>
+                <Link href="/login">Klinik Giriş</Link>
               </div>
             </div>
 
             <div>
-              <div className="footerTitle">Klinikler</div>
+              <div className="footerTitle">Kurumsal</div>
               <div className="footerLinks">
-                <Link href="/login">Klinik Giriş</Link>
-                <Link href="/panel">Klinik Panel</Link>
+                <Link href="/hakkimizda">Hakkımızda</Link>
+                <Link href="/iletisim">İletişim</Link>
+                <Link href="/kvkk">KVKK Aydınlatma Metni</Link>
+                <Link href="/gizlilik-politikasi">Gizlilik Politikası</Link>
+                <Link href="/cerez-politikasi">Çerez Politikası</Link>
+                <Link href="/kullanim-kosullari">Kullanım Koşulları</Link>
+                <Link href="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
+                <Link href="/iptal-iade">İptal ve İade Politikası</Link>
               </div>
             </div>
           </div>

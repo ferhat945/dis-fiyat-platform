@@ -28,7 +28,6 @@ export default async function OfferPage({
   const sp = await searchParams;
   const clinicId = (first(sp, "clinicId") ?? "").trim();
 
-  // ✅ Direct clinic data (clinicId varsa çek)
   const directClinic = clinicId
     ? await prisma.clinic.findUnique({
         where: { id: clinicId },
@@ -53,7 +52,6 @@ export default async function OfferPage({
   return (
     <section className={styles.wrap}>
       <div className={styles.shell}>
-        {/* HERO */}
         <header className={styles.hero}>
           <div className={styles.heroTop}>
             <div className={styles.kicker}>
@@ -90,9 +88,7 @@ export default async function OfferPage({
           </div>
         </header>
 
-        {/* CONTENT GRID */}
         <div className={styles.grid}>
-          {/* FORM CARD */}
           <div className={styles.formCard}>
             <div className={styles.formHead}>
               <div className={styles.formTitleRow}>
@@ -121,11 +117,9 @@ export default async function OfferPage({
               </div>
             </div>
 
-            {/* ✅ clinicId varsa directClinic prop'u dolu gider */}
             <OfferForm directClinic={safeDirectClinic} />
           </div>
 
-          {/* RIGHT SIDEBAR */}
           <aside className={styles.side}>
             <div className={styles.sideCard}>
               <div className={styles.sideTitle}>Neden bu kadar hızlı?</div>
@@ -163,7 +157,29 @@ export default async function OfferPage({
               </div>
 
               <div className={styles.note}>
-                <strong>Not:</strong> Bu bir bilgilendirme formudur; tıbbi teşhis/tavsiye değildir.
+                <strong>Not:</strong> Bu platform teklif yönlendirme amaçlıdır; tıbbi teşhis/tavsiye değildir.
+                Kesin fiyat muayene sonrası ilgili klinik tarafından belirlenir.
+              </div>
+            </div>
+
+            <div className={styles.sideCard}>
+              <div className={styles.sideTitle}>Şeffaf Bilgilendirme</div>
+              <div className={styles.tipGrid}>
+                <div className={styles.tip}>🦷 Platform tedavi hizmeti sunmaz, teklif yönlendirmesi yapar.</div>
+                <div className={styles.tip}>📄 Kişisel veriler, talebine uygun kliniklerle paylaşılabilir.</div>
+                <div className={styles.tip}>🔒 Form gönderimi KVKK ve güvenlik kontrollerine tabidir.</div>
+              </div>
+
+              <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
+                <Link className={styles.sideBtn} href="/kvkk">
+                  KVKK Metni →
+                </Link>
+                <Link className={styles.sideBtnSoft} href="/gizlilik-politikasi">
+                  Gizlilik Politikası →
+                </Link>
+                <Link className={styles.sideBtnSoft} href="/kullanim-kosullari">
+                  Kullanım Koşulları →
+                </Link>
               </div>
             </div>
 
@@ -187,13 +203,13 @@ export default async function OfferPage({
           </aside>
         </div>
 
-        {/* FOOT STRIP */}
         <section className={styles.bottom}>
           <div className={styles.bottomCard}>
             <div>
               <div className={styles.bottomTitle}>Şeffaf ve hızlı iletişim</div>
               <div className={styles.bottomDesc}>
-                Formu gönderdikten sonra kliniklerden geri dönüş alırsın. Gerektiğinde WhatsApp ile iletişim kurarsın.
+                Formu gönderdikten sonra uygun kliniklerden geri dönüş alırsın. Gerektiğinde WhatsApp ile
+                iletişim kurarsın.
               </div>
             </div>
 
