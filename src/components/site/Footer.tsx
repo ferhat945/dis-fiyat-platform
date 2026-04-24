@@ -13,7 +13,7 @@ export default function Footer(): JSX.Element {
 
         <div>
           <div className="h2">Bağlantılar</div>
-          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+          <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
             <Link className="link" href="/kvkk">
               KVKK Metni
             </Link>
@@ -34,7 +34,9 @@ export default function Footer(): JSX.Element {
         </div>
       </div>
 
-      <div className="footer-bottom">© {new Date().getFullYear()} • Tüm hakları saklıdır.</div>
+      <div className="footer-bottom">
+        © {new Date().getFullYear()} • Tüm hakları saklıdır.
+      </div>
     </footer>
   );
 }

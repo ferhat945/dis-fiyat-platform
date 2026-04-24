@@ -2876,3 +2876,22 @@ img { max-width: 100%; height: auto; }
     border-radius: 14px !important;
   }
 }
+
+/* ===== Footer Compact Override ===== */
+
+.site-footer {
+  padding: 30px 20px !important;
+}
+
+.footer-grid {
+  gap: 20px !important;
+}
+
+.footer-bottom {
+  margin-top: 20px !important;
+}
+
+.site-footer .p {
+  margin-top: 6px;
+  line-height: 1.5;
+}
