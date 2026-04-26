@@ -2877,21 +2877,34 @@ img { max-width: 100%; height: auto; }
   }
 }
 
-/* ===== Footer Compact Override ===== */
 
-.site-footer {
-  padding: 30px 20px !important;
+
+
+/* ===== Teklif Al Butonu Dikkat Efekti ===== */
+
+@keyframes navCtaPulseGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    box-shadow:
+      0 0 18px rgba(59, 130, 246, 0.75),
+      0 0 34px rgba(14, 165, 233, 0.45);
+    transform: translateY(-1px) scale(1.035);
+    filter: brightness(1.12);
+  }
+
+  100% {
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
 }
 
-.footer-grid {
-  gap: 20px !important;
-}
-
-.footer-bottom {
-  margin-top: 20px !important;
-}
-
-.site-footer .p {
-  margin-top: 6px;
-  line-height: 1.5;
+.navCtaPulse {
+  animation: navCtaPulseGlow 1.7s ease-in-out infinite;
+  will-change: transform, box-shadow, filter;
 }

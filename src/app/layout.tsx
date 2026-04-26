@@ -71,7 +71,7 @@ export default function RootLayout({
                 <Link className="navLink" href="/kvkk">
                   KVKK
                 </Link>
-                <Link className="navCta" href="/teklif-al">
+                <Link className="navCta navCtaPulse" href="/teklif-al">
                   Teklif Al
                 </Link>
                 <Link className="navClinic" href="/login">
