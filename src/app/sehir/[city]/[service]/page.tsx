@@ -11,6 +11,7 @@ import {
 } from "@/lib/seo-data";
 import { cityServiceFaq } from "@/lib/seo-faq";
 import { breadcrumbsJsonLd, faqJsonLd } from "@/lib/seo-jsonld";
+import { getServiceSeoContent } from "@/lib/seo-service-content";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,6 @@ function webPageJsonLd(opts: {
   name: string;
   description: string;
 }): Record<string, unknown> {
-  // metadataBase sayesinde "/" ile başlayan URL’ler absolute’a dönüşür
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${c} ${s} Fiyatları | Teklif Al | DişFiyat360`,
-    description: `${c} içinde ${s} fiyatları hakkında bilgi al. KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.`,
+    description: `${c} ${s} fiyatları, tedavi süreci, fiyatı etkileyen faktörler ve KVKK onaylı teklif alma bilgileri. Kesin fiyat muayene sonrası netleşir.`,
     alternates: { canonical: `/sehir/${citySlug}/${serviceSlug}` },
     robots: { index: true, follow: true },
   };
@@ -102,14 +102,15 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
 
   const c = cityLabel(citySlug);
   const s = serviceLabel(serviceSlug);
-
   const urlPath = `/sehir/${citySlug}/${serviceSlug}`;
 
   const teklifHref = `/teklif-al?city=${encodeURIComponent(citySlug)}&service=${encodeURIComponent(
     serviceSlug
   )}`;
 
-  const faq = cityServiceFaq(citySlug, serviceSlug);
+  const serviceContent = getServiceSeoContent(c, serviceSlug);
+  const baseFaq = cityServiceFaq(citySlug, serviceSlug);
+  const faq = [...serviceContent.faqs, ...baseFaq].slice(0, 6);
 
   const breadcrumbs = breadcrumbsJsonLd([
     { name: "Anasayfa", path: "/" },
@@ -120,11 +121,10 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
 
   const faqLd = faqJsonLd(faq);
 
-  // ✅ Ek rich result: WebPage + HowTo
   const pageLd = webPageJsonLd({
     urlPath,
     name: `${c} ${s} fiyatları`,
-    description: `${c} içinde ${s} hakkında bilgi al ve KVKK onaylı form ile kliniklerden teklif iste.`,
+    description: `${c} içinde ${s} hakkında detaylı bilgi al ve KVKK onaylı form ile kliniklerden teklif iste.`,
   });
 
   const howToLd = howToJsonLd({
@@ -137,7 +137,6 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
 
   return (
     <main className={styles.wrap}>
-      {/* JSON-LD */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageLd) }} />
@@ -145,26 +144,25 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
 
       <div className={styles.container}>
         <div className={styles.topGrid}>
-          {/* HERO */}
-          <div className={styles.hero}>
+          <section className={styles.hero}>
             <div className={styles.kickers}>
-              <span className={styles.kicker}>Şehir / Hizmet</span>
-              <span className={`${styles.kicker} ${styles.kickerSoft}`}>KVKK Onaylı</span>
-              <span className={`${styles.kicker} ${styles.kickerSoft}`}>Ücretsiz</span>
+              <span className={styles.kicker}>📍 {c}</span>
+              <span className={styles.kicker}>🦷 {s}</span>
+              <span className={styles.kicker}>KVKK Onaylı</span>
+              <span className={styles.kicker}>Ücretsiz</span>
             </div>
 
             <h1 className={styles.title}>
-              {c} {s} fiyatları
+              {c} {s} fiyatları ve teklif alma rehberi
             </h1>
 
             <p className={styles.desc}>
-              {c} içinde {s} hakkında bilgi al, KVKK onaylı form ile kliniklerden teklif iste.{" "}
-              <strong>Kesin fiyat muayene sonrası netleşir.</strong>
+              {serviceContent.intro} <strong>Kesin fiyat muayene sonrası netleşir.</strong>
             </p>
 
             <div className={styles.actions}>
               <Link href={teklifHref} className={`${styles.btn} ${styles.btnPrimary}`}>
-                Teklif Al →
+                Ücretsiz Teklif Al →
               </Link>
               <Link href={`/sehir/${citySlug}`} className={styles.btn}>
                 {c} Hizmetleri
@@ -174,24 +172,23 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
               </Link>
             </div>
 
-            <div className={styles.noticeCard}>
-              <div className={styles.noticeTitle}>Bilgilendirme</div>
-              <div className={styles.noticeText}>
-                Bu sayfa bilgilendirme amaçlıdır. Kesin fiyat muayene ve gerekli görülürse görüntüleme sonrası netleşir.
-              </div>
+            <div className={styles.trustRow}>
+              <span>✅ 30 saniyede form</span>
+              <span>🔒 KVKK onaylı</span>
+              <span>📞 Uygun klinikler dönüş yapar</span>
             </div>
-          </div>
+          </section>
 
-          {/* SIDEBAR */}
           <aside className={styles.sidebar}>
             <div className={styles.sideCard}>
               <div className={styles.sideTitle}>Nasıl çalışır?</div>
               <div className={styles.sideSub}>3 adımda teklif al</div>
-              <ul className={styles.bullets}>
-                <li>Şehir / hizmet seç</li>
-                <li>KVKK onaylı formu doldur</li>
-                <li>Uygun klinikler iletişime geçsin</li>
-              </ul>
+
+              <div className={styles.steps}>
+                <div><strong>1</strong><span>Şehir ve hizmet seç</span></div>
+                <div><strong>2</strong><span>KVKK onaylı formu doldur</span></div>
+                <div><strong>3</strong><span>Uygun klinikler iletişime geçsin</span></div>
+              </div>
 
               <div className={styles.sideActions}>
                 <Link href={teklifHref} className={`${styles.btn} ${styles.btnPrimary}`}>
@@ -205,7 +202,7 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
 
             <div className={styles.sideCard}>
               <div className={styles.sideTitle}>{c} içinde diğer işlemler</div>
-              <div className={styles.sideSub}>İç link (SEO + UX)</div>
+              <div className={styles.sideSub}>Benzer hizmet sayfalarını incele</div>
 
               <div className={styles.sideLinks}>
                 {otherServices.map((os) => (
@@ -219,9 +216,58 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
           </aside>
         </div>
 
-        {/* FAQ */}
+        <section className={styles.contentSection}>
+          <div className={styles.contentCard}>
+            <div className={styles.sectionEyebrow}>Bilgilendirme</div>
+            <h2>{c} {s} hakkında</h2>
+            <p>{serviceContent.whatIs}</p>
+            <p>
+              {c} içinde {s} araştırırken yalnızca fiyatı değil; hekimin değerlendirmesi,
+              kullanılacak materyal, tedavi planı ve varsa ek işlem ihtiyacını da dikkate almak gerekir.
+              Bu nedenle DişFiyat360 üzerinde verilen bilgiler ön bilgilendirme niteliğindedir.
+            </p>
+          </div>
+
+          <div className={styles.contentGrid}>
+            <div className={styles.contentCard}>
+              <div className={styles.sectionEyebrow}>Süreç</div>
+              <h2>{s} nasıl uygulanır?</h2>
+              <p>{serviceContent.howItWorks}</p>
+            </div>
+
+            <div className={styles.contentCard}>
+              <div className={styles.sectionEyebrow}>Uygunluk</div>
+              <h2>Kimler için uygundur?</h2>
+              <p>{serviceContent.suitableFor}</p>
+            </div>
+          </div>
+
+          <div className={styles.contentCard}>
+            <div className={styles.sectionEyebrow}>Fiyat</div>
+            <h2>{c} {s} fiyatlarını etkileyen faktörler</h2>
+            <p>
+              {s} fiyatları sabit değildir. Aynı şehirdeki klinikler arasında bile kullanılan yöntem,
+              vaka durumu ve tedavi kapsamı değişebileceği için ücret farklılaşabilir.
+            </p>
+
+            <ul className={styles.factorList}>
+              {serviceContent.priceFactors.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={styles.noticeCard}>
+            <div className={styles.noticeTitle}>Önemli not</div>
+            <div className={styles.noticeText}>
+              Bu sayfa bilgilendirme amaçlıdır; tıbbi teşhis veya tedavi tavsiyesi yerine geçmez.
+              Kesin fiyat, muayene ve gerekli görülürse görüntüleme sonrası ilgili klinik tarafından belirlenir.
+            </div>
+          </div>
+        </section>
+
         <section className={styles.faq}>
-          <h2 className={styles.faqTitle}>Sık sorulan sorular</h2>
+          <h2 className={styles.faqTitle}>{c} {s} hakkında sık sorulan sorular</h2>
 
           <div className={styles.faqGrid}>
             {faq.map((f) => (
@@ -233,17 +279,16 @@ export default async function CityServiceLanding({ params }: PageProps): Promise
           </div>
         </section>
 
-        {/* FINAL CTA */}
         <div className={styles.cta}>
           <div>
-            <div className={styles.ctaTitle}>Teklif al</div>
+            <div className={styles.ctaTitle}>{c} için {s} teklifi al</div>
             <div className={styles.ctaDesc}>
-              {c} için {s} teklif formunu 30 saniyede doldur.
+              KVKK onaylı formu doldur, uygun klinikler seninle iletişime geçsin.
             </div>
           </div>
 
           <Link href={teklifHref} className={`${styles.btn} ${styles.btnPrimary}`}>
-            Teklif Al
+            Ücretsiz Teklif Al →
           </Link>
         </div>
       </div>
