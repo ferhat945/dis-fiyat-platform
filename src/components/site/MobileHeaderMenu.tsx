@@ -32,7 +32,7 @@ export default function MobileHeaderMenu({ siteName }: Props): React.ReactElemen
       </Link>
 
       <div className="mobileHeaderActions">
-        <Link className="mobileTopCta" href="/teklif-al" onClick={closeMenu}>
+        <Link className="mobileTopCta navCtaPulse" href="/teklif-al" onClick={closeMenu}>
           Teklif Al
         </Link>
 
