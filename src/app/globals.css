@@ -3178,3 +3178,227 @@ img { max-width: 100%; height: auto; }
   color: #bfdbfe;
   text-decoration: underline;
 }
+
+/* ===== Admin Login Modern UI ===== */
+
+.adminLoginPage {
+  min-height: calc(100vh - 260px);
+  padding: 56px 16px 72px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.16), transparent 34%),
+    radial-gradient(circle at 88% 18%, rgba(20, 184, 166, 0.14), transparent 32%);
+}
+
+.adminLoginShell {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.adminLoginBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
+  font-weight: 950;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.adminLoginHero h1 {
+  margin: 0;
+  font-size: 44px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.adminLoginHero p {
+  margin: 16px 0 0;
+  max-width: 560px;
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 16px;
+  line-height: 1.8;
+  font-weight: 700;
+}
+
+.adminLoginFeatures {
+  margin-top: 22px;
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.adminLoginFeatures div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.06);
+  color: rgba(15, 23, 42, 0.82);
+}
+
+.adminLoginFeatures span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(20, 184, 166, 0.14));
+}
+
+.adminLoginFeatures strong {
+  font-weight: 850;
+}
+
+.adminLoginCard {
+  border-radius: 30px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 28px 80px rgba(2, 6, 23, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.adminLoginCardHead {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.adminLoginIcon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(20, 184, 166, 0.14));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.adminLoginCard h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 950;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.adminLoginCard p {
+  margin: 6px 0 0;
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.adminLoginForm {
+  display: grid;
+  gap: 12px;
+}
+
+.adminLoginForm label {
+  display: grid;
+  gap: 7px;
+}
+
+.adminLoginForm label span {
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(15, 23, 42, 0.78);
+}
+
+.adminLoginForm input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  outline: none;
+  font-weight: 850;
+  background: rgba(248, 250, 252, 0.95);
+  color: #0f172a;
+}
+
+.adminLoginForm input:focus {
+  border-color: rgba(37, 99, 235, 0.36);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.adminLoginForm button {
+  margin-top: 4px;
+  padding: 13px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #fff;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 18px 38px rgba(37, 99, 235, 0.24);
+}
+
+.adminLoginForm button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.adminLoginError {
+  padding: 11px 12px;
+  border-radius: 16px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  color: #b91c1c;
+  font-weight: 850;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.adminLoginNote {
+  margin-top: 16px;
+  padding: 12px 13px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 750;
+}
+
+@media (max-width: 860px) {
+  .adminLoginPage {
+    padding: 28px 14px 44px;
+  }
+
+  .adminLoginShell {
+    max-width: 520px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .adminLoginHero h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .adminLoginHero h1 {
+    font-size: 32px;
+  }
+
+  .adminLoginCard {
+    padding: 18px;
+    border-radius: 24px;
+  }
+}
