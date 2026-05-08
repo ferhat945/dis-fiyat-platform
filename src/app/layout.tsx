@@ -46,7 +46,6 @@ export default function RootLayout({
       <body>
         <header className="siteHeader">
           <div className="siteHeaderInner">
-            {/* DESKTOP HEADER */}
             <div className="desktopHeaderBar">
               <Link href="/" className="brandPill" aria-label="Ana sayfa">
                 <span className="brandIcon" aria-hidden>
@@ -80,7 +79,6 @@ export default function RootLayout({
               </nav>
             </div>
 
-            {/* MOBILE HEADER */}
             <MobileHeaderMenu siteName={SITE_NAME} />
           </div>
         </header>
@@ -96,19 +94,13 @@ export default function RootLayout({
                 </span>
                 {SITE_NAME}
               </div>
+
               <div className="footerText">
                 KVKK onaylı form ile kliniklerden teklif al.{" "}
                 <strong>Kesin fiyat muayene sonrası netleşir.</strong>
               </div>
-              <div
-                style={{
-                  marginTop: 12,
-                  fontSize: 13,
-                  lineHeight: 1.7,
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 700,
-                }}
-              >
+
+              <div className="footerBusinessInfo">
                 İşletme Sahibi: <strong>Ferhat Menekşe</strong>
                 <br />
                 Vergi No: <strong>6150625779</strong>
@@ -145,7 +137,9 @@ export default function RootLayout({
                 <Link href="/gizlilik-politikasi">Gizlilik Politikası</Link>
                 <Link href="/cerez-politikasi">Çerez Politikası</Link>
                 <Link href="/kullanim-kosullari">Kullanım Koşulları</Link>
-                <Link href="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
+                <Link href="/mesafeli-satis-sozlesmesi">
+                  Mesafeli Satış Sözleşmesi
+                </Link>
                 <Link href="/iptal-iade">İptal ve İade Politikası</Link>
               </div>
             </div>

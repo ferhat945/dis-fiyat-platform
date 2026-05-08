@@ -3152,3 +3152,29 @@ img { max-width: 100%; height: auto; }
     flex-direction: column;
   }
 }
+
+/* ===== Footer işletme bilgileri görünür renk ===== */
+
+.footerBusinessInfo {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+}
+
+.footerBusinessInfo strong {
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.footerBusinessInfo a {
+  color: #93c5fd;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.footerBusinessInfo a:hover {
+  color: #bfdbfe;
+  text-decoration: underline;
+}
