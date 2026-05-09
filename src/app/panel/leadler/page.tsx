@@ -120,8 +120,8 @@ export default async function PanelLeadsPage({
     fullName: l.fullName,
     phone: l.phone,
     status: l.status as LeadStatus,
-    clinicNote: l.clinicNote,
-    lastContactAt: l.lastContactAt,
+    clinicNote: null,
+    lastContactAt: null,
     createdAt: l.createdAt,
   }));
 
