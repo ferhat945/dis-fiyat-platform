@@ -39,6 +39,11 @@ function normalizeStatus(v: string | undefined): LeadStatus | "all" {
   return "all";
 }
 
+function safeStatus(v: string): LeadStatus {
+  if (v === "new" || v === "contacted" || v === "won" || v === "lost") return v;
+  return "new";
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -70,60 +75,76 @@ export default async function PanelLeadsPage({
 
   const now = new Date();
 
-  const activeSub = await prisma.subscription.findFirst({
-    where: {
-      clinicId: session.clinicId,
-      status: "active",
-      expiresAt: { gt: new Date() },
-    },
-    orderBy: { startedAt: "desc" },
-    select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
-  });
+  let activeSub: {
+    quotaTotal: number;
+    quotaUsed: number;
+    expiresAt: Date;
+  } | null = null;
+
+  let rows: Row[] = [];
+  let loadError: string | null = null;
+
+  const q = normalizeQuery(sp.q);
+  const statusFilter = normalizeStatus(sp.status);
+
+  try {
+    activeSub = await prisma.subscription.findFirst({
+      where: {
+        clinicId: session.clinicId,
+        status: "active",
+        expiresAt: { gt: now },
+      },
+      orderBy: { startedAt: "desc" },
+      select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
+    });
+  } catch (e) {
+    console.error("PANEL_LEADLER_SUBSCRIPTION_ERROR", e);
+  }
+
+  try {
+    const leads = await prisma.lead.findMany({
+      where: {
+        assignments: { some: { clinicId: session.clinicId } },
+        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+        ...(q
+          ? {
+              OR: [{ fullName: { contains: q } }, { phone: { contains: q } }],
+            }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        city: true,
+        service: true,
+        fullName: true,
+        phone: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    rows = leads.map((l) => ({
+      id: l.id,
+      city: l.city,
+      service: l.service,
+      fullName: l.fullName,
+      phone: l.phone,
+      status: safeStatus(l.status),
+      clinicNote: null,
+      lastContactAt: null,
+      createdAt: l.createdAt,
+    }));
+  } catch (e) {
+    console.error("PANEL_LEADLER_LEADS_ERROR", e);
+    loadError = "Leadler şu an yüklenemedi. Panelin diğer alanlarını kullanmaya devam edebilirsin.";
+  }
 
   const quotaTotal = activeSub?.quotaTotal ?? 0;
   const quotaUsed = activeSub?.quotaUsed ?? 0;
   const remaining = Math.max(0, quotaTotal - quotaUsed);
   const quotaPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
-
-  const q = normalizeQuery(sp.q);
-  const statusFilter = normalizeStatus(sp.status);
-
-  const leads = await prisma.lead.findMany({
-    where: {
-      assignments: { some: { clinicId: session.clinicId } },
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...(q
-        ? {
-            OR: [{ fullName: { contains: q } }, { phone: { contains: q } }],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      city: true,
-      service: true,
-      fullName: true,
-      phone: true,
-      status: true,
-      clinicNote: true,
-      lastContactAt: true,
-      createdAt: true,
-    },
-  });
-
-  const rows: Row[] = leads.map((l) => ({
-    id: l.id,
-    city: l.city,
-    service: l.service,
-    fullName: l.fullName,
-    phone: l.phone,
-    status: l.status as LeadStatus,
-    clinicNote: null,
-    lastContactAt: null,
-    createdAt: l.createdAt,
-  }));
 
   const buildHref = (next: { status?: string; q?: string }): string => {
     const params = new URLSearchParams();
@@ -139,7 +160,6 @@ export default async function PanelLeadsPage({
 
   return (
     <div className="panelWrap">
-      {/* Header */}
       <div className="panelHeader">
         <div className="panelHeaderLeft">
           <div className="panelKicker">📥 Leadler</div>
@@ -159,7 +179,15 @@ export default async function PanelLeadsPage({
         </div>
       </div>
 
-      {/* Quota card */}
+      {loadError ? (
+        <div className="panelCard">
+          <div className="panelCardTitle">⚠️ Leadler yüklenemedi</div>
+          <div className="panelCardSub" style={{ marginTop: 8 }}>
+            {loadError}
+          </div>
+        </div>
+      ) : null}
+
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
@@ -199,7 +227,6 @@ export default async function PanelLeadsPage({
         ) : null}
       </div>
 
-      {/* Filters */}
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
@@ -229,7 +256,7 @@ export default async function PanelLeadsPage({
           </div>
 
           <form action="/panel/leadler" method="GET" className="panelSearchRow">
-            {statusFilter !== "all" && <input type="hidden" name="status" value={statusFilter} />}
+            {statusFilter !== "all" ? <input type="hidden" name="status" value={statusFilter} /> : null}
 
             <input
               name="q"
@@ -250,9 +277,10 @@ export default async function PanelLeadsPage({
         </div>
       </div>
 
-      {/* List */}
       {rows.length === 0 ? (
-        <div className="panelEmpty">Bu filtrede lead yok.</div>
+        <div className="panelEmpty">
+          {loadError ? "Leadler yüklenemedi." : "Bu filtrede lead yok."}
+        </div>
       ) : (
         <div className="panelCard">
           <div className="panelCardHead">
@@ -282,13 +310,8 @@ export default async function PanelLeadsPage({
                     <span className="panelChip">📍 {r.city}</span>
                     <span className="panelChip panelChipSoft">🦷 {r.service}</span>
 
-                    <span className="panelChip panelChipMuted">
-                      Son arama: {r.lastContactAt ? formatTR(r.lastContactAt) : "—"}
-                    </span>
-
-                    <span className="panelChip panelChipMuted">
-                      Not: {r.clinicNote && r.clinicNote.trim().length > 0 ? "📝 Var" : "—"}
-                    </span>
+                    <span className="panelChip panelChipMuted">Son arama: —</span>
+                    <span className="panelChip panelChipMuted">Not: —</span>
                   </div>
                 </div>
 
