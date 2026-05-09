@@ -26,7 +26,6 @@ function formatTR(dt: Date): string {
 }
 
 function formatDayLabel(dt: Date): string {
-  // "23 Şub" gibi kısa
   return dt.toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
 }
 
@@ -41,7 +40,6 @@ function addDays(d: Date, days: number): Date {
 }
 
 function isNewLead(l: LeadRow, now: Date): boolean {
-  // Yeni badge: son 6 saat + status "new" ise
   const diff = now.getTime() - l.createdAt.getTime();
   const sixHours = 6 * 60 * 60 * 1000;
   return l.status === "new" && diff >= 0 && diff <= sixHours;
@@ -49,23 +47,23 @@ function isNewLead(l: LeadRow, now: Date): boolean {
 
 function buildSparkPath(values: number[], w: number, h: number, pad: number): string {
   if (values.length === 0) return "";
+
   const maxV = Math.max(...values, 1);
   const minV = Math.min(...values, 0);
 
   const usableW = w - pad * 2;
   const usableH = h - pad * 2;
-
   const den = maxV - minV || 1;
 
   const pts = values.map((v, i) => {
     const x = pad + (usableW * i) / Math.max(1, values.length - 1);
-    const t = (v - minV) / den; // 0..1
+    const t = (v - minV) / den;
     const y = pad + usableH * (1 - t);
     return { x, y };
   });
 
-  // Basit yumuşatma: Q curve
   let d = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+
   for (let i = 1; i < pts.length; i++) {
     const prev = pts[i - 1];
     const cur = pts[i];
@@ -73,7 +71,7 @@ function buildSparkPath(values: number[], w: number, h: number, pad: number): st
     const cy = ((prev.y + cur.y) / 2).toFixed(2);
     d += ` Q ${prev.x.toFixed(2)} ${prev.y.toFixed(2)} ${cx} ${cy}`;
   }
-  // son noktaya line
+
   const last = pts[pts.length - 1];
   d += ` T ${last.x.toFixed(2)} ${last.y.toFixed(2)}`;
 
@@ -86,36 +84,74 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
   const now = new Date();
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const activeSub = await prisma.subscription.findFirst({
-    where: { clinicId: session.clinicId, status: "active", expiresAt: { gt: now } },
-    orderBy: { startedAt: "desc" },
-    select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
-  });
+  let activeSub: {
+    quotaTotal: number;
+    quotaUsed: number;
+    expiresAt: Date;
+  } | null = null;
+
+  let assignments14d: Array<{ createdAt: Date }> = [];
+  let todayLeadCount = 0;
+  let lastLeads: LeadRow[] = [];
+  let coverageCount = 0;
+
+  try {
+    activeSub = await prisma.subscription.findFirst({
+      where: {
+        clinicId: session.clinicId,
+        status: "active",
+        expiresAt: { gt: now },
+      },
+      orderBy: { startedAt: "desc" },
+      select: {
+        quotaTotal: true,
+        quotaUsed: true,
+        expiresAt: true,
+      },
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_SUBSCRIPTION_ERROR", e);
+  }
 
   const quotaTotal = activeSub?.quotaTotal ?? 0;
   const quotaUsed = activeSub?.quotaUsed ?? 0;
   const remaining = Math.max(0, quotaTotal - quotaUsed);
-  const quotaPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
+  const quotaPct =
+    quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
 
-  // 14 günlük trend (atama bazlı) + 24 saat lead sayısı + son leadler + aktif coverage
   const trendDays = 14;
   const startDay = startOfDayLocal(addDays(now, -(trendDays - 1)));
   const endDay = addDays(startOfDayLocal(now), 1);
 
-  const [assignments14d, todayLeadCount, lastLeads, coverageCount] = await Promise.all([
-    prisma.leadAssignment.findMany({
-      where: { clinicId: session.clinicId, createdAt: { gte: startDay, lt: endDay } },
+  try {
+    assignments14d = await prisma.leadAssignment.findMany({
+      where: {
+        clinicId: session.clinicId,
+        createdAt: { gte: startDay, lt: endDay },
+      },
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
-    }),
-    prisma.lead.count({
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_ASSIGNMENTS_ERROR", e);
+  }
+
+  try {
+    todayLeadCount = await prisma.lead.count({
       where: {
         createdAt: { gte: since24h },
         assignments: { some: { clinicId: session.clinicId } },
       },
-    }),
-    prisma.lead.findMany({
-      where: { assignments: { some: { clinicId: session.clinicId } } },
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_TODAY_COUNT_ERROR", e);
+  }
+
+  try {
+    lastLeads = await prisma.lead.findMany({
+      where: {
+        assignments: { some: { clinicId: session.clinicId } },
+      },
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
@@ -127,12 +163,24 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
         status: true,
         createdAt: true,
       },
-    }),
-    prisma.clinicCoverage.count({ where: { clinicId: session.clinicId, isActive: true } }),
-  ]);
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_LAST_LEADS_ERROR", e);
+  }
 
-  // 14 günlük seri oluştur (boş günleri 0 doldur)
+  try {
+    coverageCount = await prisma.clinicCoverage.count({
+      where: {
+        clinicId: session.clinicId,
+        isActive: true,
+      },
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_COVERAGE_ERROR", e);
+  }
+
   const map = new Map<string, number>();
+
   for (const a of assignments14d) {
     const d = startOfDayLocal(a.createdAt);
     const key = d.toISOString().slice(0, 10);
@@ -140,6 +188,7 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
   }
 
   const series: DailyPoint[] = [];
+
   for (let i = 0; i < trendDays; i++) {
     const d = addDays(startDay, i);
     const key = d.toISOString().slice(0, 10);
@@ -180,7 +229,6 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
         </div>
       </div>
 
-      {/* Stat cards */}
       <div className="panelGrid3">
         <div className="panelStatCard">
           <div className="panelStatTop">
@@ -231,7 +279,8 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
             Kalan: <strong>{remaining}</strong>{" "}
             {hasActiveSub ? (
               <>
-                • Bitiş: <strong>{activeSub?.expiresAt ? formatTR(activeSub.expiresAt) : "—"}</strong>
+                • Bitiş:{" "}
+                <strong>{activeSub?.expiresAt ? formatTR(activeSub.expiresAt) : "—"}</strong>
               </>
             ) : (
               <>• Lead almak için abonelik gerekli</>
@@ -246,7 +295,6 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
         </div>
       </div>
 
-      {/* ✅ Kota bitince agresif yenile kartı */}
       {hasActiveSub && remaining <= 0 ? (
         <div className="panelQuotaAlert">
           <div>
@@ -262,7 +310,6 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
         </div>
       ) : null}
 
-      {/* Trend chart */}
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
@@ -285,14 +332,12 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
             role="img"
             aria-label="Lead trend grafiği"
           >
-            {/* grid lines */}
             <g opacity={0.18}>
               <line x1="0" y1={sparkH - 1} x2={sparkW} y2={sparkH - 1} stroke="currentColor" />
               <line x1="0" y1={sparkH * 0.66} x2={sparkW} y2={sparkH * 0.66} stroke="currentColor" />
               <line x1="0" y1={sparkH * 0.33} x2={sparkW} y2={sparkH * 0.33} stroke="currentColor" />
             </g>
 
-            {/* area fill */}
             {pathD ? (
               <>
                 <path
@@ -326,7 +371,6 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
         </div>
       </div>
 
-      {/* Recent leads */}
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
