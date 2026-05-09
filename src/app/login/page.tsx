@@ -26,7 +26,7 @@ export default function PanelLoginPage(): JSX.Element {
         return;
       }
 
-      window.location.href = "/panel/leadler";
+      window.location.href = "/panel";
     } catch {
       setErr("Giriş sırasında hata oluştu.");
     } finally {
