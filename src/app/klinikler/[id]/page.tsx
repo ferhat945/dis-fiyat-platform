@@ -50,6 +50,7 @@ function clinicPublicSlug(name: string, id: string): string {
 function instagramHandleFromValue(value: string): string {
   const raw = (value ?? "").trim();
   if (!raw) return "Instagram";
+
   try {
     const u = new URL(raw);
     const p = u.pathname.replace(/^\/+|\/+$/g, "");
@@ -65,8 +66,10 @@ function instagramHrefFromValue(value: string): string {
   const raw = (value ?? "").trim();
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
+
   const v = raw.replace(/^@+/, "");
   if (!v) return "";
+
   return `https://www.instagram.com/${v}/`;
 }
 
@@ -77,8 +80,10 @@ function pickPrimaryCity(coverages: Array<{ city: string }>): string {
 
 function formatTRDateTime(d: Date | string | null | undefined): string {
   if (!d) return "";
+
   const dt = typeof d === "string" ? new Date(d) : d;
   if (Number.isNaN(dt.getTime())) return "";
+
   return dt.toLocaleString("tr-TR");
 }
 
@@ -94,11 +99,9 @@ function currencySymbol(code: string): string {
   return c || "₺";
 }
 
-/**
- * SEO/UX: Hizmet slug'larını kullanıcı dostu label'a çevir.
- */
 function serviceLabel(slug: string): string {
   const s = (slug ?? "").trim().toLowerCase();
+
   const map: Record<string, string> = {
     implant: "İmplant",
     zirkonyum: "Zirkonyum Kaplama",
@@ -140,7 +143,10 @@ function serviceCategory(slug: string): string {
     { test: (v) => v.includes("implant"), label: "İmplant" },
     { test: (v) => v.includes("kanal"), label: "Kanal" },
     { test: (v) => v.includes("dolgu"), label: "Dolgu" },
-    { test: (v) => v.includes("zirkonyum") || v.includes("porselen") || v.includes("lamina"), label: "Kaplama" },
+    {
+      test: (v) => v.includes("zirkonyum") || v.includes("porselen") || v.includes("lamina"),
+      label: "Kaplama",
+    },
     { test: (v) => v.includes("cekimi") || v.includes("çekimi"), label: "Cerrahi" },
     { test: (v) => v.includes("ortodonti") || v.includes("tel"), label: "Ortodonti" },
     { test: (v) => v.includes("beyazlatma"), label: "Estetik" },
@@ -152,7 +158,6 @@ function serviceCategory(slug: string): string {
   return found?.label ?? "Diş";
 }
 
-/** JSON-LD helpers */
 function breadcrumbsJsonLd(items: Array<{ name: string; item: string }>): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -196,7 +201,13 @@ function howToJsonLd(opts: { url: string; name: string; description: string }): 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const clinicId = parseClinicIdFromSlug(id);
-  if (!clinicId) return { title: "Klinik | DişFiyat360", robots: { index: false, follow: false } };
+
+  if (!clinicId) {
+    return {
+      title: "Klinik | DişFiyat360",
+      robots: { index: false, follow: false },
+    };
+  }
 
   const clinic = await prisma.clinic.findUnique({
     where: { id: clinicId },
@@ -204,7 +215,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 
   if (!clinic || !clinic.isActive) {
-    return { title: "Klinik bulunamadı", robots: { index: false, follow: false } };
+    return {
+      title: "Klinik bulunamadı",
+      robots: { index: false, follow: false },
+    };
   }
 
   const canonicalSlug = clinicPublicSlug(clinic.name, clinic.id);
@@ -227,6 +241,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ClinicDetailPage({ params }: PageProps): Promise<JSX.Element> {
   const { id } = await params;
   const clinicId = parseClinicIdFromSlug(id);
+
   if (!clinicId) notFound();
 
   const now = new Date();
@@ -270,6 +285,33 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
 
   if (!clinic || !clinic.isActive) notFound();
 
+  const viewDay = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+
+  try {
+    await prisma.clinicPageView.upsert({
+      where: {
+        clinicId_day: {
+          clinicId: clinic.id,
+          day: viewDay,
+        },
+      },
+      create: {
+        clinicId: clinic.id,
+        day: viewDay,
+        count: 1,
+      },
+      update: {
+        count: {
+          increment: 1,
+        },
+      },
+    });
+  } catch (e) {
+    console.error("CLINIC_PROFILE_VIEW_COUNT_ERROR", e);
+  }
+
   const canonicalSlug = clinicPublicSlug(clinic.name, clinic.id);
   const canonicalUrlPath = `/klinikler/${encodeURIComponent(canonicalSlug)}`;
 
@@ -281,12 +323,14 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
   const primaryCity = pickPrimaryCity(coverages.map((x) => ({ city: x.city })));
   const primaryCityLabel = primaryCity ? cityLabel(primaryCity) : "—";
 
-  // coverages grouped by city
   const cityMap = new Map<string, CoverageRow[]>();
+
   for (const c of coverages) {
     const city = (c.city ?? "").trim();
     const service = (c.service ?? "").trim();
+
     if (!city || !service) continue;
+
     const arr = cityMap.get(city) ?? [];
     arr.push(c);
     cityMap.set(city, arr);
@@ -294,18 +338,27 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
 
   const groupedCoverages = Array.from(cityMap.entries()).map(([city, rows]) => {
     const uniq = new Map<string, CoverageRow>();
-    for (const r of rows) uniq.set(r.service, r);
-    const services = Array.from(uniq.values()).sort((a, b) => a.service.localeCompare(b.service, "tr"));
+
+    for (const r of rows) {
+      uniq.set(r.service, r);
+    }
+
+    const services = Array.from(uniq.values()).sort((a, b) =>
+      a.service.localeCompare(b.service, "tr")
+    );
+
     return { city, services };
   });
 
-  // price ranges grouped by city
   const prs: PriceRangeRow[] = (clinic.priceRanges ?? []) as PriceRangeRow[];
   const prMap = new Map<string, PriceRangeRow[]>();
+
   for (const pr of prs) {
     const city = (pr.city ?? "").trim();
     const service = (pr.service ?? "").trim();
+
     if (!city || !service) continue;
+
     const arr = prMap.get(city) ?? [];
     arr.push(pr);
     prMap.set(city, arr);
@@ -313,10 +366,12 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
 
   const groupedPrices = Array.from(prMap.entries()).map(([city, items]) => {
     const sorted = [...items].sort((a, b) => a.service.localeCompare(b.service, "tr"));
+
     const latest = sorted.reduce<Date | null>((acc, x) => {
       if (!acc) return x.updatedAt;
       return x.updatedAt > acc ? x.updatedAt : acc;
     }, null);
+
     return { city, items: sorted, latestUpdatedAt: latest };
   });
 
@@ -324,12 +379,10 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
   const igHref = igRaw ? instagramHrefFromValue(igRaw) : "";
   const igLabel = igRaw ? instagramHandleFromValue(igRaw) : "";
 
-  // ✅ DIRECT başvuru linki (lead seçilen kliniğe gitsin)
   const directOfferHref = `/teklif-al?clinicId=${encodeURIComponent(clinic.id)}`;
   const generalOfferHref = "/teklif-al";
   const ctaHref = isOpen ? directOfferHref : generalOfferHref;
 
-  // ✅ Rich results JSON-LD
   const dentistLd = {
     "@context": "https://schema.org",
     "@type": "Dentist",
@@ -367,7 +420,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }} />
 
-      {/* TOP BAR */}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ opacity: 0.8, fontWeight: 900 }}>
           <Link href="/klinikler" style={{ textDecoration: "none", color: "#111" }}>
@@ -413,7 +465,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
         </div>
       </div>
 
-      {/* HERO */}
       <div
         style={{
           marginTop: 14,
@@ -435,7 +486,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
               alignItems: "start",
             }}
           >
-            {/* LEFT */}
             <div>
               <h1 style={{ margin: 0, fontSize: 34, lineHeight: 1.1, fontWeight: 950 }}>
                 {clinic.name}
@@ -493,7 +543,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                 </span>
               </div>
 
-              {/* CONTACT + CTA CARD */}
               <div
                 style={{
                   marginTop: 12,
@@ -587,6 +636,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                     <div style={{ fontWeight: 950, color: "rgba(124,45,18,0.95)" }}>
                       Şu an direkt başvuru alınmıyor
                     </div>
+
                     <div style={{ fontWeight: 800, opacity: 0.85, lineHeight: 1.6 }}>
                       Dilersen genel formdan başvuru bırakabilirsin; uygun klinikler seni arar.
                     </div>
@@ -612,7 +662,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
               </div>
             </div>
 
-            {/* RIGHT INFO */}
             <div
               style={{
                 borderRadius: 20,
@@ -624,6 +673,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
               }}
             >
               <div style={{ fontWeight: 950 }}>Bu sayfa ne işe yarar?</div>
+
               <ul
                 style={{
                   margin: 0,
@@ -640,6 +690,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
               </ul>
 
               <div style={{ marginTop: 10, fontWeight: 950 }}>Hızlı linkler</div>
+
               <div style={{ display: "grid", gap: 8 }}>
                 {[
                   { href: "/sehir", label: "Şehirler →" },
@@ -668,9 +719,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
         </div>
       </div>
 
-      {/* COVERAGES + PRICES */}
       <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
-        {/* COVERAGES */}
         <section
           style={{
             borderRadius: 22,
@@ -704,7 +753,9 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
           </div>
 
           {groupedCoverages.length === 0 ? (
-            <div style={{ marginTop: 12, opacity: 0.75, fontWeight: 850 }}>Bu klinik için kapsam bilgisi yok.</div>
+            <div style={{ marginTop: 12, opacity: 0.75, fontWeight: 850 }}>
+              Bu klinik için kapsam bilgisi yok.
+            </div>
           ) : (
             <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
               {groupedCoverages.map((g) => (
@@ -739,7 +790,10 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                       >
                         📍 {cityLabel(g.city)}
                       </span>
-                      <span style={{ opacity: 0.72, fontWeight: 850, fontSize: 13 }}>{g.services.length} hizmet</span>
+
+                      <span style={{ opacity: 0.72, fontWeight: 850, fontSize: 13 }}>
+                        {g.services.length} hizmet
+                      </span>
                     </div>
 
                     <span
@@ -794,6 +848,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                           >
                             {cat}
                           </span>
+
                           <span>{sLabel}</span>
                           <span style={{ opacity: 0.6, fontWeight: 900 }}>↗</span>
                         </Link>
@@ -806,7 +861,6 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
           )}
         </section>
 
-        {/* PRICE RANGES */}
         <section
           style={{
             borderRadius: 22,
@@ -874,7 +928,9 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                   >
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                       <div style={{ fontWeight: 950, fontSize: 14 }}>📍 {cityLabel(g.city)}</div>
-                      <span style={{ opacity: 0.7, fontWeight: 850, fontSize: 12 }}>{g.items.length} kalem</span>
+                      <span style={{ opacity: 0.7, fontWeight: 850, fontSize: 12 }}>
+                        {g.items.length} kalem
+                      </span>
                     </div>
 
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -891,6 +947,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                       >
                         🧾 Tahmini
                       </span>
+
                       {g.latestUpdatedAt ? (
                         <span style={{ opacity: 0.65, fontWeight: 800, fontSize: 12 }}>
                           Son güncelleme: {formatTRDateTime(g.latestUpdatedAt)}
@@ -934,6 +991,7 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
                             >
                               {cat}
                             </span>
+
                             <div style={{ fontWeight: 950, fontSize: 14 }}>{sLabel}</div>
                           </div>
 
@@ -970,16 +1028,15 @@ export default async function ClinicDetailPage({ params }: PageProps): Promise<J
         </div>
       </div>
 
-      {/* Responsive */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          @media (max-width: 980px){
-            .clinicHeroGrid{
-              grid-template-columns: 1fr !important;
+            @media (max-width: 980px){
+              .clinicHeroGrid{
+                grid-template-columns: 1fr !important;
+              }
             }
-          }
-        `,
+          `,
         }}
       />
     </main>
