@@ -32,7 +32,7 @@ export default function RegisterPage(): JSX.Element {
           email,
           phone,
           password,
-          website: "", // honeypot
+          website: "",
         }),
       });
 
@@ -40,6 +40,7 @@ export default function RegisterPage(): JSX.Element {
 
       if (!r.ok || !j.ok) {
         const code = j.ok ? "UNKNOWN" : j.code;
+
         if (code === "EMAIL_ALREADY_EXISTS") {
           setErr("Bu email zaten kayıtlı. Giriş yapmayı deneyin.");
         } else if (code === "VALIDATION_ERROR") {
@@ -47,12 +48,11 @@ export default function RegisterPage(): JSX.Element {
         } else {
           setErr("Kayıt başarısız: " + code);
         }
+
         return;
       }
 
       setOkMsg("✅ Başvurun alındı. Admin onayından sonra giriş yapabileceksin.");
-      // İstersen otomatik login sayfasına da atabiliriz:
-      // setTimeout(() => (window.location.href = "/login"), 900);
     } catch {
       setErr("Kayıt sırasında hata oluştu.");
     } finally {
@@ -61,68 +61,106 @@ export default function RegisterPage(): JSX.Element {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "60px auto", padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 12 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Klinik Kayıt</h1>
-        <Link href="/login" style={{ textDecoration: "none", opacity: 0.8 }}>
-          Giriş →
-        </Link>
+    <section className="clinicRegisterPage">
+      <div className="clinicRegisterGrid">
+        <div className="clinicRegisterHero">
+          <div className="clinicRegisterBadge">🏥 Klinik Başvurusu</div>
+
+          <h1>DişFiyat360 klinik ağına katıl.</h1>
+
+          <p>
+            Kliniğini kaydet, admin onayından sonra paneline giriş yaparak leadleri,
+            hizmet bölgelerini ve abonelik sürecini yönet.
+          </p>
+
+          <div className="clinicRegisterFeatures">
+            <div>
+              <span>📥</span>
+              <strong>Yeni hasta taleplerini takip et</strong>
+            </div>
+
+            <div>
+              <span>📍</span>
+              <strong>Şehir ve hizmet kapsamını belirle</strong>
+            </div>
+
+            <div>
+              <span>🔒</span>
+              <strong>KVKK onaylı başvuru akışı</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="clinicRegisterCard">
+          <div className="clinicRegisterTop">
+            <div>
+              <h2>Klinik Kayıt</h2>
+              <p>Başvurunu oluştur, admin onayından sonra giriş yap.</p>
+            </div>
+
+            <Link href="/login" className="clinicRegisterLoginLink">
+              Giriş →
+            </Link>
+          </div>
+
+          <div className="clinicRegisterInfo">
+            Kayıt sonrası hesabın <strong>beklemede</strong> oluşturulur. Admin onayından sonra
+            giriş yapabilirsin.
+          </div>
+
+          <form onSubmit={onSubmit} className="clinicRegisterForm">
+            <label>
+              <span>Klinik Adı</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Klinik Adı"
+                autoComplete="organization"
+              />
+            </label>
+
+            <label>
+              <span>Email</span>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="klinik@email.com"
+                type="email"
+                autoComplete="email"
+              />
+            </label>
+
+            <label>
+              <span>Telefon</span>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Telefon (opsiyonel)"
+                type="tel"
+                autoComplete="tel"
+              />
+            </label>
+
+            <label>
+              <span>Şifre</span>
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Şifre"
+                type="password"
+                autoComplete="new-password"
+              />
+            </label>
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Kaydediliyor..." : "Kayıt Ol →"}
+            </button>
+
+            {okMsg ? <div className="clinicRegisterSuccess">{okMsg}</div> : null}
+            {err ? <div className="clinicRegisterError">{err}</div> : null}
+          </form>
+        </div>
       </div>
-
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, marginBottom: 12, opacity: 0.85 }}>
-        Kayıt sonrası hesabın <strong>beklemede</strong> oluşturulur. Admin onayından sonra giriş yapabilirsin.
-      </div>
-
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Klinik Adı"
-          style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8 }}
-        />
-
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          type="email"
-          style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8 }}
-        />
-
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Telefon (opsiyonel)"
-          style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8 }}
-        />
-
-        <input
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Şifre"
-          type="password"
-          style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8 }}
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #111",
-            background: "#111",
-            color: "#fff",
-            fontWeight: 700,
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
-        >
-          {loading ? "Kaydediliyor..." : "Kayıt Ol"}
-        </button>
-
-        {okMsg && <div style={{ fontWeight: 800 }}>{okMsg}</div>}
-        {err && <div style={{ color: "crimson" }}>{err}</div>}
-      </form>
-    </div>
+    </section>
   );
 }
