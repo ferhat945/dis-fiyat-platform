@@ -21,55 +21,15 @@ export default function DistanceSalesPage(): JSX.Element {
               </h1>
 
               <p className="heroDesc" style={{ maxWidth: 760 }}>
-                Bu sözleşme, DişFiyat360 platformu üzerinden sunulan dijital abonelik ve platform hizmetlerine
-                ilişkin koşulları düzenler.
+                Bu sözleşme, DişFiyat360 platformu üzerinden kliniklere sunulan
+                dijital abonelik, panel erişimi, görünürlük ve lead yönetimi
+                hizmetlerine ilişkin koşulları düzenler.
               </p>
 
               <div className="section">
                 <div className="sectionBox" style={{ background: "rgba(255,255,255,0.82)" }}>
                   <div style={{ display: "grid", gap: 12 }}>
-                    {[
-                      {
-                        title: "1) Taraflar",
-                        text:
-                          "Satıcı/Hizmet Sağlayıcı: Ferhat Menekşe – Vergi No: 6150625779 – Adres: Dumlupınar Mahallesi 38007 Sokak No:4 – Telefon: 0531 917 17 39 – E-posta: ferhatmenekse945@gmail.com. Alıcı: Platform üzerinden dijital abonelik veya platform hizmeti satın alan gerçek veya tüzel kişi klinik/işletmedir.",
-                      },
-                      {
-                        title: "2) Sözleşmenin Konusu",
-                        text:
-                          "İşbu sözleşmenin konusu, alıcının elektronik ortamda sipariş verdiği DişFiyat360 platformu kapsamındaki dijital üyelik, abonelik, görünürlük, panel erişimi, lead yönetimi veya benzeri dijital hizmetlerin satış ve kullanım şartlarının belirlenmesidir.",
-                      },
-                      {
-                        title: "3) Hizmetin Niteliği",
-                        text:
-                          "Satın alınan hizmet, fiziksel bir ürün değil; dijital platform erişimi, abonelik ve yazılım hizmetidir. Platform, kliniklerin panel kullanımı, lead görüntüleme, kapsam tanımlama ve benzeri dijital imkanlardan yararlanmasını sağlayabilir.",
-                      },
-                      {
-                        title: "4) Süre",
-                        text:
-                          "Abonelik veya paket süresi, ödeme ekranında belirtilen dönem boyunca geçerlidir. Aksi açıkça belirtilmedikçe hizmet süresi 1 aylık kullanım dönemi esasına göre değerlendirilir.",
-                      },
-                      {
-                        title: "5) Ücret ve Ödeme",
-                        text:
-                          "Hizmet bedeli, ödeme aşamasında kullanıcıya gösterilen tutardır. Ödeme, anlaşmalı ödeme altyapısı üzerinden güvenli şekilde tahsil edilir. Satıcı, fiyatlarda değişiklik yapma hakkını saklı tutar; ancak değişiklikler mevcut satın alma işlemini geriye dönük etkilemez.",
-                      },
-                      {
-                        title: "6) Hizmetin İfası",
-                        text:
-                          "Dijital hizmet, ödemenin onaylanmasının ardından makul süre içinde aktif hale getirilir veya ilgili hesap/panel erişimi kullanım durumuna getirilir. Hizmetin aktif hale gelmesiyle birlikte ifa başlamış sayılır.",
-                      },
-                      {
-                        title: "7) Cayma ve İade Bilgilendirmesi",
-                        text:
-                          "Elektronik ortamda anında ifa edilen veya ifasına başlanan dijital hizmetlerde, ilgili mevzuat kapsamında cayma hakkı istisnaları uygulanabilir. Hizmetin aktive edilmesi, panel erişiminin açılması veya kullanımın başlaması durumunda iade talepleri sınırlı şekilde değerlendirilebilir. Ayrıntılar İptal ve İade Politikası sayfasında yer alır.",
-                      },
-                      {
-                        title: "8) Sorumluluğun Sınırı",
-                        text:
-                          "Platform, dijital hizmet ve panel erişimi sunar. Platform üzerinden doğrudan sağlık hizmeti verilmez. Kullanıcı ile üçüncü kişiler arasındaki ticari veya operasyonel ilişkilerden doğan sonuçlar ilgili tarafların sorumluluğundadır.",
-                      },
-                    ].map((b) => (
+                    {BLOCKS.map((b) => (
                       <div
                         key={b.title}
                         style={{
@@ -103,8 +63,8 @@ export default function DistanceSalesPage(): JSX.Element {
                 <Link href="/iletisim" className="btn btnGhost">
                   İletişim →
                 </Link>
-                <Link href="/" className="btn btnPrimary">
-                  Ana Sayfa →
+                <Link href="/abonelik" className="btn btnPrimary">
+                  Abonelik →
                 </Link>
               </div>
             </div>
@@ -114,3 +74,51 @@ export default function DistanceSalesPage(): JSX.Element {
     </main>
   );
 }
+
+const BLOCKS = [
+  {
+    title: "1) Taraflar",
+    text:
+      "Satıcı/Hizmet Sağlayıcı: Ferhat Menekşe – Vergi No: 6150625779 – Adres: Dumlupınar Mahallesi 38007 Sokak No:4 – Telefon: 0531 917 17 39 – E-posta: ferhatmenekse945@gmail.com. Alıcı: Platform üzerinden dijital abonelik veya platform hizmeti satın alan gerçek veya tüzel kişi klinik/işletmedir.",
+  },
+  {
+    title: "2) Sözleşmenin Konusu",
+    text:
+      "İşbu sözleşmenin konusu, alıcının elektronik ortamda sipariş verdiği DişFiyat360 platformu kapsamındaki dijital üyelik, abonelik, görünürlük, panel erişimi, lead yönetimi veya benzeri dijital hizmetlerin satış ve kullanım şartlarının belirlenmesidir.",
+  },
+  {
+    title: "3) Hizmetin Niteliği",
+    text:
+      "Satın alınan hizmet fiziksel ürün değil; kliniklere sunulan dijital abonelik, panel erişimi, görünürlük, lead yönetimi ve yazılım hizmetidir. Platform üzerinden hastalara doğrudan sağlık hizmeti veya tedavi satışı yapılmaz.",
+  },
+  {
+    title: "4) Süre",
+    text:
+      "Abonelik veya paket süresi, ödeme ekranında belirtilen dönem boyunca geçerlidir. Aksi açıkça belirtilmedikçe hizmet süresi 1 aylık kullanım dönemi esasına göre değerlendirilir.",
+  },
+  {
+    title: "5) Ücret ve Ödeme",
+    text:
+      "Abonelik ve dijital hizmet ücretleri, ödeme sırasında kullanıcıya gösterilen tutarlar üzerinden tahsil edilir. Ödemeler anlaşmalı ödeme kuruluşu aracılığıyla güvenli şekilde alınır. Platform, dijital hizmet aboneliği modeliyle çalışır.",
+  },
+  {
+    title: "6) Hizmetin İfası",
+    text:
+      "Dijital hizmet, ödemenin onaylanmasının ardından makul süre içinde aktif hale getirilir veya ilgili hesap/panel erişimi kullanım durumuna getirilir. Hizmetin aktif hale gelmesiyle birlikte ifa başlamış sayılır.",
+  },
+  {
+    title: "7) Cayma ve İade Bilgilendirmesi",
+    text:
+      "Elektronik ortamda anında ifa edilen veya ifasına başlanan dijital hizmetlerde, ilgili mevzuat kapsamında cayma hakkı istisnaları uygulanabilir. Hizmetin aktive edilmesi, panel erişiminin açılması veya kullanımın başlaması durumunda iade talepleri sınırlı şekilde değerlendirilebilir. Ayrıntılar İptal ve İade Politikası sayfasında yer alır.",
+  },
+  {
+    title: "8) Platformun Sağlık Hizmeti Sunmadığına İlişkin Bilgilendirme",
+    text:
+      "DişFiyat360 sağlık hizmeti, muayene, teşhis, tedavi veya kesin fiyat satışı yapmaz. Platform, kliniklere dijital abonelik ve lead yönetimi hizmeti sunar. Sağlık hizmetleri ilgili klinikler tarafından sağlanır.",
+  },
+  {
+    title: "9) Sorumluluğun Sınırı",
+    text:
+      "Platform, dijital hizmet ve panel erişimi sunar. Platform üzerinden doğrudan sağlık hizmeti verilmez. Kullanıcı ile üçüncü kişiler arasındaki ticari veya operasyonel ilişkilerden doğan sonuçlar ilgili tarafların sorumluluğundadır.",
+  },
+];

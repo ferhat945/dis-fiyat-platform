@@ -21,57 +21,27 @@ export default function AboutPage(): JSX.Element {
               </h1>
 
               <p className="heroDesc" style={{ maxWidth: 760 }}>
-                DişFiyat360, kullanıcıların diş tedavisi taleplerini daha hızlı ve düzenli şekilde ilgili
-                kliniklere iletebilmesini kolaylaştırmak için oluşturulmuş bir teklif ve yönlendirme
-                platformudur.
+                DişFiyat360, diş kliniklerine yönelik dijital görünürlük, panel erişimi,
+                lead yönlendirme ve abonelik hizmeti sunan bir B2B platformdur.
               </p>
 
               <div className="section">
                 <div className="sectionBox" style={{ background: "rgba(255,255,255,0.82)" }}>
                   <div style={{ display: "grid", gap: 12 }}>
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 14,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>Ne Yapıyoruz?</div>
-                      <div
-                        style={{
-                          marginTop: 8,
-                          color: "rgba(15,23,42,0.72)",
-                          fontWeight: 750,
-                          lineHeight: 1.75,
-                        }}
-                      >
-                        Kullanıcıların şehir ve işlem bilgilerine göre teklif talebi oluşturmasına imkan tanıyor,
-                        bu talepleri uygun kliniklerle buluşturuyoruz.
-                      </div>
-                    </div>
+                    <InfoBlock
+                      title="Ne Yapıyoruz?"
+                      text="DişFiyat360, diş kliniklerine yönelik dijital reklam, görünürlük, lead yönlendirme ve panel aboneliği hizmeti sunan bir B2B platformdur. Klinikler platform üzerinden kendi panel erişimlerini yönetebilir, görünürlük sağlayabilir ve kendilerine yönlendirilen kullanıcı taleplerini görüntüleyebilir."
+                    />
 
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 14,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>Ne Yapmıyoruz?</div>
-                      <div
-                        style={{
-                          marginTop: 8,
-                          color: "rgba(15,23,42,0.72)",
-                          fontWeight: 750,
-                          lineHeight: 1.75,
-                        }}
-                      >
-                        Sağlık hizmeti sunmuyor, tıbbi teşhis veya tedavi vermiyoruz. Kesin fiyat ve tedavi planı
-                        muayene sonrası ilgili klinik tarafından belirlenir.
-                      </div>
-                    </div>
+                    <InfoBlock
+                      title="Ne Yapmıyoruz?"
+                      text="Platform doğrudan sağlık hizmeti sunmaz. Tıbbi teşhis, tedavi, muayene veya kesin fiyat satışı yapılmaz. Tedavi süreçleri ve sağlık hizmetleri ilgili klinikler tarafından yürütülür. Platform yalnızca dijital yönlendirme ve abonelik altyapısı sağlar."
+                    />
+
+                    <InfoBlock
+                      title="Klinikler İçin Hizmet Modeli"
+                      text="Klinikler, DişFiyat360 paneli üzerinden şehir ve hizmet kapsamlarını yönetebilir, görünürlük sağlayabilir ve KVKK onaylı kullanıcı taleplerini takip edebilir. Ücretli hizmetler dijital abonelik, panel erişimi, görünürlük ve lead yönetimi kapsamındadır."
+                    />
 
                     <div
                       style={{
@@ -112,8 +82,8 @@ export default function AboutPage(): JSX.Element {
                 <Link href="/kvkk" className="btn btnGhost">
                   KVKK →
                 </Link>
-                <Link href="/teklif-al" className="btn btnPrimary">
-                  Teklif Al →
+                <Link href="/klinikler" className="btn btnPrimary">
+                  Klinik Dizini →
                 </Link>
               </div>
             </div>
@@ -121,5 +91,30 @@ export default function AboutPage(): JSX.Element {
         </div>
       </section>
     </main>
+  );
+}
+
+function InfoBlock({ title, text }: { title: string; text: string }): JSX.Element {
+  return (
+    <div
+      style={{
+        border: "1px solid rgba(15,23,42,0.10)",
+        background: "rgba(255,255,255,0.86)",
+        borderRadius: 20,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontWeight: 950, fontSize: 16 }}>{title}</div>
+      <div
+        style={{
+          marginTop: 8,
+          color: "rgba(15,23,42,0.72)",
+          fontWeight: 750,
+          lineHeight: 1.75,
+        }}
+      >
+        {text}
+      </div>
+    </div>
   );
 }

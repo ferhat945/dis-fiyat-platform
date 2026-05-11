@@ -21,45 +21,15 @@ export default function RefundPolicyPage(): JSX.Element {
               </h1>
 
               <p className="heroDesc" style={{ maxWidth: 740 }}>
-                Bu politika, DişFiyat360 üzerinden sunulan dijital abonelik ve yazılım hizmetlerine ilişkin iptal
-                ve iade esaslarını açıklar.
+                Bu politika, DişFiyat360 üzerinden sunulan kliniklere yönelik
+                dijital abonelik, panel erişimi, görünürlük ve lead yönetimi
+                hizmetlerine ilişkin iptal ve iade esaslarını açıklar.
               </p>
 
               <div className="section">
                 <div className="sectionBox" style={{ background: "rgba(255,255,255,0.82)" }}>
                   <div style={{ display: "grid", gap: 12 }}>
-                    {[
-                      {
-                        title: "1) Hizmetin Niteliği",
-                        text:
-                          "DişFiyat360 üzerinden sunulan ücretli hizmetler dijital abonelik, panel erişimi, görünürlük, yönetim araçları ve benzeri çevrim içi hizmetlerdir. Fiziksel ürün satışı yapılmamaktadır.",
-                      },
-                      {
-                        title: "2) Hizmet Başlamadan Önce",
-                        text:
-                          "Ödeme alınmış ancak hizmet henüz aktive edilmemişse, kullanıcı talebi incelemeye alınabilir ve uygun görülmesi halinde iptal veya iade değerlendirmesi yapılabilir.",
-                      },
-                      {
-                        title: "3) Hizmet Başladıktan Sonra",
-                        text:
-                          "Dijital abonelik, panel erişimi veya benzeri çevrim içi hizmet aktif hale geldikten ve kullanıma sunulduktan sonra, hizmetten yararlanılmaya başlanmış sayılır. Bu durumda iade talepleri kural olarak kabul edilmez; ancak teknik bir hata, mükerrer tahsilat veya açık bir sistemsel problem varsa özel inceleme yapılabilir.",
-                      },
-                      {
-                        title: "4) Abonelik Süresi",
-                        text:
-                          "Satın alınan abonelik, ödeme sırasında belirtilen süre boyunca geçerlidir. Kullanıcı, aktif abonelik süresi boyunca hizmetten yararlanabilir. Kullanılmayan süreler için otomatik geri ödeme yapılmaz.",
-                      },
-                      {
-                        title: "5) İstisnai Durumlar",
-                        text:
-                          "Mükerrer ödeme, yanlış tahsilat veya satıcı kaynaklı ciddi teknik engel gibi durumlarda kullanıcı talebi ayrıca değerlendirilir. Gerekli görülürse kısmi veya tam iade yapılabilir.",
-                      },
-                      {
-                        title: "6) Başvuru",
-                        text:
-                          "İptal veya iade taleplerinizi, ödeme bilgileri ve açıklamanız ile birlikte ferhatmenekse945@gmail.com adresine iletebilirsiniz. Talepler makul süre içinde incelenir.",
-                      },
-                    ].map((b) => (
+                    {BLOCKS.map((b) => (
                       <div
                         key={b.title}
                         style={{
@@ -104,3 +74,41 @@ export default function RefundPolicyPage(): JSX.Element {
     </main>
   );
 }
+
+const BLOCKS = [
+  {
+    title: "1) Hizmetin Niteliği",
+    text:
+      "DişFiyat360 üzerinden sunulan ücretli hizmetler; kliniklere yönelik dijital abonelik, panel erişimi, görünürlük, lead yönlendirme ve yazılım hizmetleridir. Fiziksel ürün veya sağlık hizmeti satışı yapılmamaktadır.",
+  },
+  {
+    title: "2) Hizmet Başlamadan Önce",
+    text:
+      "Ödeme alınmış ancak dijital hizmet henüz aktive edilmemişse, kullanıcı talebi incelemeye alınabilir ve uygun görülmesi halinde iptal veya iade değerlendirmesi yapılabilir.",
+  },
+  {
+    title: "3) Hizmet Başladıktan Sonra",
+    text:
+      "Dijital abonelik, panel erişimi, görünürlük, lead yönetimi veya benzeri çevrim içi hizmet aktif hale geldikten ve kullanıma sunulduktan sonra hizmetten yararlanılmaya başlanmış sayılır. Bu durumda iade talepleri kural olarak kabul edilmez; ancak teknik bir hata, mükerrer tahsilat veya açık bir sistemsel problem varsa özel inceleme yapılabilir.",
+  },
+  {
+    title: "4) Abonelik Süresi",
+    text:
+      "Satın alınan abonelik, ödeme sırasında belirtilen süre boyunca geçerlidir. Kullanıcı, aktif abonelik süresi boyunca hizmetten yararlanabilir. Kullanılmayan süreler için otomatik geri ödeme yapılmaz.",
+  },
+  {
+    title: "5) Lead ve Kota Kullanımı",
+    text:
+      "Kliniklere tanımlanan lead kotası, sistemde kendilerine yönlendirilen kullanıcı taleplerini görüntüleme hakkı sağlar. Kullanılan, görüntülenen veya yönlendirilmiş leadler için iade yapılmaz.",
+  },
+  {
+    title: "6) İstisnai Durumlar",
+    text:
+      "Mükerrer ödeme, yanlış tahsilat veya satıcı kaynaklı ciddi teknik engel gibi durumlarda kullanıcı talebi ayrıca değerlendirilir. Gerekli görülürse kısmi veya tam iade yapılabilir.",
+  },
+  {
+    title: "7) Başvuru",
+    text:
+      "İptal veya iade taleplerinizi, ödeme bilgileri ve açıklamanız ile birlikte ferhatmenekse945@gmail.com adresine iletebilirsiniz. Talepler makul süre içinde incelenir.",
+  },
+];

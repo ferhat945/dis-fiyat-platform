@@ -21,58 +21,14 @@ export default function TermsPage(): JSX.Element {
               </h1>
 
               <p className="heroDesc" style={{ maxWidth: 720 }}>
-                Bu sayfa, DişFiyat360 platformunu kullanan ziyaretçi ve kullanıcılar için geçerli temel kullanım
-                şartlarını açıklar.
+                Bu sayfa, DişFiyat360 platformunu kullanan ziyaretçiler ve klinik
+                kullanıcıları için geçerli temel kullanım şartlarını açıklar.
               </p>
 
               <div className="section">
                 <div className="sectionBox" style={{ background: "rgba(255,255,255,0.82)" }}>
                   <div style={{ display: "grid", gap: 12 }}>
-                    {[
-                      {
-                        title: "1) Hizmetin Konusu",
-                        text:
-                          "DişFiyat360, kullanıcıların diş tedavisi taleplerini ilgili kliniklere iletebilmesini ve teklif sürecini kolaylaştırmayı amaçlayan bir dijital platformdur.",
-                      },
-                      {
-                        title: "2) Platformun Rolü",
-                        text:
-                          "Platform sağlık hizmeti sağlayıcısı değildir. Platform tıbbi teşhis, tedavi veya sağlık hizmeti sunmaz. Tedavi hizmetleri ilgili klinikler tarafından sunulur.",
-                      },
-                      {
-                        title: "3) Fiyat Bilgilendirmesi",
-                        text:
-                          "Platformda yer alan açıklamalar ve ön bilgiler bilgilendirme amaçlıdır. Kesin fiyat, tedavi planı, kullanılacak malzeme, ek işlem gereksinimi ve muayene bulgularına göre ilgili klinik tarafından belirlenir.",
-                      },
-                      {
-                        title: "4) Kullanıcı Yükümlülüğü",
-                        items: [
-                          "Forma girilen bilgilerin doğru ve güncel olması gerekir.",
-                          "Yanıltıcı, hukuka aykırı veya üçüncü kişilerin haklarını ihlal eden içerik girilmemelidir.",
-                          "Platform güvenliğini zedeleyecek kullanım girişimlerinden kaçınılmalıdır.",
-                        ],
-                      },
-                      {
-                        title: "5) Kliniklerle İlişki",
-                        text:
-                          "Kullanıcı ile klinik arasında kurulacak iletişim, muayene, teklif, tedavi ve benzeri süreçler ilgili tarafların kendi sorumluluğundadır. Platform bu süreçlerde taraf değildir.",
-                      },
-                      {
-                        title: "6) Erişim ve Süreklilik",
-                        text:
-                          "Platform, teknik bakım, güvenlik gereklilikleri veya altyapı çalışmaları nedeniyle geçici olarak erişilemeyebilir. Hizmetin kesintisiz ve hatasız çalışacağı garanti edilmez.",
-                      },
-                      {
-                        title: "7) Fikri Haklar",
-                        text:
-                          "Site tasarımı, metinler, marka unsurları, yazılım bileşenleri ve içerikler aksi belirtilmedikçe hak sahibine aittir. İzinsiz kopyalanamaz, çoğaltılamaz veya ticari amaçla kullanılamaz.",
-                      },
-                      {
-                        title: "8) Sorumluluğun Sınırı",
-                        text:
-                          "Platform, kliniklerin sunduğu sağlık hizmetlerinin niteliği, tedavi sonuçları, fiyatları veya kullanıcı ile klinik arasındaki ilişkilerden doğan uyuşmazlıklardan sorumlu değildir.",
-                      },
-                    ].map((b) => (
+                    {BLOCKS.map((b) => (
                       <div
                         key={b.title}
                         style={{
@@ -127,8 +83,8 @@ export default function TermsPage(): JSX.Element {
                 <Link href="/iletisim" className="btn btnGhost">
                   İletişim →
                 </Link>
-                <Link href="/teklif-al" className="btn btnPrimary">
-                  Teklif Al →
+                <Link href="/mesafeli-satis-sozlesmesi" className="btn btnPrimary">
+                  Mesafeli Satış →
                 </Link>
               </div>
             </div>
@@ -138,3 +94,55 @@ export default function TermsPage(): JSX.Element {
     </main>
   );
 }
+
+const BLOCKS = [
+  {
+    title: "1) Hizmetin Konusu",
+    text:
+      "DişFiyat360, diş kliniklerine yönelik dijital görünürlük, panel erişimi, lead yönlendirme ve abonelik altyapısı sağlayan bir B2B platformdur.",
+  },
+  {
+    title: "2) Platformun Rolü",
+    text:
+      "Platform sağlık hizmeti sağlayıcısı değildir. Platform yalnızca dijital yönlendirme, panel erişimi ve abonelik hizmeti sunar. Tıbbi teşhis, tedavi veya sağlık hizmetleri ilgili klinikler tarafından sağlanır.",
+  },
+  {
+    title: "3) Klinik Kullanıcı Hizmetleri",
+    text:
+      "Klinikler, panel üzerinden şehir/hizmet kapsamlarını, profil bilgilerini, fiyat aralıklarını, lead taleplerini ve abonelik/kota süreçlerini yönetebilir. Ücretli hizmetler dijital abonelik ve panel erişimi kapsamındadır.",
+  },
+  {
+    title: "4) Fiyat Bilgilendirmesi",
+    text:
+      "Platformda yer alan açıklamalar ve ön bilgiler bilgilendirme amaçlıdır. Kesin fiyat, tedavi planı, kullanılacak malzeme, ek işlem gereksinimi ve muayene bulgularına göre ilgili klinik tarafından belirlenir.",
+  },
+  {
+    title: "5) Kullanıcı Yükümlülüğü",
+    items: [
+      "Forma girilen bilgilerin doğru ve güncel olması gerekir.",
+      "Yanıltıcı, hukuka aykırı veya üçüncü kişilerin haklarını ihlal eden içerik girilmemelidir.",
+      "Platform güvenliğini zedeleyecek kullanım girişimlerinden kaçınılmalıdır.",
+      "Klinik kullanıcıları, panelde yer alan bilgilerin doğruluğundan sorumludur.",
+    ],
+  },
+  {
+    title: "6) Kliniklerle İlişki",
+    text:
+      "Ziyaretçi ile klinik arasında kurulacak iletişim, muayene, teklif, tedavi ve benzeri süreçler ilgili tarafların kendi sorumluluğundadır. Platform bu süreçlerde sağlık hizmeti sağlayıcısı olarak taraf değildir.",
+  },
+  {
+    title: "7) Erişim ve Süreklilik",
+    text:
+      "Platform, teknik bakım, güvenlik gereklilikleri veya altyapı çalışmaları nedeniyle geçici olarak erişilemeyebilir. Hizmetin kesintisiz ve hatasız çalışacağı garanti edilmez.",
+  },
+  {
+    title: "8) Fikri Haklar",
+    text:
+      "Site tasarımı, metinler, marka unsurları, yazılım bileşenleri ve içerikler aksi belirtilmedikçe hak sahibine aittir. İzinsiz kopyalanamaz, çoğaltılamaz veya ticari amaçla kullanılamaz.",
+  },
+  {
+    title: "9) Sorumluluğun Sınırı",
+    text:
+      "Platform, kliniklerin sunduğu sağlık hizmetlerinin niteliği, tedavi sonuçları, fiyatları veya kullanıcı ile klinik arasındaki ilişkilerden doğan uyuşmazlıklardan sorumlu değildir.",
+  },
+];

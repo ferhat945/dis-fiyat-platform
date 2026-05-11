@@ -21,8 +21,8 @@ export default function ContactPage(): JSX.Element {
               </h1>
 
               <p className="heroDesc" style={{ maxWidth: 720 }}>
-                Platform, teklifler, iş birlikleri veya hukuki bilgilendirme talepleri için aşağıdaki iletişim
-                kanallarını kullanabilirsiniz.
+                Platform, klinik aboneliği, iş birlikleri, ödeme, hukuki bilgilendirme
+                veya destek talepleri için aşağıdaki iletişim kanallarını kullanabilirsiniz.
               </p>
 
               <div className="section">
@@ -34,59 +34,29 @@ export default function ContactPage(): JSX.Element {
                       gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
                     }}
                   >
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>Telefon</div>
-                      <div style={{ marginTop: 8, fontWeight: 800 }}>
-                        <a href="tel:05319171739">0531 917 17 39</a>
-                      </div>
-                    </div>
+                    <InfoCard title="Telefon">
+                      <a href="tel:05319171739">0531 917 17 39</a>
+                    </InfoCard>
 
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>E-posta</div>
-                      <div style={{ marginTop: 8, fontWeight: 800 }}>
-                        <a href="mailto:ferhatmenekse945@gmail.com">ferhatmenekse945@gmail.com</a>
-                      </div>
-                    </div>
+                    <InfoCard title="E-posta">
+                      <a href="mailto:ferhatmenekse945@gmail.com">ferhatmenekse945@gmail.com</a>
+                    </InfoCard>
 
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>Adres</div>
-                      <div style={{ marginTop: 8, fontWeight: 800 }}>
-                        Dumlupınar Mahallesi 38007 Sokak No:4
-                      </div>
-                    </div>
+                    <InfoCard title="Adres">
+                      Dumlupınar Mahallesi 38007 Sokak No:4
+                    </InfoCard>
 
-                    <div
-                      style={{
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.86)",
-                        borderRadius: 20,
-                        padding: 16,
-                      }}
-                    >
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>Vergi No</div>
-                      <div style={{ marginTop: 8, fontWeight: 800 }}>6150625779</div>
-                    </div>
+                    <InfoCard title="Vergi No">6150625779</InfoCard>
+
+                    <InfoCard title="Hizmet Modeli">
+                      DişFiyat360, kliniklere yönelik dijital abonelik, panel erişimi,
+                      görünürlük ve lead yönlendirme hizmeti sunan bir B2B platformdur.
+                    </InfoCard>
+
+                    <InfoCard title="Sağlık Hizmeti Bilgilendirmesi">
+                      Platform doğrudan teşhis, tedavi, muayene veya kesin fiyat hizmeti
+                      sunmaz. Sağlık hizmetleri ilgili klinikler tarafından verilir.
+                    </InfoCard>
                   </div>
                 </div>
               </div>
@@ -107,5 +77,27 @@ export default function ContactPage(): JSX.Element {
         </div>
       </section>
     </main>
+  );
+}
+
+function InfoCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <div
+      style={{
+        border: "1px solid rgba(15,23,42,0.10)",
+        background: "rgba(255,255,255,0.86)",
+        borderRadius: 20,
+        padding: 16,
+      }}
+    >
+      <div style={{ fontWeight: 950, fontSize: 16 }}>{title}</div>
+      <div style={{ marginTop: 8, fontWeight: 800, lineHeight: 1.7 }}>{children}</div>
+    </div>
   );
 }
