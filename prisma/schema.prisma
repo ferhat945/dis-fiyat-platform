@@ -25,6 +25,12 @@ model Clinic {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  creditBalance Int @default(0)
+  isPremium Boolean @default(false)
+  premiumStartedAt DateTime?
+  premiumExpiresAt DateTime?
+  autoRenewPremium Boolean @default(false)
+
   coverages        ClinicCoverage[]
   blogPosts        BlogPost[]
   subscriptions    Subscription[]
@@ -33,6 +39,8 @@ model Clinic {
   priceRanges      ClinicPriceRange[]
   pageViews        ClinicPageView[]
   paymentLogs      PaymentLog[]
+
+  creditTransactions CreditTransaction[]
 
   @@map("clinics")
 }
@@ -195,4 +203,23 @@ model PaymentLog {
   @@index([clinicId, createdAt])
   @@index([status])
   @@map("payment_logs")
+}
+
+model CreditTransaction {
+  id String @id @default(cuid())
+
+  clinicId String
+
+  amount Int
+
+  type String
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@map("credit_transactions")
 }
