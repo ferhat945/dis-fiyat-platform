@@ -98,10 +98,18 @@ model LeadAssignment {
   clinicId  String
   createdAt DateTime @default(now())
 
+  unlocked      Boolean   @default(true)
+  unlockedAt    DateTime?
+  unlockPrice   Int       @default(1)
+  priorityUntil DateTime?
+  notifiedAt    DateTime?
+
   lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@unique([leadId])
+  @@index([clinicId])
+  @@index([unlocked])
   @@map("lead_assignments")
 }
 
