@@ -332,7 +332,12 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
       try {
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           await tx.leadAssignment.create({
-            data: { leadId: lead.id, clinicId: clinic.id },
+            data: {
+              leadId: lead.id,
+              clinicId: clinic.id,
+              unlocked: false,
+              unlockPrice: 1,
+            },
           });
 
           await tx.subscription.update({
@@ -356,6 +361,8 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
               details: {
                 subscriptionId: sub.id,
                 subscriptionStatus: sub.status,
+                locked: true,
+                unlockPrice: 1,
               },
             },
           });
@@ -478,7 +485,12 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
         }
 
         await tx.leadAssignment.create({
-          data: { leadId: lead.id, clinicId: chosen.id },
+          data: {
+            leadId: lead.id,
+            clinicId: chosen.id,
+            unlocked: false,
+            unlockPrice: 1,
+          },
         });
 
         await tx.subscription.update({
@@ -503,6 +515,8 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
               details: {
                 subscriptionId: chosenSub.id,
                 subscriptionStatus: chosenSub.status,
+                locked: true,
+                unlockPrice: 1,
               },
             },
           });
