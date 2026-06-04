@@ -49,12 +49,20 @@ export async function POST(req: Request, ctx: unknown): Promise<NextResponse> {
         },
         select: {
           id: true,
+          unlocked: true,
+          unlockPrice: true,
         },
       });
 
       if (!assignment) {
         return { ok: false as const, code: "FORBIDDEN_NOT_YOURS" };
       }
+
+      if (assignment.unlocked) {
+        return { ok: true as const, alreadyUnlocked: true };
+      }
+
+      const price = Math.max(1, assignment.unlockPrice ?? 1);
 
       const clinic = await tx.clinic.findUnique({
         where: { id: session.clinicId },
@@ -68,27 +76,35 @@ export async function POST(req: Request, ctx: unknown): Promise<NextResponse> {
         return { ok: false as const, code: "CLINIC_NOT_FOUND" };
       }
 
-      if (clinic.creditBalance < 1) {
+      if (clinic.creditBalance < price) {
         return { ok: false as const, code: "NO_CREDIT" };
       }
 
       await tx.clinic.update({
         where: { id: clinic.id },
         data: {
-          creditBalance: { decrement: 1 },
+          creditBalance: { decrement: price },
+        },
+      });
+
+      await tx.leadAssignment.update({
+        where: { id: assignment.id },
+        data: {
+          unlocked: true,
+          unlockedAt: new Date(),
         },
       });
 
       await tx.creditTransaction.create({
         data: {
           clinicId: clinic.id,
-          amount: -1,
+          amount: -price,
           type: "lead_unlock",
           note: `Lead açıldı: ${leadId}`,
         },
       });
 
-      return { ok: true as const };
+      return { ok: true as const, alreadyUnlocked: false };
     });
 
     if (!result.ok) {
@@ -96,7 +112,7 @@ export async function POST(req: Request, ctx: unknown): Promise<NextResponse> {
       return NextResponse.json(result, { status });
     }
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "UNKNOWN";
     console.error("LEAD_UNLOCK_ERROR:", err);
