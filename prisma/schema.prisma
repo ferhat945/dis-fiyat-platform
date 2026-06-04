@@ -25,11 +25,11 @@ model Clinic {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  creditBalance Int @default(0)
-  isPremium Boolean @default(false)
+  creditBalance    Int       @default(0)
+  isPremium        Boolean   @default(false)
   premiumStartedAt DateTime?
   premiumExpiresAt DateTime?
-  autoRenewPremium Boolean @default(false)
+  autoRenewPremium Boolean   @default(false)
 
   coverages        ClinicCoverage[]
   blogPosts        BlogPost[]
