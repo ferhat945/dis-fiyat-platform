@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireClinic } from "@/lib/clinic-auth";
 import StatusActions from "./status-actions";
 import NoteEditor from "./note-editor";
+import UnlockLeadButton from "./unlock-button";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +16,16 @@ function statusLabel(s: LeadStatus): string {
   return "Kaybedildi";
 }
 
+function safeStatus(v: string): LeadStatus {
+  if (v === "new" || v === "contacted" || v === "won" || v === "lost") return v;
+  return "new";
+}
+
 function formatTR(d: Date): string {
   return d.toLocaleString("tr-TR");
 }
 
 function normalizePhoneTR(phone: string): string {
-  // wa.me için 90 + (başındaki 0 atılır) + sadece rakam
   const onlyDigits = phone.replace(/\D/g, "");
   const noLeadingZero = onlyDigits.replace(/^0+/, "");
   return `90${noLeadingZero}`;
@@ -39,6 +44,24 @@ function statusBadgeClass(s: LeadStatus): string {
   return "panelLeadStatus panelLeadStatusLost";
 }
 
+function maskName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Kilitli lead";
+
+  return parts
+    .map((p) => {
+      const first = p[0] ?? "";
+      return `${first}${"*".repeat(Math.max(3, p.length - 1))}`;
+    })
+    .join(" ");
+}
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 6) return "05** *** ** **";
+  return `${digits.slice(0, 2)}** *** ** ${digits.slice(-2)}`;
+}
+
 export default async function LeadDetailPage({
   params,
 }: {
@@ -47,11 +70,23 @@ export default async function LeadDetailPage({
   const { id } = await params;
   const session = await requireClinic();
 
-  // Lead bu kliniğe atanmış mı?
-  const assigned = await prisma.leadAssignment.findFirst({
-    where: { clinicId: session.clinicId, leadId: id },
-    select: { id: true },
-  });
+  const [assigned, clinicBalance] = await Promise.all([
+    prisma.leadAssignment.findFirst({
+      where: { clinicId: session.clinicId, leadId: id },
+      select: {
+        id: true,
+        unlocked: true,
+        unlockedAt: true,
+        unlockPrice: true,
+      },
+    }),
+    prisma.clinic.findUnique({
+      where: { id: session.clinicId },
+      select: {
+        creditBalance: true,
+      },
+    }),
+  ]);
 
   if (!assigned) {
     return (
@@ -118,7 +153,13 @@ export default async function LeadDetailPage({
     );
   }
 
-  const st = lead.status as LeadStatus;
+  const st = safeStatus(lead.status);
+  const isUnlocked = assigned.unlocked;
+  const creditBalance = clinicBalance?.creditBalance ?? 0;
+  const unlockPrice = Math.max(1, assigned.unlockPrice ?? 1);
+
+  const shownName = isUnlocked ? lead.fullName : maskName(lead.fullName);
+  const shownPhone = isUnlocked ? lead.phone : maskPhone(lead.phone);
 
   return (
     <div className="panelWrap">
@@ -126,12 +167,13 @@ export default async function LeadDetailPage({
         <div className="panelHeaderLeft">
           <div className="panelKicker">🧾 Lead Detay</div>
           <h1 className="panelTitle">
-            {lead.fullName} <span style={{ opacity: 0.55, fontWeight: 900 }}>•</span> {lead.phone}
+            {shownName} <span style={{ opacity: 0.55, fontWeight: 900 }}>•</span> {shownPhone}
           </h1>
           <div className="panelSub">
             <span className="panelChip">📍 {lead.city}</span>{" "}
             <span className="panelChip panelChipSoft">🦷 {lead.service}</span>{" "}
-            <span className={statusBadgeClass(st)}>{statusLabel(st)}</span>
+            <span className={statusBadgeClass(st)}>{statusLabel(st)}</span>{" "}
+            {!isUnlocked ? <span className="panelChip panelChipMuted">🔒 Kilitli</span> : null}
           </div>
         </div>
 
@@ -139,30 +181,71 @@ export default async function LeadDetailPage({
           <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/leadler">
             ← Leadlere dön
           </Link>
-          <a className="panelQuickBtn" href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)} target="_blank" rel="noreferrer">
-            WhatsApp →
-          </a>
+
+          {isUnlocked ? (
+            <a
+              className="panelQuickBtn"
+              href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              WhatsApp →
+            </a>
+          ) : null}
         </div>
       </div>
 
-      {/* Lead info */}
+      {!isUnlocked ? (
+        <div className="panelCard">
+          <div className="panelCardHead">
+            <div>
+              <div className="panelCardTitle">🔒 Lead Kilitli</div>
+              <div className="panelCardSub">
+                Bu leadin telefon, e-posta ve mesaj bilgilerini görmek için {unlockPrice} kredi kullanmalısın.
+              </div>
+            </div>
+            <div className="panelCardHeadRight">
+              <span className="panelPill">Kredin: {creditBalance}</span>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <UnlockLeadButton leadId={lead.id} disabled={creditBalance < unlockPrice} />
+
+            {creditBalance < unlockPrice ? (
+              <Link href="/panel/abonelik" className="panelBtn">
+                Kredi Satın Al →
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
             <div className="panelCardTitle">📌 Lead Bilgileri</div>
-            <div className="panelCardSub">Oluşturma: {formatTR(lead.createdAt)}</div>
+            <div className="panelCardSub">
+              Oluşturma: {formatTR(lead.createdAt)}
+              {isUnlocked && assigned.unlockedAt ? <> • Açılma: {formatTR(assigned.unlockedAt)}</> : null}
+            </div>
           </div>
         </div>
 
         <div className="panelDetailGrid">
           <div className="panelDetailItem">
+            <div className="panelDetailLabel">Ad Soyad</div>
+            <div className="panelDetailValue">{isUnlocked ? lead.fullName : shownName}</div>
+          </div>
+
+          <div className="panelDetailItem">
             <div className="panelDetailLabel">Telefon</div>
-            <div className="panelDetailValue">{lead.phone}</div>
+            <div className="panelDetailValue">{isUnlocked ? lead.phone : shownPhone}</div>
           </div>
 
           <div className="panelDetailItem">
             <div className="panelDetailLabel">Email</div>
-            <div className="panelDetailValue">{lead.email ?? "—"}</div>
+            <div className="panelDetailValue">{isUnlocked ? lead.email ?? "—" : "🔒 Kilitli"}</div>
           </div>
 
           <div className="panelDetailItem">
@@ -177,65 +260,68 @@ export default async function LeadDetailPage({
 
           <div className="panelDetailItem panelDetailWide">
             <div className="panelDetailLabel">Mesaj</div>
-            <div className="panelDetailValue panelDetailNote">{lead.message ?? "—"}</div>
+            <div className="panelDetailValue panelDetailNote">
+              {isUnlocked ? lead.message ?? "—" : "🔒 Mesajı görmek için leadi açmalısın."}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Status actions */}
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">✅ Durum Güncelle</div>
-            <div className="panelCardSub">Lead ile iletişim durumuna göre güncelle.</div>
+      {isUnlocked ? (
+        <>
+          <div className="panelCard">
+            <div className="panelCardHead">
+              <div>
+                <div className="panelCardTitle">✅ Durum Güncelle</div>
+                <div className="panelCardSub">Lead ile iletişim durumuna göre güncelle.</div>
+              </div>
+            </div>
+
+            <div className="panelActionsShell">
+              <StatusActions leadId={lead.id} currentStatus={st} />
+            </div>
           </div>
-        </div>
 
-        <div className="panelActionsShell">
-          <StatusActions leadId={lead.id} currentStatus={st} />
-        </div>
-      </div>
+          <div className="panelCard">
+            <div className="panelCardHead">
+              <div>
+                <div className="panelCardTitle">📝 Not & Son Arama</div>
+                <div className="panelCardSub">Kısa not ekle, son arama zamanını işaretle.</div>
+              </div>
+            </div>
 
-      {/* Note + last contact */}
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">📝 Not & Son Arama</div>
-            <div className="panelCardSub">Kısa not ekle, son arama zamanını işaretle.</div>
+            <NoteEditor
+              leadId={lead.id}
+              initialNote={lead.clinicNote}
+              initialLastContactAt={lead.lastContactAt ? lead.lastContactAt.toISOString() : null}
+            />
           </div>
-        </div>
 
-        <NoteEditor
-          leadId={lead.id}
-          initialNote={lead.clinicNote}
-          initialLastContactAt={lead.lastContactAt ? lead.lastContactAt.toISOString() : null}
-        />
-      </div>
+          <div className="panelCard">
+            <div className="panelCardHead">
+              <div>
+                <div className="panelCardTitle">⚡ Hızlı Aksiyon</div>
+                <div className="panelCardSub">Tek tıkla WhatsApp üzerinden dönüş yap.</div>
+              </div>
+            </div>
 
-      {/* Quick actions */}
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">⚡ Hızlı Aksiyon</div>
-            <div className="panelCardSub">Tek tıkla WhatsApp üzerinden dönüş yap.</div>
+            <div className="panelQuickActions">
+              <a
+                className="panelBtn"
+                href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                WhatsApp’a yaz →
+              </a>
+
+              <Link className="panelBtnGhost" href="/panel/leadler">
+                Listeye dön
+              </Link>
+            </div>
           </div>
-        </div>
-
-        <div className="panelQuickActions">
-          <a
-            className="panelBtn"
-            href={whatsappHref(lead.fullName, lead.phone, lead.city, lead.service)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            WhatsApp’a yaz →
-          </a>
-
-          <Link className="panelBtnGhost" href="/panel/leadler">
-            Listeye dön
-          </Link>
-        </div>
-      </div>
+        </>
+      ) : null}
     </div>
   );
 }
