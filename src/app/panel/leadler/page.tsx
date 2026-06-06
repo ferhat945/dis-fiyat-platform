@@ -13,9 +13,9 @@ type Row = {
   fullName: string;
   phone: string;
   status: LeadStatus;
-  clinicNote: string | null;
-  lastContactAt: Date | null;
   createdAt: Date;
+  unlocked: boolean;
+  unlockPrice: number;
 };
 
 type SearchParams = {
@@ -44,10 +44,6 @@ function safeStatus(v: string): LeadStatus {
   return "new";
 }
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
-}
-
 function formatTR(d: Date): string {
   return d.toLocaleString("tr-TR");
 }
@@ -65,6 +61,24 @@ function statusBadgeClass(s: LeadStatus): string {
   return "panelLeadStatus panelLeadStatusLost";
 }
 
+function maskName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Kilitli lead";
+
+  return parts
+    .map((p) => {
+      const first = p[0] ?? "";
+      return `${first}${"*".repeat(Math.max(3, p.length - 1))}`;
+    })
+    .join(" ");
+}
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 6) return "05** *** ** **";
+  return `${digits.slice(0, 2)}** *** ** ${digits.slice(-2)}`;
+}
+
 export default async function PanelLeadsPage({
   searchParams,
 }: {
@@ -75,12 +89,7 @@ export default async function PanelLeadsPage({
 
   const now = new Date();
 
-  let activeSub: {
-    quotaTotal: number;
-    quotaUsed: number;
-    expiresAt: Date;
-  } | null = null;
-
+  let creditBalance = 0;
   let rows: Row[] = [];
   let loadError: string | null = null;
 
@@ -88,63 +97,66 @@ export default async function PanelLeadsPage({
   const statusFilter = normalizeStatus(sp.status);
 
   try {
-    activeSub = await prisma.subscription.findFirst({
-      where: {
-        clinicId: session.clinicId,
-        status: "active",
-        expiresAt: { gt: now },
-      },
-      orderBy: { startedAt: "desc" },
-      select: { quotaTotal: true, quotaUsed: true, expiresAt: true },
+    const clinic = await prisma.clinic.findUnique({
+      where: { id: session.clinicId },
+      select: { creditBalance: true },
     });
+
+    creditBalance = clinic?.creditBalance ?? 0;
   } catch (e) {
-    console.error("PANEL_LEADLER_SUBSCRIPTION_ERROR", e);
+    console.error("PANEL_LEADLER_CREDIT_ERROR", e);
   }
 
   try {
-    const leads = await prisma.lead.findMany({
+    const assignments = await prisma.leadAssignment.findMany({
       where: {
-        assignments: { some: { clinicId: session.clinicId } },
-        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-        ...(q
-          ? {
-              OR: [{ fullName: { contains: q } }, { phone: { contains: q } }],
-            }
-          : {}),
+        clinicId: session.clinicId,
+        lead: {
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          ...(q
+            ? {
+                OR: [{ fullName: { contains: q } }, { phone: { contains: q } }],
+              }
+            : {}),
+        },
       },
       orderBy: { createdAt: "desc" },
       take: 200,
       select: {
-        id: true,
-        city: true,
-        service: true,
-        fullName: true,
-        phone: true,
-        status: true,
-        createdAt: true,
+        unlocked: true,
+        unlockPrice: true,
+        lead: {
+          select: {
+            id: true,
+            city: true,
+            service: true,
+            fullName: true,
+            phone: true,
+            status: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
-    rows = leads.map((l) => ({
-      id: l.id,
-      city: l.city,
-      service: l.service,
-      fullName: l.fullName,
-      phone: l.phone,
-      status: safeStatus(l.status),
-      clinicNote: null,
-      lastContactAt: null,
-      createdAt: l.createdAt,
+    rows = assignments.map((a) => ({
+      id: a.lead.id,
+      city: a.lead.city,
+      service: a.lead.service,
+      fullName: a.lead.fullName,
+      phone: a.lead.phone,
+      status: safeStatus(a.lead.status),
+      createdAt: a.lead.createdAt,
+      unlocked: a.unlocked,
+      unlockPrice: Math.max(1, a.unlockPrice ?? 1),
     }));
   } catch (e) {
     console.error("PANEL_LEADLER_LEADS_ERROR", e);
     loadError = "Leadler şu an yüklenemedi. Panelin diğer alanlarını kullanmaya devam edebilirsin.";
   }
 
-  const quotaTotal = activeSub?.quotaTotal ?? 0;
-  const quotaUsed = activeSub?.quotaUsed ?? 0;
-  const remaining = Math.max(0, quotaTotal - quotaUsed);
-  const quotaPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
+  const lockedCount = rows.filter((r) => !r.unlocked).length;
+  const unlockedCount = rows.filter((r) => r.unlocked).length;
 
   const buildHref = (next: { status?: string; q?: string }): string => {
     const params = new URLSearchParams();
@@ -165,7 +177,8 @@ export default async function PanelLeadsPage({
           <div className="panelKicker">📥 Leadler</div>
           <h1 className="panelTitle">Lead Yönetimi</h1>
           <div className="panelSub">
-            Klinik: <strong>{session.name}</strong> • Toplam: <strong>{rows.length}</strong>
+            Klinik: <strong>{session.name}</strong> • Toplam: <strong>{rows.length}</strong> • Kilitli:{" "}
+            <strong>{lockedCount}</strong> • Açılmış: <strong>{unlockedCount}</strong>
           </div>
         </div>
 
@@ -174,7 +187,7 @@ export default async function PanelLeadsPage({
             Dashboard →
           </Link>
           <Link className="panelQuickBtn" href="/panel/abonelik">
-            Kota / Abonelik →
+            💎 Kredi: {creditBalance}
           </Link>
         </div>
       </div>
@@ -191,38 +204,23 @@ export default async function PanelLeadsPage({
       <div className="panelCard">
         <div className="panelCardHead">
           <div>
-            <div className="panelCardTitle">💎 Kota Durumu</div>
+            <div className="panelCardTitle">💎 Kredi Durumu</div>
             <div className="panelCardSub">
-              {activeSub ? (
-                <>
-                  Kullanılan <strong>{quotaUsed}</strong> / <strong>{quotaTotal}</strong> • Kalan{" "}
-                  <strong>{remaining}</strong>
-                </>
-              ) : (
-                <>Aktif abonelik/kota bulunamadı. Lead almak için abonelik gerekli.</>
-              )}
+              Lead iletişim bilgilerini açmak için kredi kullanılır. 1 kredi = 1 lead açma hakkı.
             </div>
           </div>
 
-          {activeSub ? (
-            <div className="panelCardHeadRight">
-              <span className="panelPill">Aktif</span>
-              <span className="panelPill panelPillSoft">%{quotaPct}</span>
-            </div>
-          ) : (
-            <div className="panelCardHeadRight">
-              <span className="panelPill">Pasif</span>
-            </div>
-          )}
+          <div className="panelCardHeadRight">
+            <span className="panelPill">Kredi: {creditBalance}</span>
+            <Link href="/panel/abonelik" className="panelMiniCta">
+              Kredi Al →
+            </Link>
+          </div>
         </div>
 
-        <div className="panelProgress" style={{ marginTop: 10 }}>
-          <div className="panelProgressBar" style={{ width: `${activeSub ? quotaPct : 0}%` }} />
-        </div>
-
-        {activeSub ? (
+        {creditBalance <= 0 ? (
           <div style={{ marginTop: 10 }} className="panelStatHint">
-            Bitiş: <strong>{activeSub.expiresAt ? formatTR(activeSub.expiresAt) : "—"}</strong>
+            Kredin yok. Kilitli leadleri açmak için kredi satın almalısın.
           </div>
         ) : null}
       </div>
@@ -278,50 +276,58 @@ export default async function PanelLeadsPage({
       </div>
 
       {rows.length === 0 ? (
-        <div className="panelEmpty">
-          {loadError ? "Leadler yüklenemedi." : "Bu filtrede lead yok."}
-        </div>
+        <div className="panelEmpty">{loadError ? "Leadler yüklenemedi." : "Bu filtrede lead yok."}</div>
       ) : (
         <div className="panelCard">
           <div className="panelCardHead">
             <div>
               <div className="panelCardTitle">📋 Lead Listesi</div>
-              <div className="panelCardSub">Detaya girip durum güncelleyebilir ve not ekleyebilirsin.</div>
+              <div className="panelCardSub">
+                Kilitli leadlerde iletişim bilgileri maskelenir. Detaya girip kredi ile açabilirsin.
+              </div>
             </div>
           </div>
 
           <div className="panelLeadList">
-            {rows.map((r) => (
-              <div key={r.id} className="panelLeadRow">
-                <div className="panelLeadMain">
-                  <div className="panelLeadTop">
-                    <div className="panelLeadName">
-                      {r.fullName} <span className="panelLeadSep">•</span> {r.phone}
+            {rows.map((r) => {
+              const shownName = r.unlocked ? r.fullName : maskName(r.fullName);
+              const shownPhone = r.unlocked ? r.phone : maskPhone(r.phone);
+
+              return (
+                <div key={r.id} className="panelLeadRow">
+                  <div className="panelLeadMain">
+                    <div className="panelLeadTop">
+                      <div className="panelLeadName">
+                        {shownName} <span className="panelLeadSep">•</span> {shownPhone}
+                      </div>
+
+                      <div className="panelLeadRight">
+                        {isNewRow(r, now) ? <span className="panelNewBadge">Yeni</span> : null}
+                        {!r.unlocked ? <span className="panelLeadStatus panelLeadStatusNew">Kilitli</span> : null}
+                        <span className={statusBadgeClass(r.status)}>{STATUS_LABEL[r.status]}</span>
+                        <span className="panelLeadTime">{formatTR(r.createdAt)}</span>
+                      </div>
                     </div>
 
-                    <div className="panelLeadRight">
-                      {isNewRow(r, now) ? <span className="panelNewBadge">Yeni</span> : null}
-                      <span className={statusBadgeClass(r.status)}>{STATUS_LABEL[r.status]}</span>
-                      <span className="panelLeadTime">{formatTR(r.createdAt)}</span>
+                    <div className="panelLeadMeta">
+                      <span className="panelChip">📍 {r.city}</span>
+                      <span className="panelChip panelChipSoft">🦷 {r.service}</span>
+                      {!r.unlocked ? (
+                        <span className="panelChip panelChipMuted">🔒 Açma bedeli: {r.unlockPrice} kredi</span>
+                      ) : (
+                        <span className="panelChip panelChipMuted">✅ Açıldı</span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="panelLeadMeta">
-                    <span className="panelChip">📍 {r.city}</span>
-                    <span className="panelChip panelChipSoft">🦷 {r.service}</span>
-
-                    <span className="panelChip panelChipMuted">Son arama: —</span>
-                    <span className="panelChip panelChipMuted">Not: —</span>
+                  <div className="panelLeadActions">
+                    <Link href={`/panel/leadler/${r.id}`} className="panelBtn">
+                      {r.unlocked ? "Detay →" : "Kilidi Aç →"}
+                    </Link>
                   </div>
                 </div>
-
-                <div className="panelLeadActions">
-                  <Link href={`/panel/leadler/${r.id}`} className="panelBtn">
-                    Detay →
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
