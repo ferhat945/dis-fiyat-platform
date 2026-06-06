@@ -13,6 +13,7 @@ type LeadRow = {
   service: string;
   status: string;
   createdAt: Date;
+  unlocked: boolean;
 };
 
 type DailyPoint = { label: string; value: number };
@@ -43,6 +44,24 @@ function isNewLead(l: LeadRow, now: Date): boolean {
   const diff = now.getTime() - l.createdAt.getTime();
   const sixHours = 6 * 60 * 60 * 1000;
   return l.status === "new" && diff >= 0 && diff <= sixHours;
+}
+
+function maskName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Kilitli lead";
+
+  return parts
+    .map((p) => {
+      const first = p[0] ?? "";
+      return `${first}${"*".repeat(Math.max(3, p.length - 1))}`;
+    })
+    .join(" ");
+}
+
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 6) return "05** *** ** **";
+  return `${digits.slice(0, 2)}** *** ** ${digits.slice(-2)}`;
 }
 
 function buildSparkPath(values: number[], w: number, h: number, pad: number): string {
@@ -84,6 +103,13 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
   const now = new Date();
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
+  let clinic: {
+    creditBalance: number;
+    isPremium: boolean;
+    premiumExpiresAt: Date | null;
+    autoRenewPremium: boolean;
+  } | null = null;
+
   let activeSub: {
     quotaTotal: number;
     quotaUsed: number;
@@ -94,6 +120,20 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
   let todayLeadCount = 0;
   let lastLeads: LeadRow[] = [];
   let coverageCount = 0;
+
+  try {
+    clinic = await prisma.clinic.findUnique({
+      where: { id: session.clinicId },
+      select: {
+        creditBalance: true,
+        isPremium: true,
+        premiumExpiresAt: true,
+        autoRenewPremium: true,
+      },
+    });
+  } catch (e) {
+    console.error("PANEL_DASHBOARD_CLINIC_ERROR", e);
+  }
 
   try {
     activeSub = await prisma.subscription.findFirst({
@@ -113,11 +153,15 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
     console.error("PANEL_DASHBOARD_SUBSCRIPTION_ERROR", e);
   }
 
+  const creditBalance = clinic?.creditBalance ?? 0;
+  const isPremiumActive = Boolean(
+    clinic?.isPremium && clinic.premiumExpiresAt && clinic.premiumExpiresAt.getTime() > now.getTime()
+  );
+
   const quotaTotal = activeSub?.quotaTotal ?? 0;
   const quotaUsed = activeSub?.quotaUsed ?? 0;
   const remaining = Math.max(0, quotaTotal - quotaUsed);
-  const quotaPct =
-    quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
+  const quotaPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
 
   const trendDays = 14;
   const startDay = startOfDayLocal(addDays(now, -(trendDays - 1)));
@@ -148,22 +192,38 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
   }
 
   try {
-    lastLeads = await prisma.lead.findMany({
+    const assignments = await prisma.leadAssignment.findMany({
       where: {
-        assignments: { some: { clinicId: session.clinicId } },
+        clinicId: session.clinicId,
       },
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
-        id: true,
-        fullName: true,
-        phone: true,
-        city: true,
-        service: true,
-        status: true,
-        createdAt: true,
+        unlocked: true,
+        lead: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            city: true,
+            service: true,
+            status: true,
+            createdAt: true,
+          },
+        },
       },
     });
+
+    lastLeads = assignments.map((a) => ({
+      id: a.lead.id,
+      fullName: a.lead.fullName,
+      phone: a.lead.phone,
+      city: a.lead.city,
+      service: a.lead.service,
+      status: a.lead.status,
+      createdAt: a.lead.createdAt,
+      unlocked: a.unlocked,
+    }));
   } catch (e) {
     console.error("PANEL_DASHBOARD_LAST_LEADS_ERROR", e);
   }
@@ -212,7 +272,7 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
           <h1 className="panelTitle">Hoş geldin, {session.name}</h1>
           <div className="panelSub">
             Bugün panelde: <strong>{todayLeadCount}</strong> lead (son 24 saat) •{" "}
-            <strong>{coverageCount}</strong> aktif kapsam
+            <strong>{coverageCount}</strong> aktif kapsam • <strong>{creditBalance}</strong> kredi
           </div>
         </div>
 
@@ -220,16 +280,60 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
           <Link className="panelQuickBtn" href="/panel/leadler">
             Leadler →
           </Link>
+          <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/abonelik">
+            Kredi Al →
+          </Link>
           <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/hizmetler">
             Kapsamlar →
-          </Link>
-          <Link className="panelQuickBtn panelQuickBtnSoft" href="/panel/fiyatlar">
-            Fiyatlar →
           </Link>
         </div>
       </div>
 
       <div className="panelGrid3">
+        <div className="panelStatCard panelStatCardAccent">
+          <div className="panelStatTop">
+            <div className="panelStatLabel">Kredi Bakiyesi</div>
+            <div className="panelStatIcon">💎</div>
+          </div>
+
+          <div className="panelStatValue">{creditBalance}</div>
+          <div className="panelStatHint">1 kredi = 1 lead açma hakkı</div>
+
+          <div className="panelStatFoot">
+            <Link className="panelLink panelLinkStrong" href="/panel/abonelik">
+              Kredi Satın Al →
+            </Link>
+          </div>
+        </div>
+
+        <div className="panelStatCard">
+          <div className="panelStatTop">
+            <div className="panelStatLabel">Premium Durumu</div>
+            <div className="panelStatIcon">⭐</div>
+          </div>
+
+          <div className="panelStatRow">
+            <div className="panelStatValueSmall">{isPremiumActive ? "Aktif" : "Pasif"}</div>
+            <div className="panelStatBadge">{clinic?.autoRenewPremium ? "Oto yenileme açık" : "Standart"}</div>
+          </div>
+
+          <div className="panelStatHint">
+            {isPremiumActive && clinic?.premiumExpiresAt ? (
+              <>
+                Bitiş: <strong>{formatTR(clinic.premiumExpiresAt)}</strong>
+              </>
+            ) : (
+              <>Premium ile öncelikli lead erişimi kazanırsın.</>
+            )}
+          </div>
+
+          <div className="panelStatFoot">
+            <Link className="panelLink" href="/panel/abonelik">
+              Premium Paket →
+            </Link>
+          </div>
+        </div>
+
         <div className="panelStatCard">
           <div className="panelStatTop">
             <div className="panelStatLabel">Aktif Hizmet</div>
@@ -243,69 +347,19 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
             </Link>
           </div>
         </div>
-
-        <div className="panelStatCard">
-          <div className="panelStatTop">
-            <div className="panelStatLabel">Son 24 Saat</div>
-            <div className="panelStatIcon">⚡</div>
-          </div>
-          <div className="panelStatValue">{todayLeadCount}</div>
-          <div className="panelStatHint">Sana atanan leadler</div>
-          <div className="panelStatFoot">
-            <Link className="panelLink" href="/panel/leadler">
-              Listeye git →
-            </Link>
-          </div>
-        </div>
-
-        <div className="panelStatCard panelStatCardAccent">
-          <div className="panelStatTop">
-            <div className="panelStatLabel">Kota Kullanımı</div>
-            <div className="panelStatIcon">💎</div>
-          </div>
-
-          <div className="panelStatRow">
-            <div className="panelStatValueSmall">
-              {quotaUsed} / {quotaTotal || "—"}
-            </div>
-            <div className="panelStatBadge">{hasActiveSub ? "Aktif" : "Pasif"}</div>
-          </div>
-
-          <div className="panelProgress">
-            <div className="panelProgressBar" style={{ width: `${quotaPct}%` }} />
-          </div>
-
-          <div className="panelStatHint">
-            Kalan: <strong>{remaining}</strong>{" "}
-            {hasActiveSub ? (
-              <>
-                • Bitiş:{" "}
-                <strong>{activeSub?.expiresAt ? formatTR(activeSub.expiresAt) : "—"}</strong>
-              </>
-            ) : (
-              <>• Lead almak için abonelik gerekli</>
-            )}
-          </div>
-
-          <div className="panelStatFoot">
-            <Link className="panelLink panelLinkStrong" href="/panel/abonelik">
-              Abonelik / Kota →
-            </Link>
-          </div>
-        </div>
       </div>
 
-      {hasActiveSub && remaining <= 0 ? (
+      {creditBalance <= 0 ? (
         <div className="panelQuotaAlert">
           <div>
-            <div className="panelQuotaTitle">🚨 Lead kotanız tükendi!</div>
+            <div className="panelQuotaTitle">💎 Kredin yok</div>
             <div className="panelQuotaDesc">
-              Yeni lead almak için aboneliğinizi hemen yenileyin / kota yükleyin.
+              Yeni leadlerin iletişim bilgilerini açmak için kredi satın almalısın.
             </div>
           </div>
 
           <Link href="/panel/abonelik" className="panelQuotaBtn">
-            Hemen Yenile →
+            Kredi Satın Al →
           </Link>
         </div>
       ) : null}
@@ -387,49 +441,53 @@ export default async function PanelDashboardPage(): Promise<JSX.Element> {
           <div className="panelEmpty">Henüz lead yok.</div>
         ) : (
           <div className="panelLeadList">
-            {lastLeads.map((l) => (
-              <div
-                key={l.id}
-                className={`panelLeadRow ${isNewLead(l, now) ? "panelLeadRowNew" : ""}`}
-              >
-                <div className="panelLeadMain">
-                  <div className="panelLeadTop">
-                    <div className="panelLeadName">
-                      {l.fullName} <span className="panelLeadSep">•</span> {l.phone}
+            {lastLeads.map((l) => {
+              const shownName = l.unlocked ? l.fullName : maskName(l.fullName);
+              const shownPhone = l.unlocked ? l.phone : maskPhone(l.phone);
+
+              return (
+                <div
+                  key={l.id}
+                  className={`panelLeadRow ${isNewLead(l, now) ? "panelLeadRowNew" : ""}`}
+                >
+                  <div className="panelLeadMain">
+                    <div className="panelLeadTop">
+                      <div className="panelLeadName">
+                        {shownName} <span className="panelLeadSep">•</span> {shownPhone}
+                      </div>
+
+                      <div className="panelLeadRight">
+                        {isNewLead(l, now) ? <span className="panelNewBadge">Yeni</span> : null}
+                        {!l.unlocked ? <span className="panelLeadStatus panelLeadStatusNew">Kilitli</span> : null}
+                        <span className="panelLeadTime">{formatTR(l.createdAt)}</span>
+                      </div>
                     </div>
 
-                    <div className="panelLeadRight">
-                      {isNewLead(l, now) ? <span className="panelNewBadge">Yeni</span> : null}
-                      <span className="panelLeadTime">{formatTR(l.createdAt)}</span>
+                    <div className="panelLeadMeta">
+                      <span className="panelChip">📍 {l.city}</span>
+                      <span className="panelChip panelChipSoft">🦷 {l.service}</span>
+                      <span className="panelChip panelChipMuted">Durum: {l.status}</span>
                     </div>
                   </div>
 
-                  <div className="panelLeadMeta">
-                    <span className="panelChip">📍 {l.city}</span>
-                    <span className="panelChip panelChipSoft">🦷 {l.service}</span>
-                    <span className="panelChip panelChipMuted">Durum: {l.status}</span>
+                  <div className="panelLeadActions">
+                    <Link className="panelBtn" href={`/panel/leadler/${l.id}`}>
+                      {l.unlocked ? "Detay →" : "Kilidi Aç →"}
+                    </Link>
                   </div>
                 </div>
-
-                <div className="panelLeadActions">
-                  <Link className="panelBtn" href={`/panel/leadler/${l.id}`}>
-                    Detay →
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {!hasActiveSub ? (
+      {hasActiveSub ? (
         <div className="panelAlert">
-          <div className="panelAlertTitle">💡 Abonelik pasif</div>
+          <div className="panelAlertTitle">Eski abonelik bilgisi</div>
           <div className="panelAlertDesc">
-            Klinik dizininde listelenmeye devam edersin; ancak lead almak için kota gerekir.{" "}
-            <Link className="panelLink panelLinkStrong" href="/panel/abonelik">
-              Abonelik sayfasından kota yükle →
-            </Link>
+            Eski kota sisteminde kalan: <strong>{remaining}</strong> / {quotaTotal} • Kullanım: %{quotaPct}.
+            Yeni sistemde lead açma işlemleri kredi bakiyesi üzerinden ilerler.
           </div>
         </div>
       ) : null}
