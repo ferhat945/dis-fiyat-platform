@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { verifyClinicSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,7 @@ export default async function PanelLayout({
   if (!session) {
     return (
       <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 14 }}>
-          Yetkisiz
-        </h1>
+        <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 14 }}>Yetkisiz</h1>
         <div style={{ marginBottom: 16, opacity: 0.85, fontSize: 15 }}>
           Paneli görmek için giriş yapmalısın.
         </div>
@@ -43,13 +42,27 @@ export default async function PanelLayout({
     );
   }
 
+  const clinic = await prisma.clinic.findUnique({
+    where: { id: session.clinicId },
+    select: {
+      creditBalance: true,
+      isPremium: true,
+      premiumExpiresAt: true,
+    },
+  });
+
+  const now = new Date();
+  const isPremiumActive = Boolean(
+    clinic?.isPremium && clinic.premiumExpiresAt && clinic.premiumExpiresAt.getTime() > now.getTime()
+  );
+
   return (
     <div
       style={{
         padding: 24,
         maxWidth: 1200,
         margin: "0 auto",
-        fontSize: 16,            // 🔥 TÜM PANEL YAZILARI BÜYÜDÜ
+        fontSize: 16,
         lineHeight: 1.7,
       }}
     >
@@ -63,12 +76,24 @@ export default async function PanelLayout({
           marginBottom: 20,
         }}
       >
-        <div style={{ fontSize: 22, fontWeight: 900 }}>
-          Klinik Panel
-        </div>
+        <div style={{ fontSize: 22, fontWeight: 900 }}>Klinik Panel</div>
 
-        <div style={{ opacity: 0.8, fontSize: 15 }}>
-          {session.name}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <Link href="/panel/abonelik" style={pillStyle()}>
+            💎 Kredi: {clinic?.creditBalance ?? 0}
+          </Link>
+
+          {isPremiumActive ? (
+            <Link href="/panel/abonelik" style={premiumPillStyle()}>
+              ⭐ Premium
+            </Link>
+          ) : (
+            <Link href="/panel/abonelik" style={softPillStyle()}>
+              Premium Ol
+            </Link>
+          )}
+
+          <div style={{ opacity: 0.8, fontSize: 15, fontWeight: 800 }}>{session.name}</div>
         </div>
       </div>
 
@@ -85,7 +110,7 @@ export default async function PanelLayout({
         <NavLink href="/panel/hizmetler">Hizmetler</NavLink>
         <NavLink href="/panel/fiyatlar">Fiyatlar</NavLink>
         <NavLink href="/panel/profil">Profil</NavLink>
-        <NavLink href="/panel/abonelik">Abonelik</NavLink>
+        <NavLink href="/panel/abonelik">Kredi / Premium</NavLink>
         <NavLink href="/panel/istatistik">İstatistikler</NavLink>
         <NavLink href="/panel/blog">Blog</NavLink>
       </nav>
@@ -106,7 +131,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }): JSX
         borderRadius: 12,
         border: "1px solid #ddd",
         color: "#111",
-        fontSize: 15,      // 🔥 Menü yazıları büyüdü
+        fontSize: 15,
         background: "rgba(255,255,255,0.8)",
         transition: "all .15s ease",
       }}
@@ -114,4 +139,33 @@ function NavLink({ href, children }: { href: string; children: ReactNode }): JSX
       {children}
     </Link>
   );
+}
+
+function pillStyle(): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    padding: "8px 12px",
+    borderRadius: 999,
+    border: "1px solid rgba(124,58,237,0.22)",
+    background: "rgba(124,58,237,0.10)",
+    color: "rgba(15,23,42,0.92)",
+    fontWeight: 950,
+    fontSize: 13,
+  };
+}
+
+function premiumPillStyle(): React.CSSProperties {
+  return {
+    ...pillStyle(),
+    border: "1px solid rgba(245,158,11,0.28)",
+    background: "rgba(245,158,11,0.14)",
+  };
+}
+
+function softPillStyle(): React.CSSProperties {
+  return {
+    ...pillStyle(),
+    border: "1px solid rgba(15,23,42,0.10)",
+    background: "rgba(255,255,255,0.75)",
+  };
 }
