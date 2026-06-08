@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
@@ -12,7 +13,9 @@ type PackageCard = {
   note: string;
   buyHref: string;
   featured?: boolean;
+  premium?: boolean;
   badge?: string;
+  icon: string;
 };
 
 function fmtDate(d: Date | null | undefined): string {
@@ -101,155 +104,483 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
       title: "5 Kredi Paketi",
       priceText: "1500 TL",
       credits: 5,
-      note: "5 adet lead açma hakkı. Abonelik zorunluluğu yoktur.",
+      note: "Başlangıç için ideal. 5 adet lead açma hakkı verir.",
       buyHref: "/panel/abonelik/satin-al?package=credit_5",
       badge: "Başlangıç",
+      icon: "💎",
     },
     {
       title: "10 Kredi Paketi",
       priceText: "2000 TL",
       credits: 10,
-      note: "Daha avantajlı kredi paketi. 1 kredi = 1 lead açma hakkı.",
+      note: "En dengeli paket. Daha düşük maliyetle daha fazla lead aç.",
       buyHref: "/panel/abonelik/satin-al?package=credit_10",
       featured: true,
-      badge: "Popüler",
+      badge: "En Popüler",
+      icon: "⚡",
     },
     {
       title: "25 Kredi Paketi",
       priceText: "4000 TL",
       credits: 25,
-      note: "Yoğun lead alan klinikler için en avantajlı kredi paketi.",
+      note: "Yoğun çalışan klinikler için en avantajlı kredi paketi.",
       buyHref: "/panel/abonelik/satin-al?package=credit_25",
-      badge: "En avantajlı",
+      badge: "En Avantajlı",
+      icon: "🚀",
     },
     {
       title: "Premium Üyelik",
       priceText: "2500 TL / ay",
       credits: 10,
-      note: "Aylık 10 kredi + premium öncelik hakkı. Gerçek ödeme altyapısı bağlanınca otomatik yenileme aktif kullanılır.",
+      note: "Aylık 10 kredi + premium öncelik. Lead dağıtımında öne çık.",
       buyHref: "/panel/abonelik/satin-al?package=premium",
       featured: true,
+      premium: true,
       badge: "Premium",
+      icon: "👑",
     },
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 16px 44px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
-        <div>
-          <div style={badgeStyle()}>💳 Kredi & Premium</div>
+    <div className="creditPage">
+      <style>{`
+        .creditPage {
+          position: relative;
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 22px 16px 56px;
+          overflow: hidden;
+        }
 
-          <h1 style={{ margin: "10px 0 0", fontSize: 30, lineHeight: 1.1, fontWeight: 950 }}>
-            Kredi Yönetimi
-          </h1>
+        .creditPage::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: -2;
+          background:
+            radial-gradient(circle at 8% 0%, rgba(124,58,237,.22), transparent 34%),
+            radial-gradient(circle at 100% 22%, rgba(14,165,233,.18), transparent 35%),
+            radial-gradient(circle at 50% 100%, rgba(236,72,153,.12), transparent 38%);
+        }
 
-          <div style={{ marginTop: 8, color: "rgba(15,23,42,0.72)", fontWeight: 750, lineHeight: 1.75 }}>
-            Lead detaylarını görüntülemek için kredi kullanırsın. 1 kredi = 1 lead açma hakkı.
+        .glowOrb {
+          position: absolute;
+          width: 260px;
+          height: 260px;
+          border-radius: 999px;
+          filter: blur(35px);
+          opacity: .42;
+          z-index: -1;
+          animation: floatGlow 7s ease-in-out infinite;
+        }
+
+        .glowOne {
+          top: 20px;
+          right: 90px;
+          background: rgba(124,58,237,.35);
+        }
+
+        .glowTwo {
+          bottom: 240px;
+          left: 10px;
+          background: rgba(14,165,233,.26);
+          animation-delay: -2s;
+        }
+
+        @keyframes floatGlow {
+          0%, 100% { transform: translate3d(0,0,0) scale(1); }
+          50% { transform: translate3d(0,18px,0) scale(1.08); }
+        }
+
+        .heroCard {
+          position: relative;
+          overflow: hidden;
+          border-radius: 32px;
+          padding: 24px;
+          border: 1px solid rgba(255,255,255,.62);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.54)),
+            radial-gradient(circle at 10% 0%, rgba(124,58,237,.22), transparent 36%),
+            radial-gradient(circle at 90% 15%, rgba(14,165,233,.18), transparent 40%);
+          box-shadow: 0 28px 80px rgba(15,23,42,.12);
+          backdrop-filter: blur(18px);
+        }
+
+        .heroCard::after {
+          content: "";
+          position: absolute;
+          inset: -120px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.48), transparent);
+          transform: rotate(12deg) translateX(-55%);
+          animation: shineMove 6s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        @keyframes shineMove {
+          0%, 55% { transform: rotate(12deg) translateX(-60%); opacity: 0; }
+          70% { opacity: .8; }
+          100% { transform: rotate(12deg) translateX(60%); opacity: 0; }
+        }
+
+        .heroContent {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          justify-content: space-between;
+          gap: 18px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .heroTitle {
+          margin: 12px 0 0;
+          font-size: clamp(32px, 4vw, 52px);
+          line-height: 1;
+          letter-spacing: -0.055em;
+          font-weight: 1000;
+          color: rgba(2,6,23,.96);
+        }
+
+        .heroText {
+          margin-top: 12px;
+          max-width: 720px;
+          color: rgba(15,23,42,.72);
+          font-weight: 850;
+          line-height: 1.75;
+        }
+
+        .heroMetrics {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(170px, 1fr));
+          gap: 12px;
+          margin-top: 16px;
+        }
+
+        .metricCard {
+          position: relative;
+          border-radius: 24px;
+          padding: 16px;
+          border: 1px solid rgba(255,255,255,.72);
+          background: rgba(255,255,255,.70);
+          box-shadow: 0 18px 45px rgba(15,23,42,.08);
+          overflow: hidden;
+        }
+
+        .metricCard::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at top right, rgba(124,58,237,.14), transparent 45%);
+          pointer-events: none;
+        }
+
+        .metricLabel {
+          position: relative;
+          opacity: .72;
+          font-weight: 950;
+          font-size: 12px;
+        }
+
+        .metricValue {
+          position: relative;
+          margin-top: 8px;
+          font-weight: 1000;
+          font-size: 30px;
+          letter-spacing: -0.035em;
+          color: rgba(2,6,23,.96);
+        }
+
+        .metricHint {
+          position: relative;
+          margin-top: 4px;
+          opacity: .68;
+          font-weight: 850;
+          font-size: 12px;
+        }
+
+        .packageGrid {
+          margin-top: 16px;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+          gap: 14px;
+        }
+
+        .packageCard {
+          position: relative;
+          min-height: 330px;
+          border-radius: 30px;
+          padding: 18px;
+          display: grid;
+          gap: 12px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,.72);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.62));
+          box-shadow: 0 22px 58px rgba(15,23,42,.10);
+          transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+        }
+
+        .packageCard:hover {
+          transform: translateY(-7px);
+          box-shadow: 0 32px 78px rgba(79,70,229,.18);
+          border-color: rgba(124,58,237,.30);
+        }
+
+        .packageCard.featured {
+          background:
+            radial-gradient(circle at 12% 0%, rgba(124,58,237,.24), transparent 42%),
+            linear-gradient(135deg, rgba(255,255,255,.92), rgba(245,243,255,.74));
+          border-color: rgba(124,58,237,.28);
+        }
+
+        .packageCard.premium {
+          color: white;
+          background:
+            radial-gradient(circle at 0% 0%, rgba(250,204,21,.25), transparent 32%),
+            radial-gradient(circle at 100% 15%, rgba(168,85,247,.38), transparent 42%),
+            linear-gradient(135deg, rgba(15,23,42,.98), rgba(67,56,202,.94));
+          border-color: rgba(255,255,255,.22);
+          box-shadow: 0 30px 90px rgba(67,56,202,.28);
+        }
+
+        .packageCard::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at top right, rgba(255,255,255,.44), transparent 38%);
+          opacity: .6;
+          pointer-events: none;
+        }
+
+        .packageTop,
+        .packagePrice,
+        .packageChips,
+        .packageNote,
+        .packageAction {
+          position: relative;
+          z-index: 1;
+        }
+
+        .packageTop {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          align-items: flex-start;
+        }
+
+        .packageIcon {
+          width: 44px;
+          height: 44px;
+          display: grid;
+          place-items: center;
+          border-radius: 18px;
+          background: rgba(255,255,255,.78);
+          box-shadow: inset 0 0 0 1px rgba(15,23,42,.08);
+          font-size: 22px;
+        }
+
+        .premium .packageIcon {
+          background: rgba(255,255,255,.14);
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+        }
+
+        .packageTitle {
+          margin-top: 12px;
+          font-size: 20px;
+          font-weight: 1000;
+          letter-spacing: -0.025em;
+        }
+
+        .packagePrice {
+          font-size: 34px;
+          font-weight: 1000;
+          letter-spacing: -0.045em;
+          line-height: 1.05;
+        }
+
+        .packageChips {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .packageNote {
+          min-height: 58px;
+          opacity: .78;
+          font-weight: 850;
+          line-height: 1.65;
+        }
+
+        .premium .packageNote {
+          opacity: .86;
+        }
+
+        .buyButton {
+          display: inline-flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          text-align: center;
+          padding: 14px 16px;
+          border-radius: 18px;
+          background: linear-gradient(135deg, rgba(79,70,229,.98), rgba(168,85,247,.98));
+          color: white;
+          font-weight: 1000;
+          text-decoration: none;
+          border: 1px solid rgba(255,255,255,.20);
+          box-shadow: 0 18px 42px rgba(124,58,237,.22);
+          transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+        .buyButton:hover {
+          transform: scale(1.025);
+          box-shadow: 0 24px 55px rgba(124,58,237,.30);
+        }
+
+        .premium .buyButton {
+          background: linear-gradient(135deg, #facc15, #fb923c);
+          color: rgba(15,23,42,.96);
+          box-shadow: 0 18px 45px rgba(250,204,21,.20);
+        }
+
+        .transactionCard {
+          margin-top: 16px;
+          border-radius: 30px;
+          border: 1px solid rgba(255,255,255,.72);
+          background: rgba(255,255,255,.74);
+          box-shadow: 0 24px 70px rgba(15,23,42,.10);
+          backdrop-filter: blur(16px);
+          padding: 18px;
+          overflow: hidden;
+        }
+
+        .transactionRow {
+          display: grid;
+          grid-template-columns: minmax(140px, 190px) 1fr auto;
+          gap: 12px;
+          align-items: center;
+          border: 1px solid rgba(15,23,42,.08);
+          background: rgba(255,255,255,.72);
+          border-radius: 18px;
+          padding: 12px 14px;
+        }
+
+        @media (max-width: 760px) {
+          .heroMetrics {
+            grid-template-columns: 1fr;
+          }
+
+          .transactionRow {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <div className="glowOrb glowOne" />
+      <div className="glowOrb glowTwo" />
+
+      <section className="heroCard">
+        <div className="heroContent">
+          <div>
+            <span style={badgeStyle()}>💎 Kredi & Premium Merkezi</span>
+            <h1 className="heroTitle">Lead aç, hastaya daha hızlı ulaş.</h1>
+            <div className="heroText">
+              Kredi satın alarak lead iletişim bilgilerini açabilir, Premium ile dağıtımda öne geçebilirsin.
+              Tüm kredi alış ve harcama hareketlerin burada şeffaf şekilde tutulur.
+            </div>
+          </div>
+
+          <div style={{ opacity: 0.78, fontWeight: 950 }}>
+            Klinik: <strong>{session.name}</strong>
           </div>
         </div>
 
-        <div style={{ opacity: 0.75, fontWeight: 900 }}>
-          Klinik: <strong>{session.name}</strong>
+        <div className="heroMetrics">
+          <div className="metricCard">
+            <div className="metricLabel">Kredi Bakiyesi</div>
+            <div className="metricValue">{creditBalance}</div>
+            <div className="metricHint">1 kredi = 1 lead açma</div>
+          </div>
+
+          <div className="metricCard">
+            <div className="metricLabel">Premium Durumu</div>
+            <div className="metricValue">{isPremiumActive ? "Aktif" : "Pasif"}</div>
+            <div className="metricHint">
+              {isPremiumActive ? `Bitiş: ${fmtDate(clinic?.premiumExpiresAt)}` : "Dağıtım önceliği kapalı"}
+            </div>
+          </div>
+
+          <div className="metricCard">
+            <div className="metricLabel">Otomatik Yenileme</div>
+            <div className="metricValue">{clinic?.autoRenewPremium ? "Açık" : "Kapalı"}</div>
+            <div className="metricHint">Gerçek ödeme altyapısı bağlanınca kullanılacak</div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-        <InfoCard title="Kredi Bakiyesi" value={String(creditBalance)} hint="1 kredi = 1 lead açma" />
-        <InfoCard
-          title="Premium Durumu"
-          value={isPremiumActive ? "Aktif" : "Pasif"}
-          hint={isPremiumActive ? `Bitiş: ${fmtDate(clinic?.premiumExpiresAt)}` : "Premium öncelik kapalı"}
-        />
-        <InfoCard
-          title="Otomatik Yenileme"
-          value={clinic?.autoRenewPremium ? "Açık" : "Kapalı"}
-          hint="Gerçek ödeme altyapısı bağlanınca kullanılacak"
-        />
-      </div>
+      <div style={{ marginTop: 14 }}>{isPremiumActive ? premiumBox(clinic?.premiumExpiresAt) : normalBox()}</div>
 
-      <div style={{ marginTop: 12 }}>{isPremiumActive ? premiumBox(clinic?.premiumExpiresAt) : normalBox()}</div>
-
-      <div style={{ marginTop: 12, display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+      <section className="packageGrid">
         {packages.map((p) => (
           <div
             key={p.title}
-            style={{
-              borderRadius: 22,
-              border: p.featured ? "1px solid rgba(124,58,237,0.18)" : "1px solid rgba(15,23,42,0.10)",
-              background: p.featured
-                ? "radial-gradient(900px 240px at 10% 0%, rgba(124,58,237,0.20), transparent 60%), rgba(255,255,255,0.78)"
-                : "rgba(255,255,255,0.78)",
-              boxShadow: "0 18px 45px rgba(2,6,23,0.08)",
-              padding: 14,
-              display: "grid",
-              gap: 10,
-              overflow: "hidden",
-            }}
+            className={`packageCard ${p.featured ? "featured" : ""} ${p.premium ? "premium" : ""}`}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "start", flexWrap: "wrap" }}>
-              <div style={{ fontSize: 18, fontWeight: 950 }}>{p.title}</div>
-              {p.badge ? <span style={badgeStyle()}>{p.badge}</span> : null}
+            <div className="packageTop">
+              <div>
+                <div className="packageIcon">{p.icon}</div>
+                <div className="packageTitle">{p.title}</div>
+              </div>
+              {p.badge ? <span style={p.premium ? premiumBadgeStyle() : badgeStyle()}>{p.badge}</span> : null}
             </div>
 
-            <div style={{ fontSize: 30, fontWeight: 950, lineHeight: 1.05 }}>{p.priceText}</div>
+            <div className="packagePrice">{p.priceText}</div>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <span style={chipStyle()}>🎯 {p.credits} kredi</span>
-              <span style={chipStyle()}>🔒 KVKK uyumlu</span>
-              <span style={chipStyle()}>⚡ Hızlı aktivasyon</span>
+            <div className="packageChips">
+              <span style={p.premium ? premiumChipStyle() : chipStyle()}>🎯 {p.credits} kredi</span>
+              <span style={p.premium ? premiumChipStyle() : chipStyle()}>🔒 KVKK uyumlu</span>
+              <span style={p.premium ? premiumChipStyle() : chipStyle()}>⚡ Hızlı aktivasyon</span>
             </div>
 
-            <div style={{ opacity: 0.78, fontWeight: 850, lineHeight: 1.7 }}>{p.note}</div>
+            <div className="packageNote">{p.note}</div>
 
-            <Link href={p.buyHref} style={p.featured ? buyPrimary() : buySoft()}>
-              Satın Al →
-            </Link>
+            <div className="packageAction">
+              <Link href={p.buyHref} className="buyButton">
+                ⚡ Hemen Satın Al
+              </Link>
+            </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      <div style={{ marginTop: 16, borderRadius: 22, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.78)", boxShadow: "0 18px 45px rgba(2,6,23,0.08)", padding: 14 }}>
+      <section className="transactionCard">
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
-            <div style={{ fontWeight: 950, fontSize: 18 }}>📜 Kredi Hareketleri</div>
-            <div style={{ opacity: 0.72, fontWeight: 800, marginTop: 4 }}>
-              Son 30 kredi işlemi.
-            </div>
+            <div style={{ fontWeight: 1000, fontSize: 22, letterSpacing: "-0.02em" }}>📜 Kredi Hareketleri</div>
+            <div style={{ opacity: 0.72, fontWeight: 850, marginTop: 4 }}>Son 30 kredi işlemi.</div>
           </div>
 
           <span style={badgeStyle()}>Bakiye: {creditBalance}</span>
         </div>
 
         {transactions.length === 0 ? (
-          <div style={{ marginTop: 12, opacity: 0.75, fontWeight: 850 }}>
-            Henüz kredi hareketi yok.
-          </div>
+          <div style={{ marginTop: 14, opacity: 0.75, fontWeight: 850 }}>Henüz kredi hareketi yok.</div>
         ) : (
-          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
             {transactions.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "minmax(140px, 180px) 1fr auto",
-                  gap: 10,
-                  alignItems: "center",
-                  border: "1px solid rgba(15,23,42,0.08)",
-                  background: "rgba(255,255,255,0.70)",
-                  borderRadius: 14,
-                  padding: "10px 12px",
-                }}
-              >
+              <div key={t.id} className="transactionRow">
                 <div style={{ opacity: 0.72, fontWeight: 850, fontSize: 13 }}>{fmtDateTime(t.createdAt)}</div>
                 <div>
-                  <div style={{ fontWeight: 950 }}>{typeLabel(t.type)}</div>
+                  <div style={{ fontWeight: 1000 }}>{typeLabel(t.type)}</div>
                   <div style={{ opacity: 0.7, fontWeight: 800, fontSize: 12 }}>{t.note ?? "—"}</div>
                 </div>
                 <div
                   style={{
-                    fontWeight: 950,
+                    fontWeight: 1000,
                     color: t.amount >= 0 ? "#15803d" : "#b91c1c",
                     whiteSpace: "nowrap",
+                    fontSize: 16,
                   }}
                 >
                   {t.amount > 0 ? `+${t.amount}` : t.amount} kredi
@@ -258,7 +589,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       <div style={{ marginTop: 16, opacity: 0.75 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Eski kota bilgisi</div>
@@ -299,96 +630,74 @@ function premiumBox(expiresAt: Date | null | undefined): JSX.Element {
   );
 }
 
-function noticeBox(kind: "ok" | "info" | "danger"): React.CSSProperties {
-  const base: React.CSSProperties = {
-    borderRadius: 22,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "rgba(255,255,255,0.78)",
-    boxShadow: "0 18px 45px rgba(2,6,23,0.08)",
-    padding: 14,
+function noticeBox(kind: "ok" | "info"): CSSProperties {
+  const base: CSSProperties = {
+    borderRadius: 24,
+    border: "1px solid rgba(255,255,255,0.70)",
+    background: "rgba(255,255,255,0.68)",
+    boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
+    padding: 16,
+    backdropFilter: "blur(16px)",
   };
 
   if (kind === "ok") {
-    return { ...base, border: "1px solid rgba(34,197,94,0.22)", background: "rgba(34,197,94,0.10)" };
+    return {
+      ...base,
+      border: "1px solid rgba(34,197,94,0.24)",
+      background: "linear-gradient(135deg, rgba(34,197,94,0.13), rgba(255,255,255,0.70))",
+    };
   }
-  if (kind === "danger") {
-    return { ...base, border: "1px solid rgba(239,68,68,0.22)", background: "rgba(239,68,68,0.08)" };
-  }
-  return { ...base, border: "1px solid rgba(59,130,246,0.22)", background: "rgba(59,130,246,0.08)" };
-}
 
-function badgeStyle(): React.CSSProperties {
   return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "7px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "rgba(255,255,255,0.75)",
-    fontWeight: 900,
-    fontSize: 12,
+    ...base,
+    border: "1px solid rgba(59,130,246,0.24)",
+    background: "linear-gradient(135deg, rgba(59,130,246,0.13), rgba(255,255,255,0.70))",
   };
 }
 
-function chipStyle(): React.CSSProperties {
+function badgeStyle(): CSSProperties {
   return {
     display: "inline-flex",
     alignItems: "center",
     gap: 8,
-    padding: "7px 10px",
+    padding: "8px 12px",
+    borderRadius: 999,
+    border: "1px solid rgba(15,23,42,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    fontWeight: 950,
+    fontSize: 12,
+    boxShadow: "0 10px 22px rgba(15,23,42,0.06)",
+  };
+}
+
+function premiumBadgeStyle(): CSSProperties {
+  return {
+    ...badgeStyle(),
+    color: "white",
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.14)",
+  };
+}
+
+function chipStyle(): CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 10px",
     borderRadius: 999,
     border: "1px solid rgba(15,23,42,0.10)",
     background: "rgba(255,255,255,0.72)",
-    fontWeight: 900,
+    fontWeight: 950,
     fontSize: 12,
   };
 }
 
-function buyPrimary(): React.CSSProperties {
+function premiumChipStyle(): CSSProperties {
   return {
-    display: "inline-block",
-    textAlign: "center",
-    padding: "12px 14px",
-    borderRadius: 16,
-    background: "rgba(11,18,32,0.92)",
-    color: "#fff",
-    fontWeight: 950,
-    textDecoration: "none",
-    border: "1px solid rgba(255,255,255,0.16)",
-    boxShadow: "0 16px 35px rgba(2,6,23,0.16)",
+    ...chipStyle(),
+    color: "white",
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.12)",
   };
-}
-
-function buySoft(): React.CSSProperties {
-  return {
-    display: "inline-block",
-    textAlign: "center",
-    padding: "12px 14px",
-    borderRadius: 16,
-    background: "rgba(255,255,255,0.82)",
-    color: "rgba(15,23,42,0.92)",
-    fontWeight: 950,
-    textDecoration: "none",
-    border: "1px solid rgba(15,23,42,0.12)",
-    boxShadow: "0 12px 26px rgba(2,6,23,0.06)",
-  };
-}
-
-function InfoCard({ title, value, hint }: { title: string; value: string; hint: string }): JSX.Element {
-  return (
-    <div
-      style={{
-        border: "1px solid rgba(15,23,42,0.10)",
-        background: "rgba(255,255,255,0.78)",
-        borderRadius: 18,
-        padding: "12px 14px",
-        boxShadow: "0 12px 26px rgba(2,6,23,0.06)",
-      }}
-    >
-      <div style={{ opacity: 0.75, fontWeight: 900, fontSize: 12 }}>{title}</div>
-      <div style={{ marginTop: 6, fontWeight: 950, fontSize: 22 }}>{value}</div>
-      <div style={{ marginTop: 4, opacity: 0.7, fontWeight: 850, fontSize: 12 }}>{hint}</div>
-    </div>
-  );
 }
