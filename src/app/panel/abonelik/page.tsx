@@ -15,13 +15,21 @@ type PackageCard = {
   badge?: string;
 };
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
-}
-
 function fmtDate(d: Date | null | undefined): string {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("tr-TR");
+}
+
+function fmtDateTime(d: Date | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("tr-TR");
+}
+
+function typeLabel(type: string): string {
+  if (type === "purchase") return "Kredi satın alma";
+  if (type === "lead_unlock") return "Lead açma";
+  if (type === "premium_monthly_credit") return "Premium aylık kredi";
+  return type;
 }
 
 export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
@@ -41,7 +49,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
 
   const now = new Date();
 
-  const [clinic, activeSub] = await Promise.all([
+  const [clinic, activeSub, transactions] = await Promise.all([
     prisma.clinic.findUnique({
       where: { id: session.clinicId },
       select: {
@@ -65,6 +73,18 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
         expiresAt: true,
       },
     }),
+    prisma.creditTransaction.findMany({
+      where: { clinicId: session.clinicId },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        note: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
   const creditBalance = clinic?.creditBalance ?? 0;
@@ -75,7 +95,6 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
   const quotaTotal = activeSub?.quotaTotal ?? 0;
   const quotaUsed = activeSub?.quotaUsed ?? 0;
   const remaining = Math.max(0, quotaTotal - quotaUsed);
-  const usedPct = quotaTotal > 0 ? clamp(Math.round((quotaUsed / quotaTotal) * 100), 0, 100) : 0;
 
   const packages: PackageCard[] = [
     {
@@ -107,7 +126,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
       title: "Premium Üyelik",
       priceText: "2500 TL / ay",
       credits: 10,
-      note: "Aylık 10 kredi + premium öncelik hakkı. İleride otomatik yenileme ile çalışacak.",
+      note: "Aylık 10 kredi + premium öncelik hakkı. Gerçek ödeme altyapısı bağlanınca otomatik yenileme aktif kullanılır.",
       buyHref: "/panel/abonelik/satin-al?package=premium",
       featured: true,
       badge: "Premium",
@@ -125,7 +144,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
           </h1>
 
           <div style={{ marginTop: 8, color: "rgba(15,23,42,0.72)", fontWeight: 750, lineHeight: 1.75 }}>
-            Lead detaylarını görüntülemek için kredi kullanırsın. Abonelik zorunlu değildir.
+            Lead detaylarını görüntülemek için kredi kullanırsın. 1 kredi = 1 lead açma hakkı.
           </div>
         </div>
 
@@ -144,7 +163,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
         <InfoCard
           title="Otomatik Yenileme"
           value={clinic?.autoRenewPremium ? "Açık" : "Kapalı"}
-          hint="Ödeme altyapısı bağlanınca kullanılacak"
+          hint="Gerçek ödeme altyapısı bağlanınca kullanılacak"
         />
       </div>
 
@@ -189,12 +208,64 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
         ))}
       </div>
 
+      <div style={{ marginTop: 16, borderRadius: 22, border: "1px solid rgba(15,23,42,0.10)", background: "rgba(255,255,255,0.78)", boxShadow: "0 18px 45px rgba(2,6,23,0.08)", padding: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 950, fontSize: 18 }}>📜 Kredi Hareketleri</div>
+            <div style={{ opacity: 0.72, fontWeight: 800, marginTop: 4 }}>
+              Son 30 kredi işlemi.
+            </div>
+          </div>
+
+          <span style={badgeStyle()}>Bakiye: {creditBalance}</span>
+        </div>
+
+        {transactions.length === 0 ? (
+          <div style={{ marginTop: 12, opacity: 0.75, fontWeight: 850 }}>
+            Henüz kredi hareketi yok.
+          </div>
+        ) : (
+          <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+            {transactions.map((t) => (
+              <div
+                key={t.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(140px, 180px) 1fr auto",
+                  gap: 10,
+                  alignItems: "center",
+                  border: "1px solid rgba(15,23,42,0.08)",
+                  background: "rgba(255,255,255,0.70)",
+                  borderRadius: 14,
+                  padding: "10px 12px",
+                }}
+              >
+                <div style={{ opacity: 0.72, fontWeight: 850, fontSize: 13 }}>{fmtDateTime(t.createdAt)}</div>
+                <div>
+                  <div style={{ fontWeight: 950 }}>{typeLabel(t.type)}</div>
+                  <div style={{ opacity: 0.7, fontWeight: 800, fontSize: 12 }}>{t.note ?? "—"}</div>
+                </div>
+                <div
+                  style={{
+                    fontWeight: 950,
+                    color: t.amount >= 0 ? "#15803d" : "#b91c1c",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {t.amount > 0 ? `+${t.amount}` : t.amount} kredi
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ marginTop: 16, opacity: 0.75 }}>
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Eski kota bilgisi</div>
         {activeSub ? (
           <div style={{ fontWeight: 800, lineHeight: 1.7 }}>
-            Eski abonelik/kota sisteminde kalan: <strong>{remaining}</strong> / {quotaTotal} — kullanım %{usedPct}.
-            Bitiş: <strong>{fmtDate(activeSub.expiresAt)}</strong>
+            Eski abonelik/kota sisteminde kalan: <strong>{remaining}</strong> / {quotaTotal}. Bitiş:{" "}
+            <strong>{fmtDate(activeSub.expiresAt)}</strong>. Yeni sistemde lead açma işlemleri kredi bakiyesi üzerinden ilerler.
           </div>
         ) : (
           <div style={{ fontWeight: 800, lineHeight: 1.7 }}>
@@ -211,7 +282,7 @@ function normalBox(): JSX.Element {
     <div style={noticeBox("info")}>
       <div style={{ fontWeight: 950 }}>ℹ️ Premium kapalı</div>
       <div style={{ marginTop: 6, opacity: 0.85, fontWeight: 850 }}>
-        Normal klinikler kredi satın alarak lead açabilir. Premium klinikler ise öncelikli lead erişimi kazanır.
+        Normal klinikler kredi satın alarak lead açabilir. Premium klinikler ise dağıtımda öncelik kazanır.
       </div>
     </div>
   );

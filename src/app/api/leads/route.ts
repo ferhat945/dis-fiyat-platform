@@ -411,6 +411,8 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
           select: {
             id: true,
             lastAssignedAt: true,
+            isPremium: true,
+            premiumExpiresAt: true,
             subscriptions: {
               where: {
                 status: { in: ["active", "trial"] },
@@ -477,7 +479,20 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
           return { lead, assigned: false };
         }
 
-        const chosen = eligible[0];
+        const premiumEligible = eligible.filter(
+          (c) => c.isPremium && c.premiumExpiresAt && c.premiumExpiresAt.getTime() > now.getTime()
+        );
+
+        const normalEligible = eligible.filter(
+          (c) => !c.isPremium || !c.premiumExpiresAt || c.premiumExpiresAt.getTime() <= now.getTime()
+        );
+
+        const chosen = premiumEligible.length > 0 ? premiumEligible[0] : normalEligible[0];
+
+        if (!chosen) {
+          return { lead, assigned: false };
+        }
+
         const chosenSub = chosen.subscriptions[0];
 
         if (!chosenSub) {
@@ -511,12 +526,13 @@ export async function POST(req: Request): Promise<NextResponse<ApiResp>> {
               city: parsed.city,
               service: parsed.service,
               assigned: true,
-              reason: "auto_distribution",
+              reason: premiumEligible.length > 0 ? "auto_distribution_premium_priority" : "auto_distribution",
               details: {
                 subscriptionId: chosenSub.id,
                 subscriptionStatus: chosenSub.status,
                 locked: true,
                 unlockPrice: 1,
+                premiumPriorityUsed: premiumEligible.length > 0,
               },
             },
           });
