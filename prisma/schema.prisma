@@ -195,21 +195,59 @@ model ClinicPageView {
 }
 
 model PaymentLog {
-  id          String   @id @default(cuid())
-  clinicId    String
-  kind        String // "subscription_base" | "extra_leads"
-  amount      Int
-  currency    String   @default("TRY")
-  status      String // "started" | "success" | "failed" | "canceled"
-  provider    String? // "paytr" | "mock"
-  providerRef String? // PayTR order id / reference
-  payload     Json?
-  createdAt   DateTime @default(now())
+  id       String @id @default(cuid())
+  clinicId String
+
+  packageCode String?
+  kind        String
+  credits     Int?
+
+  amount   Int
+  currency String @default("TRY")
+
+  status   String  @default("started")
+  provider String?
+
+  // Bizim oluşturacağımız benzersiz ödeme sipariş numarası
+  orderNumber String? @unique
+
+  // Bankanın döndürdüğü işlem veya referans numarası
+  providerRef String?
+
+  // Aynı callback'in iki kez hak tanımlamasını engeller
+  callbackVerified Boolean @default(false)
+
+  serviceAgreementAccepted     Boolean   @default(false)
+  refundPolicyAccepted         Boolean   @default(false)
+  immediatePerformanceAccepted Boolean   @default(false)
+  agreementVersion             String?
+  agreementAcceptedAt          DateTime?
+
+  paidAt     DateTime?
+  failedAt   DateTime?
+  canceledAt DateTime?
+
+  errorCode    String?
+  errorMessage String? @db.Text
+
+  // Eski ödeme kayıtları için korunuyor
+  payload Json?
+
+  // Yeni ödeme başlangıç ve callback kayıtları
+  requestPayload  Json?
+  callbackPayload Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@index([clinicId, createdAt])
+  @@index([clinicId, status])
   @@index([status])
+  @@index([provider])
+  @@index([providerRef])
+  @@index([packageCode])
   @@map("payment_logs")
 }
 

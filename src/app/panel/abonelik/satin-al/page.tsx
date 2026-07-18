@@ -5,37 +5,53 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-type PackageCode = "base" | "extra" | "credit_5" | "credit_10" | "credit_25" | "premium";
+type PackageCode =
+  | "credit_5"
+  | "credit_10"
+  | "credit_25"
+  | "premium";
 
 type StartResp =
   | {
       ok: true;
-      mode: "trial" | "created" | "updated" | "credits_added" | "premium_started";
+      mode:
+        | "trial"
+        | "created"
+        | "updated"
+        | "credits_added"
+        | "premium_started";
       package: PackageCode;
       creditsAdded?: number;
     }
-  | { ok: false; code: string };
+  | {
+      ok: false;
+      code: string;
+    };
 
 type PackageInfo = {
   code: PackageCode;
   title: string;
   subtitle: string;
   price: string;
+  totalPrice: string;
   credits: number;
   icon: string;
   badge: string;
-  accent: "blue" | "purple" | "orange" | "premium" | "dark";
+  accent: "blue" | "purple" | "orange" | "premium";
   benefits: string[];
+  serviceType: string;
+  duration: string;
+  activation: string;
+  renewal: string;
+  leadPolicy: string;
 };
 
-function isPackageCode(v: string | null): v is PackageCode {
+function isPackageCode(value: string | null): value is PackageCode {
   return (
-    v === "base" ||
-    v === "extra" ||
-    v === "credit_5" ||
-    v === "credit_10" ||
-    v === "credit_25" ||
-    v === "premium"
+    value === "credit_5" ||
+    value === "credit_10" ||
+    value === "credit_25" ||
+    value === "premium"
   );
 }
 
@@ -44,13 +60,25 @@ function packageInfo(pkg: PackageCode): PackageInfo {
     return {
       code: pkg,
       title: "5 Kredi Paketi",
-      subtitle: "Başlangıç için hızlı kredi yükleme",
-      price: "1500 TL",
+      subtitle:
+        "Başlangıç için hazırlanmış tek seferlik lead görüntüleme paketi",
+      price: "1.500 TL",
+      totalPrice: "1.500 TL",
       credits: 5,
       icon: "💎",
       badge: "Başlangıç",
       accent: "blue",
-      benefits: ["5 lead açma hakkı", "Abonelik zorunluluğu yok", "Anında kredi yükleme"],
+      benefits: [
+        "5 lead iletişim kaydını görüntüleme hakkı",
+        "Abonelik zorunluluğu olmadan kullanım",
+        "Başarılı ödeme onayından sonra aktivasyon",
+      ],
+      serviceType: "Tek seferlik dijital kredi paketi",
+      duration: "Kredi bakiyesi tükenene kadar",
+      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      renewal: "Otomatik yenilenmez",
+      leadPolicy:
+        "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
   }
 
@@ -58,13 +86,25 @@ function packageInfo(pkg: PackageCode): PackageInfo {
     return {
       code: pkg,
       title: "10 Kredi Paketi",
-      subtitle: "En popüler ve dengeli kredi paketi",
-      price: "2000 TL",
+      subtitle:
+        "Dengeli kullanım için hazırlanmış tek seferlik kredi paketi",
+      price: "2.000 TL",
+      totalPrice: "2.000 TL",
       credits: 10,
       icon: "⚡",
       badge: "En Popüler",
       accent: "purple",
-      benefits: ["10 lead açma hakkı", "Daha avantajlı birim maliyet", "Anında kredi yükleme"],
+      benefits: [
+        "10 lead iletişim kaydını görüntüleme hakkı",
+        "5 kredi paketine göre daha avantajlı birim maliyet",
+        "Başarılı ödeme onayından sonra aktivasyon",
+      ],
+      serviceType: "Tek seferlik dijital kredi paketi",
+      duration: "Kredi bakiyesi tükenene kadar",
+      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      renewal: "Otomatik yenilenmez",
+      leadPolicy:
+        "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
   }
 
@@ -72,102 +112,213 @@ function packageInfo(pkg: PackageCode): PackageInfo {
     return {
       code: pkg,
       title: "25 Kredi Paketi",
-      subtitle: "Yoğun çalışan klinikler için yüksek avantaj",
-      price: "4000 TL",
+      subtitle:
+        "Yoğun lead kullanan klinikler için hazırlanmış kredi paketi",
+      price: "4.000 TL",
+      totalPrice: "4.000 TL",
       credits: 25,
       icon: "🚀",
       badge: "En Avantajlı",
       accent: "orange",
-      benefits: ["25 lead açma hakkı", "En düşük birim maliyet", "Yoğun lead kullanımı için ideal"],
-    };
-  }
-
-  if (pkg === "premium") {
-    return {
-      code: pkg,
-      title: "Premium Üyelik",
-      subtitle: "Lead dağıtımında öncelik + aylık kredi",
-      price: "2500 TL / ay",
-      credits: 10,
-      icon: "👑",
-      badge: "Premium",
-      accent: "premium",
-      benefits: ["Aylık 10 kredi", "Premium dağıtım önceliği", "Daha hızlı lead erişimi"],
-    };
-  }
-
-  if (pkg === "base") {
-    return {
-      code: pkg,
-      title: "Eski Aylık Abonelik",
-      subtitle: "Eski kota sistemi için abonelik",
-      price: "2000 TL",
-      credits: 10,
-      icon: "📦",
-      badge: "Eski Sistem",
-      accent: "dark",
-      benefits: ["10 lead kotası", "30 gün kullanım", "Eski sistem uyumluluğu"],
+      benefits: [
+        "25 lead iletişim kaydını görüntüleme hakkı",
+        "Paketler arasındaki en düşük birim maliyet",
+        "Yoğun lead kullanımı için yüksek kredi bakiyesi",
+      ],
+      serviceType: "Tek seferlik dijital kredi paketi",
+      duration: "Kredi bakiyesi tükenene kadar",
+      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      renewal: "Otomatik yenilenmez",
+      leadPolicy:
+        "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
   }
 
   return {
-    code: pkg,
-    title: "Eski Ek Lead Paketi",
-    subtitle: "Eski kota sistemine ek lead",
-    price: "1000 TL",
+    code: "premium",
+    title: "Premium Üyelik",
+    subtitle:
+      "30 günlük Premium üyelik, 10 kredi ve uygun lead dağıtımlarında öncelik",
+    price: "2.500 TL / 30 gün",
+    totalPrice: "2.500 TL",
     credits: 10,
-    icon: "➕",
-    badge: "Ek Paket",
-    accent: "dark",
-    benefits: ["+10 lead kotası", "Aktif aboneliğe eklenir", "Eski sistem uyumluluğu"],
+    icon: "👑",
+    badge: "Premium",
+    accent: "premium",
+    benefits: [
+      "Üyelik başlangıcında 10 kredi",
+      "Uygun lead dağıtımlarında standart kliniklere göre öncelik",
+      "30 günlük Premium üyelik süresi",
+    ],
+    serviceType: "30 günlük dijital Premium üyelik",
+    duration: "Başarılı ödeme onayından itibaren 30 gün",
+    activation: "Başarılı ödeme onayından sonra başlatılır",
+    renewal: "Otomatik yenilenmez; yeniden satın alınması gerekir",
+    leadPolicy:
+      "Premium öncelik; münhasır lead, belirli sayıda talep, kesin hasta, randevu veya gelir garantisi değildir.",
   };
 }
 
-function successMessage(j: Extract<StartResp, { ok: true }>): string {
-  if (j.mode === "credits_added") return `✅ ${j.creditsAdded ?? 0} kredi hesabına eklendi.`;
-  if (j.mode === "premium_started") return "✅ Premium üyelik başlatıldı ve 10 kredi yüklendi.";
-  if (j.mode === "trial") return "✅ Trial başlatıldı.";
-  if (j.mode === "created") return "✅ Abonelik başlatıldı.";
+function successMessage(
+  response: Extract<StartResp, { ok: true }>
+): string {
+  if (response.mode === "credits_added") {
+    return `✅ ${response.creditsAdded ?? 0} kredi hesabına eklendi.`;
+  }
+
+  if (response.mode === "premium_started") {
+    return "✅ Premium üyelik başlatıldı ve 10 kredi yüklendi.";
+  }
+
+  if (response.mode === "trial") {
+    return "✅ Deneme üyeliği başlatıldı.";
+  }
+
+  if (response.mode === "created") {
+    return "✅ Abonelik başlatıldı.";
+  }
+
   return "✅ Kota güncellendi.";
 }
 
+function errorMessage(code: string): string {
+  if (
+    code === "UNAUTHORIZED" ||
+    code === "UNAUTHORIZED_CLINIC"
+  ) {
+    return "Oturum bulunamadı. Lütfen tekrar giriş yap.";
+  }
+
+  if (
+    code === "INVALID_PACKAGE" ||
+    code === "VALIDATION_ERROR"
+  ) {
+    return "Gönderilen ödeme veya paket bilgileri doğrulanamadı.";
+  }
+
+  if (code === "CLINIC_NOT_FOUND") {
+    return "Aktif klinik hesabı bulunamadı.";
+  }
+
+  if (code === "PAYMENT_PROVIDER_NOT_ACTIVE") {
+    return "Sanal POS henüz aktif değildir. Ödeme alınmamış ve hesabına herhangi bir kredi veya üyelik hakkı tanımlanmamıştır.";
+  }
+
+  if (
+    code === "PAYMENT_START_ERROR" ||
+    code === "PAYMENT_FAILED"
+  ) {
+    return "Ödeme işlemi başlatılamadı. Lütfen daha sonra tekrar dene.";
+  }
+
+  return code || "İşlem tamamlanamadı.";
+}
+
 export default function BuyPage(): JSX.Element {
-  const sp = useSearchParams();
-  const pkgParam = sp.get("package");
-  const pkg: PackageCode = isPackageCode(pkgParam) ? pkgParam : "credit_10";
+  const searchParams = useSearchParams();
+  const packageParam = searchParams.get("package");
+
+  const pkg: PackageCode = isPackageCode(packageParam)
+    ? packageParam
+    : "credit_10";
 
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const selected = useMemo(() => packageInfo(pkg), [pkg]);
+  const [
+    serviceAgreementAccepted,
+    setServiceAgreementAccepted,
+  ] = useState<boolean>(false);
 
-  const startMockPayment = async (): Promise<void> => {
+  const [
+    refundPolicyAccepted,
+    setRefundPolicyAccepted,
+  ] = useState<boolean>(false);
+
+  const [
+    immediatePerformanceAccepted,
+    setImmediatePerformanceAccepted,
+  ] = useState<boolean>(false);
+
+  const selected = useMemo(
+    () => packageInfo(pkg),
+    [pkg]
+  );
+
+  const allApprovalsAccepted =
+    serviceAgreementAccepted &&
+    refundPolicyAccepted &&
+    immediatePerformanceAccepted;
+
+  /*
+   * Garanti BBVA Sanal POS bağlantısı tamamlandığında
+   * bu değer ortam değişkeninden veya sunucudan alınabilir.
+   *
+   * Şu anda false kalmalıdır. Böylece istemci tarafında
+   * mock ödeme veya ücretsiz kredi yükleme başlatılamaz.
+   */
+  const paymentProviderActive = false;
+
+  const startPayment = async (): Promise<void> => {
+    if (!paymentProviderActive) {
+      setInfo(null);
+      setErr(
+        "Garanti BBVA Sanal POS henüz aktif değildir. Bu nedenle ödeme işlemi başlatılamaz."
+      );
+      return;
+    }
+
+    if (!allApprovalsAccepted) {
+      setInfo(null);
+      setErr(
+        "Ödeme işlemine devam etmek için sözleşme ve hizmet onaylarını kabul etmelisin."
+      );
+      return;
+    }
+
     setLoading(true);
     setErr(null);
     setInfo(null);
 
     try {
-      const r = await fetch("/api/payments/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ package: selected.code }),
-      });
+      const response = await fetch(
+        "/api/payments/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            package: selected.code,
+            serviceAgreementAccepted,
+            refundPolicyAccepted,
+            immediatePerformanceAccepted,
+          }),
+        }
+      );
 
-      const j = (await r.json()) as StartResp;
+      const data = (await response.json()) as StartResp;
 
-      if (!r.ok || !j.ok) {
-        setErr("İşlem başarısız: " + (j.ok ? "" : j.code));
+      if (!response.ok || !data.ok) {
+        setErr(
+          "İşlem başarısız: " +
+            (data.ok
+              ? "Bilinmeyen hata"
+              : errorMessage(data.code))
+        );
         return;
       }
 
-      setInfo(successMessage(j));
+      setInfo(successMessage(data));
 
       window.setTimeout(() => {
         window.location.href = "/panel/abonelik";
       }, 650);
     } catch {
-      setErr("Bağlantı hatası.");
+      setErr(
+        "Bağlantı hatası oluştu. Lütfen internet bağlantını kontrol ederek tekrar dene."
+      );
     } finally {
       setLoading(false);
     }
@@ -220,8 +371,13 @@ export default function BuyPage(): JSX.Element {
         }
 
         @keyframes floatOrb {
-          0%, 100% { transform: translate3d(0,0,0) scale(1); }
-          50% { transform: translate3d(0,18px,0) scale(1.08); }
+          0%, 100% {
+            transform: translate3d(0,0,0) scale(1);
+          }
+
+          50% {
+            transform: translate3d(0,18px,0) scale(1.08);
+          }
         }
 
         .topBar {
@@ -248,7 +404,7 @@ export default function BuyPage(): JSX.Element {
           display: grid;
           grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
           gap: 18px;
-          align-items: stretch;
+          align-items: start;
         }
 
         .checkoutHero {
@@ -256,7 +412,7 @@ export default function BuyPage(): JSX.Element {
           overflow: hidden;
           border-radius: 34px;
           padding: 26px;
-          min-height: 500px;
+          min-height: 540px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -283,16 +439,32 @@ export default function BuyPage(): JSX.Element {
           content: "";
           position: absolute;
           inset: -120px;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,.50), transparent);
+          background:
+            linear-gradient(
+              90deg,
+              transparent,
+              rgba(255,255,255,.50),
+              transparent
+            );
           transform: rotate(13deg) translateX(-58%);
           animation: shineMove 6s ease-in-out infinite;
           pointer-events: none;
         }
 
         @keyframes shineMove {
-          0%, 55% { transform: rotate(13deg) translateX(-62%); opacity: 0; }
-          70% { opacity: .75; }
-          100% { transform: rotate(13deg) translateX(62%); opacity: 0; }
+          0%, 55% {
+            transform: rotate(13deg) translateX(-62%);
+            opacity: 0;
+          }
+
+          70% {
+            opacity: .75;
+          }
+
+          100% {
+            transform: rotate(13deg) translateX(62%);
+            opacity: 0;
+          }
         }
 
         .heroInner {
@@ -335,6 +507,41 @@ export default function BuyPage(): JSX.Element {
 
         .premium .subtitle {
           opacity: .86;
+        }
+
+        .heroDetails {
+          position: relative;
+          z-index: 1;
+          margin-top: 24px;
+          display: grid;
+          gap: 10px;
+        }
+
+        .heroDetail {
+          display: grid;
+          grid-template-columns: 145px 1fr;
+          gap: 12px;
+          align-items: start;
+          border-radius: 17px;
+          padding: 11px 13px;
+          background: rgba(255,255,255,.58);
+          border: 1px solid rgba(255,255,255,.68);
+          font-size: 13px;
+          line-height: 1.55;
+        }
+
+        .premium .heroDetail {
+          background: rgba(255,255,255,.10);
+          border-color: rgba(255,255,255,.16);
+        }
+
+        .heroDetailLabel {
+          font-weight: 1000;
+          opacity: .68;
+        }
+
+        .heroDetailValue {
+          font-weight: 900;
         }
 
         .priceBox {
@@ -381,13 +588,105 @@ export default function BuyPage(): JSX.Element {
 
         .benefit {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 10px;
           border-radius: 18px;
           padding: 12px;
           background: rgba(255,255,255,.76);
           border: 1px solid rgba(15,23,42,.08);
           font-weight: 900;
+          line-height: 1.5;
+        }
+
+        .orderTable {
+          margin-top: 16px;
+          border-radius: 20px;
+          overflow: hidden;
+          border: 1px solid rgba(15,23,42,.09);
+          background: rgba(255,255,255,.68);
+        }
+
+        .orderRow {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 11px 13px;
+          border-bottom: 1px solid rgba(15,23,42,.07);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+
+        .orderRow:last-child {
+          border-bottom: 0;
+        }
+
+        .orderLabel {
+          color: rgba(15,23,42,.66);
+          font-weight: 850;
+        }
+
+        .orderValue {
+          color: rgba(15,23,42,.92);
+          font-weight: 1000;
+          text-align: right;
+        }
+
+        .orderRow.total {
+          background: rgba(79,70,229,.07);
+          padding-top: 14px;
+          padding-bottom: 14px;
+        }
+
+        .orderRow.total .orderLabel,
+        .orderRow.total .orderValue {
+          font-size: 17px;
+          color: rgba(15,23,42,.96);
+        }
+
+        .approvalList {
+          margin-top: 16px;
+          display: grid;
+          gap: 10px;
+        }
+
+        .approvalItem {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          border-radius: 18px;
+          padding: 12px;
+          border: 1px solid rgba(15,23,42,.09);
+          background: rgba(255,255,255,.70);
+          cursor: pointer;
+        }
+
+        .approvalItem:hover {
+          border-color: rgba(79,70,229,.24);
+          background: rgba(248,250,252,.90);
+        }
+
+        .approvalItem input {
+          width: 18px;
+          height: 18px;
+          margin: 2px 0 0;
+          flex: 0 0 auto;
+          accent-color: #4f46e5;
+          cursor: pointer;
+        }
+
+        .approvalText {
+          color: rgba(15,23,42,.78);
+          font-size: 12px;
+          font-weight: 820;
+          line-height: 1.65;
+        }
+
+        .approvalText a {
+          color: #4338ca;
+          font-weight: 1000;
+          text-decoration: underline;
+          text-underline-offset: 2px;
         }
 
         .payButton {
@@ -399,9 +698,17 @@ export default function BuyPage(): JSX.Element {
           color: white;
           font-weight: 1000;
           cursor: pointer;
-          background: linear-gradient(135deg, rgba(79,70,229,.98), rgba(168,85,247,.98));
+          background:
+            linear-gradient(
+              135deg,
+              rgba(79,70,229,.98),
+              rgba(168,85,247,.98)
+            );
           box-shadow: 0 22px 55px rgba(124,58,237,.25);
-          transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+          transition:
+            transform .18s ease,
+            box-shadow .18s ease,
+            opacity .18s ease;
         }
 
         .payButton:hover:not(:disabled) {
@@ -410,8 +717,9 @@ export default function BuyPage(): JSX.Element {
         }
 
         .payButton:disabled {
-          opacity: .65;
+          opacity: .52;
           cursor: not-allowed;
+          box-shadow: none;
         }
 
         .trustGrid {
@@ -439,6 +747,20 @@ export default function BuyPage(): JSX.Element {
           background: rgba(59,130,246,.08);
           font-weight: 850;
           line-height: 1.65;
+          color: rgba(15,23,42,.78);
+          font-size: 13px;
+        }
+
+        .warningNotice {
+          margin-top: 12px;
+          border-radius: 20px;
+          padding: 14px;
+          border: 1px solid rgba(245,158,11,.24);
+          background: rgba(245,158,11,.09);
+          font-weight: 850;
+          line-height: 1.65;
+          color: rgba(120,53,15,.92);
+          font-size: 13px;
         }
 
         .successBox {
@@ -458,6 +780,7 @@ export default function BuyPage(): JSX.Element {
           background: rgba(239,68,68,.10);
           color: #b91c1c;
           font-weight: 950;
+          line-height: 1.55;
         }
 
         @media (max-width: 900px) {
@@ -473,86 +796,428 @@ export default function BuyPage(): JSX.Element {
             grid-template-columns: 1fr;
           }
         }
+
+        @media (max-width: 560px) {
+          .heroDetail {
+            grid-template-columns: 1fr;
+            gap: 3px;
+          }
+
+          .orderRow {
+            flex-direction: column;
+            gap: 3px;
+          }
+
+          .orderValue {
+            text-align: left;
+          }
+        }
       `}</style>
 
       <div className="orb orbOne" />
       <div className="orb orbTwo" />
 
       <div className="topBar">
-        <span style={badgeStyle()}>💳 Güvenli Ödeme Alanı</span>
-        <Link href="/panel/abonelik" className="backLink">
+        <span style={badgeStyle()}>
+          💳 Güvenli Ödeme Alanı
+        </span>
+
+        <Link
+          href="/panel/abonelik"
+          className="backLink"
+        >
           ← Kredi Yönetimine dön
         </Link>
       </div>
 
       <div className="checkoutGrid">
-        <section className={`checkoutHero ${selected.accent === "premium" ? "premium" : ""}`}>
+        <section
+          className={`checkoutHero ${
+            selected.accent === "premium"
+              ? "premium"
+              : ""
+          }`}
+        >
           <div className="heroInner">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div className="iconBubble">{selected.icon}</div>
-              <span style={selected.accent === "premium" ? premiumBadgeStyle() : badgeStyle()}>{selected.badge}</span>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div className="iconBubble">
+                {selected.icon}
+              </div>
+
+              <span
+                style={
+                  selected.accent === "premium"
+                    ? premiumBadgeStyle()
+                    : badgeStyle()
+                }
+              >
+                {selected.badge}
+              </span>
             </div>
 
-            <h1 className="title">{selected.title}</h1>
-            <div className="subtitle">{selected.subtitle}</div>
+            <h1 className="title">
+              {selected.title}
+            </h1>
+
+            <div className="subtitle">
+              {selected.subtitle}
+            </div>
+
+            <div className="heroDetails">
+              <div className="heroDetail">
+                <div className="heroDetailLabel">
+                  Hizmet türü
+                </div>
+
+                <div className="heroDetailValue">
+                  {selected.serviceType}
+                </div>
+              </div>
+
+              <div className="heroDetail">
+                <div className="heroDetailLabel">
+                  Kapsam
+                </div>
+
+                <div className="heroDetailValue">
+                  {selected.credits} kredi
+                </div>
+              </div>
+
+              <div className="heroDetail">
+                <div className="heroDetailLabel">
+                  Geçerlilik
+                </div>
+
+                <div className="heroDetailValue">
+                  {selected.duration}
+                </div>
+              </div>
+
+              <div className="heroDetail">
+                <div className="heroDetailLabel">
+                  Aktivasyon
+                </div>
+
+                <div className="heroDetailValue">
+                  {selected.activation}
+                </div>
+              </div>
+
+              <div className="heroDetail">
+                <div className="heroDetailLabel">
+                  Yenileme
+                </div>
+
+                <div className="heroDetailValue">
+                  {selected.renewal}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="priceBox">
             <div>
-              <div style={{ opacity: 0.72, fontWeight: 950, fontSize: 12 }}>Seçilen paket</div>
-              <div className="price">{selected.price}</div>
+              <div
+                style={{
+                  opacity: 0.72,
+                  fontWeight: 950,
+                  fontSize: 12,
+                }}
+              >
+                Seçilen paket
+              </div>
+
+              <div className="price">
+                {selected.price}
+              </div>
             </div>
-            <div style={{ fontWeight: 1000, opacity: 0.84 }}>
+
+            <div
+              style={{
+                fontWeight: 1000,
+                opacity: 0.84,
+              }}
+            >
               {selected.credits} kredi
             </div>
           </div>
         </section>
 
         <aside className="summaryCard">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "start" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+              alignItems: "start",
+            }}
+          >
             <div>
-              <div style={{ fontWeight: 1000, fontSize: 24, letterSpacing: "-0.035em" }}>Sipariş Özeti</div>
-              <div style={{ opacity: 0.68, fontWeight: 850, marginTop: 4 }}>{selected.title}</div>
+              <div
+                style={{
+                  fontWeight: 1000,
+                  fontSize: 24,
+                  letterSpacing: "-0.035em",
+                }}
+              >
+                Sipariş Özeti
+              </div>
+
+              <div
+                style={{
+                  opacity: 0.68,
+                  fontWeight: 850,
+                  marginTop: 4,
+                }}
+              >
+                {selected.title}
+              </div>
             </div>
-            <span style={badgeStyle()}>{selected.price}</span>
+
+            <span style={badgeStyle()}>
+              {selected.totalPrice}
+            </span>
           </div>
 
           <div className="benefitList">
-            {selected.benefits.map((b) => (
-              <div className="benefit" key={b}>
+            {selected.benefits.map((benefit) => (
+              <div
+                className="benefit"
+                key={benefit}
+              >
                 <span>✅</span>
-                <span>{b}</span>
+                <span>{benefit}</span>
               </div>
             ))}
           </div>
 
+          <div className="orderTable">
+            <div className="orderRow">
+              <span className="orderLabel">
+                Paket
+              </span>
+
+              <span className="orderValue">
+                {selected.title}
+              </span>
+            </div>
+
+            <div className="orderRow">
+              <span className="orderLabel">
+                Kredi miktarı
+              </span>
+
+              <span className="orderValue">
+                {selected.credits} kredi
+              </span>
+            </div>
+
+            <div className="orderRow">
+              <span className="orderLabel">
+                Hizmet süresi
+              </span>
+
+              <span className="orderValue">
+                {selected.duration}
+              </span>
+            </div>
+
+            <div className="orderRow">
+              <span className="orderLabel">
+                Yenileme
+              </span>
+
+              <span className="orderValue">
+                {selected.renewal}
+              </span>
+            </div>
+
+            <div className="orderRow total">
+              <span className="orderLabel">
+                Ödenecek toplam
+              </span>
+
+              <span className="orderValue">
+                {selected.totalPrice}
+              </span>
+            </div>
+          </div>
+
           <div className="notice">
-            <strong>Not:</strong> Şu an test/mock işlem çalışır. Ödeme sistemi bağlanınca bu ekran gerçek ödeme akışına bağlanacak.
+            <strong>
+              Lead bilgilendirmesi:
+            </strong>{" "}
+            {selected.leadPolicy}
+          </div>
+
+          <div className="warningNotice">
+            <strong>
+              Sanal POS başvuru süreci:
+            </strong>{" "}
+            Garanti BBVA Sanal POS bağlantısı henüz
+            etkin değildir. Bu ekranda şu anda karttan
+            tahsilat yapılmaz ve kredi ya da Premium
+            üyelik tanımlanmaz.
+          </div>
+
+          <div className="approvalList">
+            <label className="approvalItem">
+              <input
+                type="checkbox"
+                checked={serviceAgreementAccepted}
+                onChange={(event) =>
+                  setServiceAgreementAccepted(
+                    event.target.checked
+                  )
+                }
+              />
+
+              <span className="approvalText">
+                <Link
+                  href="/mesafeli-satis-sozlesmesi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Dijital Hizmet Satış ve Kullanım
+                  Sözleşmesi
+                </Link>
+                ’ni okudum, paket kapsamını ve kullanım
+                koşullarını kabul ediyorum.
+              </span>
+            </label>
+
+            <label className="approvalItem">
+              <input
+                type="checkbox"
+                checked={refundPolicyAccepted}
+                onChange={(event) =>
+                  setRefundPolicyAccepted(
+                    event.target.checked
+                  )
+                }
+              />
+
+              <span className="approvalText">
+                <Link
+                  href="/iptal-iade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  İptal ve İade Politikası
+                </Link>
+                ’nı okudum ve kabul ediyorum.
+              </span>
+            </label>
+
+            <label className="approvalItem">
+              <input
+                type="checkbox"
+                checked={immediatePerformanceAccepted}
+                onChange={(event) =>
+                  setImmediatePerformanceAccepted(
+                    event.target.checked
+                  )
+                }
+              />
+
+              <span className="approvalText">
+                Satın aldığım dijital hizmetin başarılı
+                ödeme onayından sonra elektronik ortamda
+                hemen başlatılmasını ve kredi veya üyelik
+                hakkının hesabıma tanımlanmasını talep
+                ediyorum.
+              </span>
+            </label>
           </div>
 
           <button
             type="button"
-            onClick={() => void startMockPayment()}
-            disabled={loading}
+            onClick={() => void startPayment()}
+            disabled={
+              loading ||
+              !allApprovalsAccepted ||
+              !paymentProviderActive
+            }
             className="payButton"
           >
-            {loading ? "İşlem hazırlanıyor..." : "⚡ İşlemi Başlat"}
+            {loading
+              ? "İşlem hazırlanıyor..."
+              : paymentProviderActive
+                ? `${selected.totalPrice} Öde ve Paketi Aktifleştir`
+                : "Sanal POS Başvuru Sürecinde"}
           </button>
 
-          {info ? <div className="successBox">{info}</div> : null}
-          {err ? <div className="errorBox">Hata: {err}</div> : null}
+          {!allApprovalsAccepted && !loading ? (
+            <div
+              style={{
+                marginTop: 9,
+                textAlign: "center",
+                color: "rgba(15,23,42,.58)",
+                fontSize: 11,
+                fontWeight: 850,
+                lineHeight: 1.5,
+              }}
+            >
+              Bilgilendirme ve sözleşme metinlerini
+              incelemek için onay kutularını
+              işaretleyebilirsin. Ödeme altyapısı şu anda
+              kapalıdır.
+            </div>
+          ) : null}
+
+          {info ? (
+            <div className="successBox">
+              {info}
+            </div>
+          ) : null}
+
+          {err ? (
+            <div className="errorBox">
+              Hata: {err}
+            </div>
+          ) : null}
 
           <div className="trustGrid">
-            <div className="trustItem">🔒 KVKK</div>
-            <div className="trustItem">⚡ Anında</div>
-            <div className="trustItem">📜 Kayıtlı</div>
+            <div className="trustItem">
+              🔒 Güvenli işlem
+            </div>
+
+            <div className="trustItem">
+              🏦 3D Secure hazırlığı
+            </div>
+
+            <div className="trustItem">
+              📜 İşlem kaydı
+            </div>
           </div>
 
-          <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href="/panel/abonelik" style={ghostLinkStyle()}>
+          <div
+            style={{
+              marginTop: 14,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <Link
+              href="/panel/abonelik"
+              style={ghostLinkStyle()}
+            >
               Paketlere Dön
             </Link>
-            <Link href="/panel/leadler" style={ghostLinkStyle()}>
+
+            <Link
+              href="/panel/leadler"
+              style={ghostLinkStyle()}
+            >
               Leadler →
             </Link>
           </div>
@@ -573,7 +1238,8 @@ function badgeStyle(): CSSProperties {
     background: "rgba(255,255,255,0.78)",
     fontWeight: 950,
     fontSize: 12,
-    boxShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    boxShadow:
+      "0 10px 22px rgba(15,23,42,0.06)",
   };
 }
 
@@ -581,8 +1247,10 @@ function premiumBadgeStyle(): CSSProperties {
   return {
     ...badgeStyle(),
     color: "white",
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: "rgba(255,255,255,0.14)",
+    border:
+      "1px solid rgba(255,255,255,0.18)",
+    background:
+      "rgba(255,255,255,0.14)",
   };
 }
 
@@ -593,8 +1261,10 @@ function ghostLinkStyle(): CSSProperties {
     textDecoration: "none",
     padding: "11px 12px",
     borderRadius: 16,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "rgba(255,255,255,0.72)",
+    border:
+      "1px solid rgba(15,23,42,0.10)",
+    background:
+      "rgba(255,255,255,0.72)",
     color: "rgba(15,23,42,0.86)",
     fontWeight: 950,
   };
