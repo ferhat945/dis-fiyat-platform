@@ -13,38 +13,50 @@ type BlogPost = {
   updatedAt: string;
 };
 
-type ApiOk<T> = { ok: true } & T;
+type ApiOk<T> = {
+  ok: true;
+} & T;
+
 type ApiErr = {
   ok: false;
   code?: string;
   message?: string;
-  issues?: Array<{ path: string; message: string }>;
+  issues?: Array<{
+    path: string;
+    message: string;
+  }>;
 };
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
+type Props = {
+  postId: string;
+  onSaved?: (post: BlogPost) => void;
+  onDeleted?: () => void;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
-function readString(v: unknown, fallback = ""): string {
-  return typeof v === "string" ? v : fallback;
+function readString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
 }
 
-function readBool(v: unknown, fallback = false): boolean {
-  return typeof v === "boolean" ? v : fallback;
+function readBool(value: unknown, fallback = false): boolean {
+  return typeof value === "boolean" ? value : fallback;
 }
 
-function readNullableString(v: unknown): string | null {
-  return typeof v === "string" ? v : v === null ? null : null;
+function readNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
 }
 
-function normalizeErrText(err: ApiErr | null): string {
-  const t = (err?.message ?? err?.code ?? "").trim();
-  return t ? t : "İşlem başarısız.";
+function normalizeErrText(error: ApiErr | null): string {
+  const text = (error?.message ?? error?.code ?? "").trim();
+
+  return text || "İşlem başarısız.";
 }
 
-// basit slugify (Türkçe harfleri sadeleştir + url uyumlu)
 function slugifyTR(input: string): string {
-  return (input ?? "")
+  return input
     .toLocaleLowerCase("tr-TR")
     .trim()
     .replaceAll("ı", "i")
@@ -65,175 +77,382 @@ function slugifyTR(input: string): string {
     .replace(/^-|-$/g, "");
 }
 
-type Props = {
-  postId: string; // "new" veya id/slug
-  onSaved?: (p: BlogPost) => void;
-  onDeleted?: () => void;
-};
-
-export default function AdminBlogEditor({ postId, onSaved, onDeleted }: Props): JSX.Element {
+export default function AdminBlogEditor({
+  postId,
+  onSaved,
+  onDeleted,
+}: Props): JSX.Element {
   const isNew = postId === "new";
 
-  const [loading, setLoading] = useState(!isNew);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [loading, setLoading] = useState<boolean>(!isNew);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
 
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [content, setContent] = useState("");
-  const [isPublished, setIsPublished] = useState(false);
+  const [title, setTitle] = useState<string>("");
+  const [slug, setSlug] = useState<string>("");
+  const [excerpt, setExcerpt] = useState<string>("");
+  const [content, setContent] = useState<string>("");
+  const [isPublished, setIsPublished] = useState<boolean>(false);
 
-  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
 
-  // slug otomatik üretimi için: kullanıcı slug alanına dokundu mu?
-  const slugTouchedRef = useRef(false);
+  const slugTouchedRef = useRef<boolean>(false);
 
-  const canSave = useMemo(() => {
-    if (title.trim().length < 3) return false;
-    if (content.trim().length < 20) return false;
+  const canSave = useMemo<boolean>(() => {
+    if (title.trim().length < 3) {
+      return false;
+    }
+
+    if (content.trim().length < 20) {
+      return false;
+    }
+
     return true;
   }, [title, content]);
 
   async function loadPost(): Promise<void> {
-    if (isNew) return;
+    if (isNew) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setMsg(null);
 
-    const res = await fetch(`/api/admin/blog/${encodeURIComponent(postId)}`, { cache: "no-store" });
-    const j: unknown = await res.json().catch(() => null);
+    try {
+      const response = await fetch(
+        `/api/admin/blog/${encodeURIComponent(postId)}`,
+        {
+          cache: "no-store",
+        },
+      );
 
-    if (!res.ok || !isRecord(j) || j.ok !== true) {
-      const err = isRecord(j) ? (j as ApiErr) : null;
-      setMsg({ type: "err", text: normalizeErrText(err) });
+      const json: unknown = await response.json().catch(() => null);
+
+      if (!response.ok || !isRecord(json) || json.ok !== true) {
+        const error = isRecord(json) ? (json as ApiErr) : null;
+
+        setMsg({
+          type: "err",
+          text: normalizeErrText(error),
+        });
+
+        return;
+      }
+
+      const result = json as ApiOk<{
+        post: unknown;
+      }>;
+
+      if (!isRecord(result.post)) {
+        setMsg({
+          type: "err",
+          text: "Post okunamadı.",
+        });
+
+        return;
+      }
+
+      const post = result.post;
+
+      slugTouchedRef.current = true;
+
+      setTitle(readString(post.title));
+      setSlug(readString(post.slug));
+      setExcerpt(readString(post.excerpt));
+      setContent(readString(post.content));
+      setIsPublished(readBool(post.isPublished));
+    } catch {
+      setMsg({
+        type: "err",
+        text: "Yazı yüklenemedi.",
+      });
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const ok = j as ApiOk<{ post: unknown }>;
-    const p = ok.post;
-
-    if (!isRecord(p)) {
-      setMsg({ type: "err", text: "Post okunamadı." });
-      setLoading(false);
-      return;
-    }
-
-    slugTouchedRef.current = true; // mevcut postta slug zaten var; otomatik üretim karışmasın
-    setTitle(readString(p.title));
-    setSlug(readString(p.slug));
-    setExcerpt(readString(p.excerpt, ""));
-    setContent(readString(p.content));
-    setIsPublished(readBool(p.isPublished));
-
-    setLoading(false);
   }
 
   async function save(): Promise<void> {
-    setSaving(true);
-    setMsg(null);
-
-    const payload = {
-      title: title.trim(),
-      slug: slug.trim() || undefined,
-      excerpt: excerpt.trim() ? excerpt.trim() : null,
-      content,
-      isPublished,
-    };
-
-    const res = await fetch(isNew ? "/api/admin/blog" : `/api/admin/blog/${encodeURIComponent(postId)}`, {
-      method: isNew ? "POST" : "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const j: unknown = await res.json().catch(() => null);
-
-    if (!res.ok || !isRecord(j) || j.ok !== true) {
-      const err = isRecord(j) ? (j as ApiErr) : null;
-
-      if (err?.issues?.length) {
-        setMsg({ type: "err", text: err.issues[0]?.message ?? "Doğrulama hatası." });
-      } else {
-        setMsg({ type: "err", text: normalizeErrText(err) });
-      }
-
-      setSaving(false);
+    if (!canSave || loading || saving || deleting) {
       return;
     }
 
-    const ok = j as ApiOk<{ post?: unknown }>;
-    const post = ok.post;
+    setSaving(true);
+    setMsg(null);
 
-    if (isRecord(post)) {
-      const saved: BlogPost = {
-        id: readString(post.id),
-        title: readString(post.title),
-        slug: readString(post.slug),
-        excerpt: readNullableString(post.excerpt),
-        content: readString(post.content),
-        isPublished: readBool(post.isPublished),
-        publishedAt: readNullableString(post.publishedAt),
-        updatedAt: readString(post.updatedAt),
+    try {
+      const payload = {
+        title: title.trim(),
+        slug: slug.trim() || undefined,
+        excerpt: excerpt.trim() ? excerpt.trim() : null,
+        content,
+        isPublished,
       };
-      setMsg({ type: "ok", text: "Kaydedildi ✅" });
-      onSaved?.(saved);
-    } else {
-      setMsg({ type: "ok", text: "Kaydedildi ✅" });
-    }
 
-    setSaving(false);
+      const response = await fetch(
+        isNew
+          ? "/api/admin/blog"
+          : `/api/admin/blog/${encodeURIComponent(postId)}`,
+        {
+          method: isNew ? "POST" : "PATCH",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const json: unknown = await response.json().catch(() => null);
+
+      if (!response.ok || !isRecord(json) || json.ok !== true) {
+        const error = isRecord(json) ? (json as ApiErr) : null;
+
+        if (error?.issues?.length) {
+          setMsg({
+            type: "err",
+            text:
+              error.issues[0]?.message ??
+              "Doğrulama hatası.",
+          });
+        } else {
+          setMsg({
+            type: "err",
+            text: normalizeErrText(error),
+          });
+        }
+
+        return;
+      }
+
+      const result = json as ApiOk<{
+        post?: unknown;
+      }>;
+
+      if (isRecord(result.post)) {
+        const post = result.post;
+
+        const savedPost: BlogPost = {
+          id: readString(post.id),
+          title: readString(post.title),
+          slug: readString(post.slug),
+          excerpt: readNullableString(post.excerpt),
+          content: readString(post.content),
+          isPublished: readBool(post.isPublished),
+          publishedAt: readNullableString(post.publishedAt),
+          updatedAt: readString(post.updatedAt),
+        };
+
+        setTitle(savedPost.title);
+        setSlug(savedPost.slug);
+        setExcerpt(savedPost.excerpt ?? "");
+        setContent(savedPost.content);
+        setIsPublished(savedPost.isPublished);
+        slugTouchedRef.current = true;
+
+        onSaved?.(savedPost);
+      }
+
+      setMsg({
+        type: "ok",
+        text: "Kaydedildi ✅",
+      });
+    } catch {
+      setMsg({
+        type: "err",
+        text: "Kaydetme işlemi başarısız.",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function del(): Promise<void> {
-    if (isNew) return;
+    if (isNew || loading || saving || deleting) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Bu blog yazısını silmek istediğine emin misin?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
 
     setDeleting(true);
     setMsg(null);
 
-    const res = await fetch(`/api/admin/blog/${encodeURIComponent(postId)}`, { method: "DELETE" });
-    const j: unknown = await res.json().catch(() => null);
+    try {
+      const response = await fetch(
+        `/api/admin/blog/${encodeURIComponent(postId)}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-    if (!res.ok || !isRecord(j) || j.ok !== true) {
-      const err = isRecord(j) ? (j as ApiErr) : null;
-      setMsg({ type: "err", text: normalizeErrText(err) });
+      const json: unknown = await response.json().catch(() => null);
+
+      if (!response.ok || !isRecord(json) || json.ok !== true) {
+        const error = isRecord(json) ? (json as ApiErr) : null;
+
+        setMsg({
+          type: "err",
+          text: normalizeErrText(error),
+        });
+
+        return;
+      }
+
+      setMsg({
+        type: "ok",
+        text: "Silindi.",
+      });
+
+      onDeleted?.();
+    } catch {
+      setMsg({
+        type: "err",
+        text: "Silme işlemi başarısız.",
+      });
+    } finally {
       setDeleting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isNew) {
+      setLoading(false);
       return;
     }
 
-    setMsg({ type: "ok", text: "Silindi." });
-    setDeleting(false);
-    onDeleted?.();
-  }
+    let cancelled = false;
 
-  // load
-  useEffect(() => {
-    void loadPost();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
+    async function loadInitialPost(): Promise<void> {
+      try {
+        const response = await fetch(
+          `/api/admin/blog/${encodeURIComponent(postId)}`,
+          {
+            cache: "no-store",
+          },
+        );
 
-  // title -> slug (kullanıcı slug'a dokunmadıysa)
+        const json: unknown = await response.json().catch(() => null);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok || !isRecord(json) || json.ok !== true) {
+          const error = isRecord(json) ? (json as ApiErr) : null;
+
+          setMsg({
+            type: "err",
+            text: normalizeErrText(error),
+          });
+
+          return;
+        }
+
+        const result = json as ApiOk<{
+          post: unknown;
+        }>;
+
+        if (!isRecord(result.post)) {
+          setMsg({
+            type: "err",
+            text: "Post okunamadı.",
+          });
+
+          return;
+        }
+
+        const post = result.post;
+
+        slugTouchedRef.current = true;
+
+        setTitle(readString(post.title));
+        setSlug(readString(post.slug));
+        setExcerpt(readString(post.excerpt));
+        setContent(readString(post.content));
+        setIsPublished(readBool(post.isPublished));
+      } catch {
+        if (!cancelled) {
+          setMsg({
+            type: "err",
+            text: "Yazı yüklenemedi.",
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadInitialPost();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isNew, postId]);
+
   useEffect(() => {
-    if (slugTouchedRef.current) return;
-    const next = slugifyTR(title);
-    if (next) setSlug(next);
+    if (slugTouchedRef.current) {
+      return;
+    }
+
+    const nextSlug = slugifyTR(title);
+
+    if (nextSlug) {
+      setSlug(nextSlug);
+    }
   }, [title]);
 
   return (
     <section className="rounded-2xl border bg-white/60 shadow-sm backdrop-blur">
-      {/* üst bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white/50 px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl border bg-white text-lg">📝</div>
+          <div className="grid h-10 w-10 place-items-center rounded-2xl border bg-white text-lg">
+            📝
+          </div>
+
           <div>
-            <div className="text-sm font-extrabold text-gray-900">{isNew ? "Yeni Yazı" : "Yazıyı Düzenle"}</div>
+            <div className="text-sm font-extrabold text-gray-900">
+              {isNew ? "Yeni Yazı" : "Yazıyı Düzenle"}
+            </div>
+
             <div className="text-xs text-gray-600">
               Durum:{" "}
-              <span className={isPublished ? "font-bold text-emerald-700" : "font-bold text-gray-700"}>
+              <span
+                className={
+                  isPublished
+                    ? "font-bold text-emerald-700"
+                    : "font-bold text-gray-700"
+                }
+              >
                 {isPublished ? "Yayında" : "Taslak"}
               </span>
-              {saving ? <span className="ml-2 text-gray-500">• kaydediliyor…</span> : null}
+
+              {loading ? (
+                <span className="ml-2 text-gray-500">
+                  • yükleniyor…
+                </span>
+              ) : null}
+
+              {saving ? (
+                <span className="ml-2 text-gray-500">
+                  • kaydediliyor…
+                </span>
+              ) : null}
+
+              {deleting ? (
+                <span className="ml-2 text-gray-500">
+                  • siliniyor…
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -241,35 +460,46 @@ export default function AdminBlogEditor({ postId, onSaved, onDeleted }: Props): 
         <div className="flex flex-wrap items-center gap-2">
           {!isNew ? (
             <button
+              type="button"
               onClick={() => void loadPost()}
-              disabled={saving || deleting}
-              className="rounded-xl border bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+              disabled={loading || saving || deleting}
+              className="rounded-xl border bg-white px-4 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Yenile
+              {loading ? "Yükleniyor..." : "Yenile"}
             </button>
           ) : null}
 
           {!isNew ? (
             <button
+              type="button"
               onClick={() => void del()}
-              disabled={saving || deleting}
-              className="rounded-xl border bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-60"
+              disabled={loading || saving || deleting}
+              className="rounded-xl border bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {deleting ? "Siliniyor..." : "Sil"}
             </button>
           ) : null}
 
           <button
+            type="button"
             onClick={() => void save()}
-            disabled={!canSave || saving || deleting}
-            className="rounded-xl border bg-black px-4 py-2 text-sm font-extrabold text-white disabled:opacity-60"
+            disabled={
+              loading ||
+              !canSave ||
+              saving ||
+              deleting
+            }
+            className="rounded-xl border bg-black px-4 py-2 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "Kaydediliyor..." : isNew ? "Oluştur" : "Kaydet"}
+            {saving
+              ? "Kaydediliyor..."
+              : isNew
+                ? "Oluştur"
+                : "Kaydet"}
           </button>
         </div>
       </div>
 
-      {/* mesaj */}
       {msg ? (
         <div
           className={[
@@ -283,127 +513,200 @@ export default function AdminBlogEditor({ postId, onSaved, onDeleted }: Props): 
         </div>
       ) : null}
 
-      {/* içerik */}
-      <div className="grid gap-4 p-4 lg:grid-cols-[1.6fr_0.9fr]">
-        {/* sol: içerik */}
-        <div className="grid gap-4">
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <label className="text-sm font-extrabold text-gray-900">Başlık</label>
-            <p className="mt-1 text-xs text-gray-500">Örn: İstanbul implant fiyatları 2026</p>
-            <input
-              className="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:ring-2"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Başlık..."
-            />
-          </div>
-
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <label className="text-sm font-extrabold text-gray-900">İçerik</label>
-            <p className="mt-1 text-xs text-gray-500">Blog içeriği. En az 20 karakter.</p>
-            <textarea
-              className="mt-2 min-h-[320px] w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-2"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Blog içeriği..."
-            />
-          </div>
+      {loading ? (
+        <div className="p-6 text-sm font-semibold text-gray-600">
+          Yazı yükleniyor...
         </div>
-
-        {/* sağ: SEO + yayın */}
-        <aside className="grid gap-4">
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <label className="text-sm font-extrabold text-gray-900">Slug</label>
-            <p className="mt-1 text-xs text-gray-500">Boş bırakınca başlıktan otomatik üretilir.</p>
-            <input
-              className="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:ring-2"
-              value={slug}
-              onChange={(e) => {
-                slugTouchedRef.current = true;
-                setSlug(e.target.value);
-              }}
-              placeholder="istanbul-implant-fiyatlari"
-            />
-            <div className="mt-2 text-xs text-gray-500">
-              Önizleme: <span className="font-semibold text-gray-800">/blog/{slug || "slug"}</span>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <label className="text-sm font-extrabold text-gray-900">Özet (Snippet)</label>
-            <p className="mt-1 text-xs text-gray-500">Google sonucu için 1–2 cümle önerilir.</p>
-            <textarea
-              className="mt-2 min-h-[110px] w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-2"
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.target.value)}
-              placeholder="Kısa özet..."
-            />
-          </div>
-
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-extrabold text-gray-900">Yayın durumu</div>
-                <div className="mt-1 text-xs text-gray-500">Yayına alınca blogda görünür.</div>
-              </div>
-
-              <label className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                />
-                Yayında
+      ) : (
+        <div className="grid gap-4 p-4 lg:grid-cols-[1.6fr_0.9fr]">
+          <div className="grid gap-4">
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <label
+                htmlFor="admin-blog-title"
+                className="text-sm font-extrabold text-gray-900"
+              >
+                Başlık
               </label>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Örn: İstanbul implant fiyatları 2026
+              </p>
+
+              <input
+                id="admin-blog-title"
+                className="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:ring-2"
+                value={title}
+                onChange={(event) =>
+                  setTitle(event.target.value)
+                }
+                placeholder="Başlık..."
+              />
             </div>
 
-            <div className="mt-3 rounded-xl border bg-black/5 p-3 text-xs text-gray-700">
-              <div className="font-bold">İpucu</div>
-              <div className="mt-1">
-                Başlık 50–60 karakter, özet 120–160 karakter bandında olursa snippet daha iyi görünür.
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <label
+                htmlFor="admin-blog-content"
+                className="text-sm font-extrabold text-gray-900"
+              >
+                İçerik
+              </label>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Blog içeriği. En az 20 karakter.
+              </p>
+
+              <textarea
+                id="admin-blog-content"
+                className="mt-2 min-h-[320px] w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-2"
+                value={content}
+                onChange={(event) =>
+                  setContent(event.target.value)
+                }
+                placeholder="Blog içeriği..."
+              />
+            </div>
+          </div>
+
+          <aside className="grid gap-4">
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <label
+                htmlFor="admin-blog-slug"
+                className="text-sm font-extrabold text-gray-900"
+              >
+                Slug
+              </label>
+
+              <p className="mt-1 text-xs text-gray-500">
+                Boş bırakınca başlıktan otomatik üretilir.
+              </p>
+
+              <input
+                id="admin-blog-slug"
+                className="mt-2 w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold outline-none focus:ring-2"
+                value={slug}
+                onChange={(event) => {
+                  slugTouchedRef.current = true;
+                  setSlug(event.target.value);
+                }}
+                placeholder="istanbul-implant-fiyatlari"
+              />
+
+              <div className="mt-2 text-xs text-gray-500">
+                Önizleme:{" "}
+                <span className="font-semibold text-gray-800">
+                  /blog/{slug || "slug"}
+                </span>
               </div>
             </div>
-          </div>
 
-          <div className="rounded-2xl border bg-white/70 p-4">
-            <div className="text-sm font-extrabold text-gray-900">Hızlı işlemler</div>
-            <div className="mt-3 grid gap-2">
-              <button
-                onClick={() => {
-                  // hızlı: slug'ı yeniden üret
-                  slugTouchedRef.current = true;
-                  setSlug(slugifyTR(title));
-                }}
-                className="rounded-xl border bg-white px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
-                type="button"
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <label
+                htmlFor="admin-blog-excerpt"
+                className="text-sm font-extrabold text-gray-900"
               >
-                Slug’ı başlıktan üret
-              </button>
+                Özet (Snippet)
+              </label>
 
-              <button
-                onClick={() => {
-                  const t = excerpt.trim() ? excerpt.trim() : "";
-                  if (!t) {
-                    setExcerpt((content ?? "").slice(0, 160));
-                  }
-                }}
-                className="rounded-xl border bg-white px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
-                type="button"
-              >
-                Özet boşsa içerikten doldur
-              </button>
+              <p className="mt-1 text-xs text-gray-500">
+                Google sonucu için 1–2 cümle önerilir.
+              </p>
+
+              <textarea
+                id="admin-blog-excerpt"
+                className="mt-2 min-h-[110px] w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none focus:ring-2"
+                value={excerpt}
+                onChange={(event) =>
+                  setExcerpt(event.target.value)
+                }
+                placeholder="Kısa özet..."
+              />
             </div>
-          </div>
-        </aside>
-      </div>
 
-      {/* alt bar */}
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-extrabold text-gray-900">
+                    Yayın durumu
+                  </div>
+
+                  <div className="mt-1 text-xs text-gray-500">
+                    Yayına alınca blogda görünür.
+                  </div>
+                </div>
+
+                <label className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-bold">
+                  <input
+                    type="checkbox"
+                    checked={isPublished}
+                    onChange={(event) =>
+                      setIsPublished(event.target.checked)
+                    }
+                  />
+
+                  Yayında
+                </label>
+              </div>
+
+              <div className="mt-3 rounded-xl border bg-black/5 p-3 text-xs text-gray-700">
+                <div className="font-bold">İpucu</div>
+
+                <div className="mt-1">
+                  Başlık 50–60 karakter, özet 120–160
+                  karakter bandında olursa snippet daha iyi
+                  görünür.
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-white/70 p-4">
+              <div className="text-sm font-extrabold text-gray-900">
+                Hızlı işlemler
+              </div>
+
+              <div className="mt-3 grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    slugTouchedRef.current = true;
+                    setSlug(slugifyTR(title));
+                  }}
+                  className="rounded-xl border bg-white px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
+                >
+                  Slug’ı başlıktan üret
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!excerpt.trim()) {
+                      setExcerpt(content.slice(0, 160));
+                    }
+                  }}
+                  className="rounded-xl border bg-white px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
+                >
+                  Özet boşsa içerikten doldur
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-white/40 px-4 py-3 text-xs text-gray-600">
         <div>
-          {isNew ? "Yeni yazı oluşturuyorsun." : "Düzenleme modundasın."}{" "}
-          <span className="opacity-80">Kaydetmeden çıkarsan değişiklikler kaybolur.</span>
+          {isNew
+            ? "Yeni yazı oluşturuyorsun."
+            : "Düzenleme modundasın."}{" "}
+          <span className="opacity-80">
+            Kaydetmeden çıkarsan değişiklikler kaybolur.
+          </span>
         </div>
-        <div className="font-semibold">{canSave ? "Kaydetmeye hazır ✅" : "Başlık/İçerik kısa ⚠️"}</div>
+
+        <div className="font-semibold">
+          {canSave
+            ? "Kaydetmeye hazır ✅"
+            : "Başlık/İçerik kısa ⚠️"}
+        </div>
       </div>
     </section>
   );
