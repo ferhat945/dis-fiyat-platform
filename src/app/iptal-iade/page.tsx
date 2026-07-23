@@ -262,17 +262,17 @@ export default function RefundPolicyPage(): JSX.Element {
               </div>
 
               <div className="ctaRow">
-                <Link
+                <Link href="/teslimat-iade" className="btn btnSoft">
+                  Teslimat ve İade Şartları →
+                </Link>
+
+                <Link 
                   href="/mesafeli-satis-sozlesmesi"
-                  className="btn btnSoft"
+                  className="btn btnGhost"
                 >
                   Mesafeli Satış Sözleşmesi →
                 </Link>
-
-                <Link href="/kullanim-kosullari" className="btn btnGhost">
-                  Kullanım Koşulları →
-                </Link>
-
+                
                 <Link href="/iletisim" className="btn btnPrimary">
                   İletişim →
                 </Link>

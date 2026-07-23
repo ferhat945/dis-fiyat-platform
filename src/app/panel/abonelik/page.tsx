@@ -907,14 +907,12 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
 
       <div className="paymentNotice">
         <strong>
-          🏦 Garanti BBVA Sanal POS başvuru
-          sürecindedir.
+          💳 iyzico güvenli ödeme altyapısı başvuru sürecindedir.
         </strong>{" "}
-        Paketleri ve sözleşme bilgilerini
-        inceleyebilirsin. Ödeme altyapısı
-        etkinleştirilene kadar karttan tahsilat
-        yapılmaz ve hesabına otomatik kredi ya da
-        Premium üyelik tanımlanmaz.
+        Paketleri, fiyatları ve sözleşme bilgilerini inceleyebilirsin.
+        iyzico ödeme entegrasyonu etkinleştirilene kadar karttan tahsilat
+        yapılmaz ve hesabına otomatik kredi ya da Premium üyelik
+        tanımlanmaz.
       </div>
 
       <section className="packageGrid">
@@ -987,7 +985,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
                     : chipStyle()
                 }
               >
-                🏦 Sanal POS hazırlığı
+                💳 iyzico güvenli ödeme
               </span>
             </div>
 

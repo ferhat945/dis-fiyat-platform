@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -75,7 +76,8 @@ function packageInfo(pkg: PackageCode): PackageInfo {
       ],
       serviceType: "Tek seferlik dijital kredi paketi",
       duration: "Kredi bakiyesi tükenene kadar",
-      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      activation:
+        "Başarılı ödeme onayından sonra hesaba tanımlanır",
       renewal: "Otomatik yenilenmez",
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
@@ -101,7 +103,8 @@ function packageInfo(pkg: PackageCode): PackageInfo {
       ],
       serviceType: "Tek seferlik dijital kredi paketi",
       duration: "Kredi bakiyesi tükenene kadar",
-      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      activation:
+        "Başarılı ödeme onayından sonra hesaba tanımlanır",
       renewal: "Otomatik yenilenmez",
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
@@ -127,7 +130,8 @@ function packageInfo(pkg: PackageCode): PackageInfo {
       ],
       serviceType: "Tek seferlik dijital kredi paketi",
       duration: "Kredi bakiyesi tükenene kadar",
-      activation: "Başarılı ödeme onayından sonra hesaba tanımlanır",
+      activation:
+        "Başarılı ödeme onayından sonra hesaba tanımlanır",
       renewal: "Otomatik yenilenmez",
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
@@ -152,8 +156,10 @@ function packageInfo(pkg: PackageCode): PackageInfo {
     ],
     serviceType: "30 günlük dijital Premium üyelik",
     duration: "Başarılı ödeme onayından itibaren 30 gün",
-    activation: "Başarılı ödeme onayından sonra başlatılır",
-    renewal: "Otomatik yenilenmez; yeniden satın alınması gerekir",
+    activation:
+      "Başarılı ödeme onayından sonra başlatılır",
+    renewal:
+      "Otomatik yenilenmez; yeniden satın alınması gerekir",
     leadPolicy:
       "Premium öncelik; münhasır lead, belirli sayıda talep, kesin hasta, randevu veya gelir garantisi değildir.",
   };
@@ -201,7 +207,7 @@ function errorMessage(code: string): string {
   }
 
   if (code === "PAYMENT_PROVIDER_NOT_ACTIVE") {
-    return "Sanal POS henüz aktif değildir. Ödeme alınmamış ve hesabına herhangi bir kredi veya üyelik hakkı tanımlanmamıştır.";
+    return "iyzico ödeme altyapısı henüz aktif değildir. Ödeme alınmamış ve hesabına herhangi bir kredi veya üyelik hakkı tanımlanmamıştır.";
   }
 
   if (
@@ -252,11 +258,12 @@ export default function BuyPage(): JSX.Element {
     immediatePerformanceAccepted;
 
   /*
-   * Garanti BBVA Sanal POS bağlantısı tamamlandığında
-   * bu değer ortam değişkeninden veya sunucudan alınabilir.
+   * iyzico ödeme entegrasyonu tamamlandığında bu değer,
+   * sunucu tarafındaki ödeme yapılandırmasından alınmalıdır.
    *
-   * Şu anda false kalmalıdır. Böylece istemci tarafında
-   * mock ödeme veya ücretsiz kredi yükleme başlatılamaz.
+   * Başvuru ve entegrasyon tamamlanana kadar false kalır.
+   * Böylece karttan ödeme alınmaz ve yanlışlıkla kredi ya da
+   * Premium üyelik tanımlanmaz.
    */
   const paymentProviderActive = false;
 
@@ -264,7 +271,7 @@ export default function BuyPage(): JSX.Element {
     if (!paymentProviderActive) {
       setInfo(null);
       setErr(
-        "Garanti BBVA Sanal POS henüz aktif değildir. Bu nedenle ödeme işlemi başlatılamaz."
+        "iyzico ödeme altyapısı henüz aktif değildir. Bu nedenle ödeme işlemi başlatılamaz."
       );
       return;
     }
@@ -341,9 +348,21 @@ export default function BuyPage(): JSX.Element {
           inset: 0;
           z-index: -2;
           background:
-            radial-gradient(circle at 12% 0%, rgba(124,58,237,.22), transparent 34%),
-            radial-gradient(circle at 95% 20%, rgba(14,165,233,.18), transparent 36%),
-            radial-gradient(circle at 50% 100%, rgba(236,72,153,.10), transparent 38%);
+            radial-gradient(
+              circle at 12% 0%,
+              rgba(124,58,237,.22),
+              transparent 34%
+            ),
+            radial-gradient(
+              circle at 95% 20%,
+              rgba(14,165,233,.18),
+              transparent 36%
+            ),
+            radial-gradient(
+              circle at 50% 100%,
+              rgba(236,72,153,.10),
+              transparent 38%
+            );
         }
 
         .orb {
@@ -371,7 +390,8 @@ export default function BuyPage(): JSX.Element {
         }
 
         @keyframes floatOrb {
-          0%, 100% {
+          0%,
+          100% {
             transform: translate3d(0,0,0) scale(1);
           }
 
@@ -402,7 +422,9 @@ export default function BuyPage(): JSX.Element {
 
         .checkoutGrid {
           display: grid;
-          grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+          grid-template-columns:
+            minmax(0, 1.15fr)
+            minmax(320px, .85fr);
           gap: 18px;
           align-items: start;
         }
@@ -418,9 +440,21 @@ export default function BuyPage(): JSX.Element {
           justify-content: space-between;
           border: 1px solid rgba(255,255,255,.72);
           background:
-            linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.58)),
-            radial-gradient(circle at 10% 0%, rgba(124,58,237,.24), transparent 40%),
-            radial-gradient(circle at 100% 20%, rgba(14,165,233,.16), transparent 42%);
+            linear-gradient(
+              135deg,
+              rgba(255,255,255,.88),
+              rgba(255,255,255,.58)
+            ),
+            radial-gradient(
+              circle at 10% 0%,
+              rgba(124,58,237,.24),
+              transparent 40%
+            ),
+            radial-gradient(
+              circle at 100% 20%,
+              rgba(14,165,233,.16),
+              transparent 42%
+            );
           box-shadow: 0 30px 90px rgba(15,23,42,.12);
           backdrop-filter: blur(18px);
         }
@@ -428,9 +462,21 @@ export default function BuyPage(): JSX.Element {
         .checkoutHero.premium {
           color: white;
           background:
-            radial-gradient(circle at 0% 0%, rgba(250,204,21,.26), transparent 32%),
-            radial-gradient(circle at 100% 10%, rgba(168,85,247,.38), transparent 44%),
-            linear-gradient(135deg, rgba(15,23,42,.98), rgba(67,56,202,.94));
+            radial-gradient(
+              circle at 0% 0%,
+              rgba(250,204,21,.26),
+              transparent 32%
+            ),
+            radial-gradient(
+              circle at 100% 10%,
+              rgba(168,85,247,.38),
+              transparent 44%
+            ),
+            linear-gradient(
+              135deg,
+              rgba(15,23,42,.98),
+              rgba(67,56,202,.94)
+            );
           border-color: rgba(255,255,255,.22);
           box-shadow: 0 34px 105px rgba(67,56,202,.28);
         }
@@ -452,7 +498,8 @@ export default function BuyPage(): JSX.Element {
         }
 
         @keyframes shineMove {
-          0%, 55% {
+          0%,
+          55% {
             transform: rotate(13deg) translateX(-62%);
             opacity: 0;
           }
@@ -578,6 +625,34 @@ export default function BuyPage(): JSX.Element {
           background: rgba(255,255,255,.76);
           box-shadow: 0 30px 90px rgba(15,23,42,.10);
           backdrop-filter: blur(18px);
+        }
+
+        .iyzicoCheckoutBox {
+          margin-top: 16px;
+          border-radius: 20px;
+          padding: 14px;
+          border: 1px solid rgba(15,23,42,.09);
+          background: #ffffff;
+          display: grid;
+          gap: 10px;
+          justify-items: center;
+          text-align: center;
+          overflow: hidden;
+        }
+
+        .iyzicoCheckoutLabel {
+          color: rgba(15,23,42,.66);
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1.5;
+        }
+
+        .iyzicoCheckoutLogo {
+          display: block;
+          width: 100%;
+          max-width: 280px;
+          height: auto;
+          object-fit: contain;
         }
 
         .benefitList {
@@ -987,6 +1062,22 @@ export default function BuyPage(): JSX.Element {
             </span>
           </div>
 
+          <div className="iyzicoCheckoutBox">
+            <div className="iyzicoCheckoutLabel">
+              Ödemeler iyzico güvenli ödeme altyapısı üzerinden
+              gerçekleştirilecektir.
+            </div>
+
+            <Image
+              src="/payment/iyzico-checkout.png"
+              alt="iyzico ile Öde"
+              width={720}
+              height={214}
+              className="iyzicoCheckoutLogo"
+              sizes="(max-width: 900px) 100vw, 280px"
+            />
+          </div>
+
           <div className="benefitList">
             {selected.benefits.map((benefit) => (
               <div
@@ -1060,12 +1151,11 @@ export default function BuyPage(): JSX.Element {
 
           <div className="warningNotice">
             <strong>
-              Sanal POS başvuru süreci:
+              iyzico başvuru ve entegrasyon süreci:
             </strong>{" "}
-            Garanti BBVA Sanal POS bağlantısı henüz
-            etkin değildir. Bu ekranda şu anda karttan
-            tahsilat yapılmaz ve kredi ya da Premium
-            üyelik tanımlanmaz.
+            iyzico ödeme bağlantısı henüz etkin değildir. Bu
+            ekranda şu anda karttan tahsilat yapılmaz ve kredi ya
+            da Premium üyelik tanımlanmaz.
           </div>
 
           <div className="approvalList">
@@ -1086,8 +1176,7 @@ export default function BuyPage(): JSX.Element {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Dijital Hizmet Satış ve Kullanım
-                  Sözleşmesi
+                  Dijital Hizmet Satış ve Kullanım Sözleşmesi
                 </Link>
                 ’ni okudum, paket kapsamını ve kullanım
                 koşullarını kabul ediyorum.
@@ -1106,6 +1195,14 @@ export default function BuyPage(): JSX.Element {
               />
 
               <span className="approvalText">
+                <Link
+                  href="/teslimat-iade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Teslimat ve İade Şartları
+                </Link>
+                ’nı ve{" "}
                 <Link
                   href="/iptal-iade"
                   target="_blank"
@@ -1129,11 +1226,10 @@ export default function BuyPage(): JSX.Element {
               />
 
               <span className="approvalText">
-                Satın aldığım dijital hizmetin başarılı
-                ödeme onayından sonra elektronik ortamda
-                hemen başlatılmasını ve kredi veya üyelik
-                hakkının hesabıma tanımlanmasını talep
-                ediyorum.
+                Satın aldığım dijital hizmetin başarılı ödeme
+                onayından sonra elektronik ortamda hemen
+                başlatılmasını ve kredi veya üyelik hakkının
+                hesabıma tanımlanmasını talep ediyorum.
               </span>
             </label>
           </div>
@@ -1152,7 +1248,7 @@ export default function BuyPage(): JSX.Element {
               ? "İşlem hazırlanıyor..."
               : paymentProviderActive
                 ? `${selected.totalPrice} Öde ve Paketi Aktifleştir`
-                : "Sanal POS Başvuru Sürecinde"}
+                : "iyzico Entegrasyonu Hazırlanıyor"}
           </button>
 
           {!allApprovalsAccepted && !loading ? (
@@ -1166,9 +1262,9 @@ export default function BuyPage(): JSX.Element {
                 lineHeight: 1.5,
               }}
             >
-              Bilgilendirme ve sözleşme metinlerini
-              incelemek için onay kutularını
-              işaretleyebilirsin. Ödeme altyapısı şu anda
+              Bilgilendirme, teslimat ve sözleşme metinlerini
+              incelemek için onay kutularını işaretleyebilirsin.
+              iyzico entegrasyonu tamamlanana kadar ödeme işlemi
               kapalıdır.
             </div>
           ) : null}
@@ -1187,15 +1283,15 @@ export default function BuyPage(): JSX.Element {
 
           <div className="trustGrid">
             <div className="trustItem">
-              🔒 Güvenli işlem
+              🔒 SSL korumalı bağlantı
             </div>
 
             <div className="trustItem">
-              🏦 3D Secure hazırlığı
+              🛡️ iyzico güvenli ödeme
             </div>
 
             <div className="trustItem">
-              📜 İşlem kaydı
+              💳 Visa ve Mastercard
             </div>
           </div>
 
@@ -1234,8 +1330,10 @@ function badgeStyle(): CSSProperties {
     gap: 8,
     padding: "8px 12px",
     borderRadius: 999,
-    border: "1px solid rgba(15,23,42,0.10)",
-    background: "rgba(255,255,255,0.78)",
+    border:
+      "1px solid rgba(15,23,42,0.10)",
+    background:
+      "rgba(255,255,255,0.78)",
     fontWeight: 950,
     fontSize: 12,
     boxShadow:
@@ -1265,7 +1363,8 @@ function ghostLinkStyle(): CSSProperties {
       "1px solid rgba(15,23,42,0.10)",
     background:
       "rgba(255,255,255,0.72)",
-    color: "rgba(15,23,42,0.86)",
+    color:
+      "rgba(15,23,42,0.86)",
     fontWeight: 950,
   };
 }

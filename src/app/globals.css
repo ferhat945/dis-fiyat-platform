@@ -3649,3 +3649,134 @@ img { max-width: 100%; height: auto; }
     flex-direction: column;
   }
 }
+
+/* =========================================================
+   IYZICO UYUMLU FOOTER VE GUVENLI ODEME ALANI
+   ========================================================= */
+
+.siteFooterInner {
+  grid-template-columns:
+    minmax(260px, 1.25fr)
+    minmax(170px, 0.65fr)
+    minmax(210px, 0.85fr)
+    minmax(260px, 1fr);
+  gap: 22px;
+}
+
+.footerMainColumn,
+.footerPaymentColumn {
+  min-width: 0;
+}
+
+.footerContactTitle {
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.footerBusinessInfo {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.footerBusinessInfo strong {
+  color: rgba(255, 255, 255, 0.94);
+  font-weight: 900;
+}
+
+.footerBusinessInfo a {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 850;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.footerBusinessInfo a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footerPaymentColumn {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    radial-gradient(
+      380px 180px at 20% 0%,
+      rgba(124, 58, 237, 0.18),
+      transparent 65%
+    ),
+    rgba(255, 255, 255, 0.055);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.footerPaymentText {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.7;
+}
+
+.footerPaymentLogoBox {
+  margin-top: 14px;
+  width: 100%;
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.footerPaymentLogo {
+  display: block;
+  width: 100%;
+  max-width: 310px;
+  height: auto;
+  object-fit: contain;
+}
+
+.footerPaymentBadges {
+  margin-top: 12px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.footerPaymentBadges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .siteFooterInner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .siteFooterInner {
+    grid-template-columns: 1fr;
+  }
+
+  .footerPaymentColumn {
+    padding: 14px;
+  }
+
+  .footerPaymentLogo {
+    max-width: 280px;
+  }
+}

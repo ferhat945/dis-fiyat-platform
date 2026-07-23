@@ -558,12 +558,12 @@ export default function DistanceSalesPage(): JSX.Element {
               </div>
 
               <div className="ctaRow">
-                <Link href="/iptal-iade" className="btn btnSoft">
-                  İptal ve İade Politikası →
+                <Link href="/teslimat-iade" className="btn btnSoft">
+                  Teslimat ve İade Şartları →
                 </Link>
 
-                <Link href="/kullanim-kosullari" className="btn btnGhost">
-                  Kullanım Koşulları →
+                <Link href="/iptal-iade" className="btn btnGhost">
+                  İptal ve İade Politikası →
                 </Link>
 
                 <Link href="/iletisim" className="btn btnPrimary">
