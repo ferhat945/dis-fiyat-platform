@@ -111,6 +111,7 @@ export default async function PanelLayout({
         <NavLink href="/panel/fiyatlar">Fiyatlar</NavLink>
         <NavLink href="/panel/profil">Profil</NavLink>
         <NavLink href="/panel/abonelik">Kredi / Premium</NavLink>
+        <NavLink href="/panel/islemler">İşlem Geçmişi</NavLink>
         <NavLink href="/panel/istatistik">İstatistikler</NavLink>
         <NavLink href="/panel/blog">Blog</NavLink>
       </nav>

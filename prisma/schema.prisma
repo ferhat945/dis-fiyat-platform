@@ -208,39 +208,52 @@ model PaymentLog {
   status   String  @default("started")
   provider String?
 
-  // Bizim oluşturacağımız benzersiz ödeme sipariş numarası
+  // DişFiyat360 tarafından oluşturulan benzersiz sipariş numarası
   orderNumber String? @unique
 
-  // Bankanın döndürdüğü işlem veya referans numarası
+  // iyzico veya ödeme kuruluşu işlem referansı
   providerRef String?
 
-  // Aynı callback'in iki kez hak tanımlamasını engeller
+  // Aynı callback işleminin iki defa hak tanımlamasını önler
   callbackVerified Boolean @default(false)
 
+  // Kullanıcı sözleşme onayları
   serviceAgreementAccepted     Boolean   @default(false)
   refundPolicyAccepted         Boolean   @default(false)
   immediatePerformanceAccepted Boolean   @default(false)
   agreementVersion             String?
   agreementAcceptedAt          DateTime?
 
+  // Ödeme durum tarihleri
   paidAt     DateTime?
   failedAt   DateTime?
   canceledAt DateTime?
 
+  // Dijital hizmet teslim kanıtları
+  deliveredAt   DateTime?
+  balanceBefore Int?
+  balanceAfter  Int?
+
+  // Premium paket teslim kanıtları
+  premiumStartedAt DateTime?
+  premiumExpiresAt DateTime?
+
   errorCode    String?
   errorMessage String? @db.Text
 
-  // Eski ödeme kayıtları için korunuyor
+  // Eski ödeme kayıtları için korunur
   payload Json?
 
-  // Yeni ödeme başlangıç ve callback kayıtları
+  // Ödeme başlangıç ve callback kayıtları
   requestPayload  Json?
   callbackPayload Json?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
 
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  creditTransactions CreditTransaction[]
 
   @@index([clinicId, createdAt])
   @@index([clinicId, status])
@@ -248,6 +261,7 @@ model PaymentLog {
   @@index([provider])
   @@index([providerRef])
   @@index([packageCode])
+  @@index([deliveredAt])
   @@map("payment_logs")
 }
 
@@ -256,16 +270,36 @@ model CreditTransaction {
 
   clinicId String
 
+  // İşlemin bağlı olduğu ödeme kaydı.
+  // Lead açma gibi ödeme dışı hareketlerde boş olabilir.
+  paymentLogId String?
+
+  // Artı değer kredi ekler, eksi değer kredi düşer.
   amount Int
 
+  // purchase, lead_unlock, premium_monthly_credit,
+  // refund, admin_adjustment gibi işlem türleri
   type String
 
-  note String?
+  note String? @db.Text
+
+  // İşlem öncesi ve sonrası kredi bakiyesi
+  balanceBefore Int?
+  balanceAfter  Int?
+
+  // Dijital hakkın hesaba tanımlandığı tarih
+  deliveredAt DateTime?
 
   createdAt DateTime @default(now())
 
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
+  paymentLog PaymentLog? @relation(fields: [paymentLogId], references: [id], onDelete: SetNull)
+
   @@index([clinicId])
+  @@index([clinicId, createdAt])
+  @@index([paymentLogId])
+  @@index([type])
+  @@index([deliveredAt])
   @@map("credit_transactions")
 }

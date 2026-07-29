@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type PackageCode =
   | "credit_5"
@@ -15,19 +15,21 @@ type PackageCode =
 type StartResp =
   | {
       ok: true;
-      mode:
-        | "trial"
-        | "created"
-        | "updated"
-        | "credits_added"
-        | "premium_started";
+      mode: "payment_redirect";
       package: PackageCode;
-      creditsAdded?: number;
+      redirectUrl: string;
     }
   | {
       ok: false;
       code: string;
     };
+
+type PaymentConfigResp = {
+  ok: true;
+  provider: "iyzico";
+  active: boolean;
+  checkoutEnabled: boolean;
+};
 
 type PackageInfo = {
   code: PackageCode;
@@ -165,28 +167,6 @@ function packageInfo(pkg: PackageCode): PackageInfo {
   };
 }
 
-function successMessage(
-  response: Extract<StartResp, { ok: true }>
-): string {
-  if (response.mode === "credits_added") {
-    return `✅ ${response.creditsAdded ?? 0} kredi hesabına eklendi.`;
-  }
-
-  if (response.mode === "premium_started") {
-    return "✅ Premium üyelik başlatıldı ve 10 kredi yüklendi.";
-  }
-
-  if (response.mode === "trial") {
-    return "✅ Deneme üyeliği başlatıldı.";
-  }
-
-  if (response.mode === "created") {
-    return "✅ Abonelik başlatıldı.";
-  }
-
-  return "✅ Kota güncellendi.";
-}
-
 function errorMessage(code: string): string {
   if (
     code === "UNAUTHORIZED" ||
@@ -231,6 +211,10 @@ export default function BuyPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [paymentProviderActive, setPaymentProviderActive] =
+    useState<boolean>(false);
+  const [paymentConfigLoading, setPaymentConfigLoading] =
+    useState<boolean>(true);
 
   const [
     serviceAgreementAccepted,
@@ -257,17 +241,61 @@ export default function BuyPage(): JSX.Element {
     refundPolicyAccepted &&
     immediatePerformanceAccepted;
 
-  /*
-   * iyzico ödeme entegrasyonu tamamlandığında bu değer,
-   * sunucu tarafındaki ödeme yapılandırmasından alınmalıdır.
-   *
-   * Başvuru ve entegrasyon tamamlanana kadar false kalır.
-   * Böylece karttan ödeme alınmaz ve yanlışlıkla kredi ya da
-   * Premium üyelik tanımlanmaz.
-   */
-  const paymentProviderActive = false;
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPaymentConfig(): Promise<void> {
+      try {
+        const response = await fetch("/api/payments/config", {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("PAYMENT_CONFIG_REQUEST_FAILED");
+        }
+
+        const data =
+          (await response.json()) as PaymentConfigResp;
+
+        if (!cancelled) {
+          setPaymentProviderActive(
+            data.ok &&
+              data.provider === "iyzico" &&
+              data.active &&
+              data.checkoutEnabled
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setPaymentProviderActive(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setPaymentConfigLoading(false);
+        }
+      }
+    }
+
+    void loadPaymentConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const startPayment = async (): Promise<void> => {
+    if (paymentConfigLoading) {
+      setInfo(null);
+      setErr(
+        "Ödeme altyapısı kontrol ediliyor. Lütfen birkaç saniye sonra tekrar dene."
+      );
+      return;
+    }
+
     if (!paymentProviderActive) {
       setInfo(null);
       setErr(
@@ -289,21 +317,19 @@ export default function BuyPage(): JSX.Element {
     setInfo(null);
 
     try {
-      const response = await fetch(
-        "/api/payments/start",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            package: selected.code,
-            serviceAgreementAccepted,
-            refundPolicyAccepted,
-            immediatePerformanceAccepted,
-          }),
-        }
-      );
+      const response = await fetch("/api/payments/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          package: selected.code,
+          serviceAgreementAccepted,
+          refundPolicyAccepted,
+          immediatePerformanceAccepted,
+        }),
+      });
 
       const data = (await response.json()) as StartResp;
 
@@ -317,11 +343,22 @@ export default function BuyPage(): JSX.Element {
         return;
       }
 
-      setInfo(successMessage(data));
+      if (
+        data.mode !== "payment_redirect" ||
+        typeof data.redirectUrl !== "string" ||
+        !data.redirectUrl.trim()
+      ) {
+        setErr(
+          "Ödeme yönlendirme adresi oluşturulamadı. Kartınızdan herhangi bir tahsilat yapılmadı."
+        );
+        return;
+      }
 
-      window.setTimeout(() => {
-        window.location.href = "/panel/abonelik";
-      }, 650);
+      setInfo(
+        "✅ Güvenli ödeme sayfasına yönlendiriliyorsun..."
+      );
+
+      window.location.assign(data.redirectUrl);
     } catch {
       setErr(
         "Bağlantı hatası oluştu. Lütfen internet bağlantını kontrol ederek tekrar dene."
@@ -1149,6 +1186,18 @@ export default function BuyPage(): JSX.Element {
             {selected.leadPolicy}
           </div>
 
+          <div className="notice">
+            <strong>
+              Dijital hizmetin teslimi:
+            </strong>{" "}
+            Kredi paketlerinde hizmet, satın alınan kredilerin
+            klinik hesabına tanımlanmasıyla teslim edilmiş sayılır.
+            Premium üyelikte hizmet, Premium hakkının etkinleştirilmesi
+            ve paket kapsamındaki kredilerin hesaba tanımlanmasıyla
+            başlar. Kredilerin kullanılması klinik kullanıcısının
+            tercihine bağlıdır.
+          </div>
+
           <div className="warningNotice">
             <strong>
               iyzico başvuru ve entegrasyon süreci:
@@ -1229,7 +1278,10 @@ export default function BuyPage(): JSX.Element {
                 Satın aldığım dijital hizmetin başarılı ödeme
                 onayından sonra elektronik ortamda hemen
                 başlatılmasını ve kredi veya üyelik hakkının
-                hesabıma tanımlanmasını talep ediyorum.
+                hesabıma tanımlanmasını talep ediyorum. Kredi
+                bakiyesinin veya Premium üyelik hakkının hesabıma
+                tanımlanmasıyla dijital hizmetin teslim edilmiş
+                sayılacağını kabul ediyorum.
               </span>
             </label>
           </div>
@@ -1239,16 +1291,19 @@ export default function BuyPage(): JSX.Element {
             onClick={() => void startPayment()}
             disabled={
               loading ||
+              paymentConfigLoading ||
               !allApprovalsAccepted ||
               !paymentProviderActive
             }
             className="payButton"
           >
             {loading
-              ? "İşlem hazırlanıyor..."
-              : paymentProviderActive
-                ? `${selected.totalPrice} Öde ve Paketi Aktifleştir`
-                : "iyzico Entegrasyonu Hazırlanıyor"}
+              ? "Güvenli ödeme hazırlanıyor..."
+              : paymentConfigLoading
+                ? "Ödeme altyapısı kontrol ediliyor..."
+                : paymentProviderActive
+                  ? `${selected.totalPrice} Güvenli Ödemeye Geç`
+                  : "iyzico Entegrasyonu Hazırlanıyor"}
           </button>
 
           {!allApprovalsAccepted && !loading ? (

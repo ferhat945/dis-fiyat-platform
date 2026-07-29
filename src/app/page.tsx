@@ -468,6 +468,10 @@ export default async function HomePage(): Promise<JSX.Element> {
                       KVKK Metni
                     </Link>
 
+                    <Link href="/klinik-paketleri" className="btn btnGhost">
+                      Klinik Paketleri
+                    </Link>
+
                     <Link href="/teklif-al" className="btn btnPrimary">
                       Teklif Al →
                     </Link>
