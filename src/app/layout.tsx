@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import "./globals.css";
 import { absUrl, getBaseUrl } from "@/lib/site-url";
@@ -174,21 +173,10 @@ export default function RootLayout({
               <div className="footerTitle">Güvenli Online Ödeme</div>
 
               <p className="footerPaymentText">
-                Klinik kredi paketi ve Premium üyelik ödemeleri, iyzico ödeme
-                altyapısı üzerinden güvenli şekilde gerçekleştirilir. Kart
-                bilgileri DişFiyat360 sunucularında saklanmaz.
+                Klinik kredi paketi ve Premium üyelik ödemeleri güvenli online
+                ödeme altyapısı üzerinden gerçekleştirilir. Kart bilgileri
+                DişFiyat360 sunucularında saklanmaz.
               </p>
-
-              <div className="footerPaymentLogoBox">
-                <Image
-                  src="/payment/iyzico-footer.png"
-                  alt="iyzico ile Öde, Visa ve Mastercard"
-                  width={720}
-                  height={214}
-                  className="footerPaymentLogo"
-                  sizes="(max-width: 980px) 100vw, 320px"
-                />
-              </div>
 
               <div className="footerPaymentBadges">
                 <span>🔒 SSL</span>
