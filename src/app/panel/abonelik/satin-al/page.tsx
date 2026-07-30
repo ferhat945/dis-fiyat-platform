@@ -1,7 +1,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -25,8 +24,8 @@ type StartResp =
     };
 
 type PaymentConfigResp = {
-  ok: true;
-  provider: "iyzico";
+  ok: boolean;
+  provider?: string;
   active: boolean;
   checkoutEnabled: boolean;
 };
@@ -49,7 +48,9 @@ type PackageInfo = {
   leadPolicy: string;
 };
 
-function isPackageCode(value: string | null): value is PackageCode {
+function isPackageCode(
+  value: string | null
+): value is PackageCode {
   return (
     value === "credit_5" ||
     value === "credit_10" ||
@@ -187,14 +188,14 @@ function errorMessage(code: string): string {
   }
 
   if (code === "PAYMENT_PROVIDER_NOT_ACTIVE") {
-    return "iyzico ödeme altyapısı henüz aktif değildir. Ödeme alınmamış ve hesabına herhangi bir kredi veya üyelik hakkı tanımlanmamıştır.";
+    return "Online ödeme altyapısı henüz aktif değildir. Kartınızdan herhangi bir tahsilat yapılmamış ve hesabınıza kredi veya üyelik hakkı tanımlanmamıştır.";
   }
 
   if (
     code === "PAYMENT_START_ERROR" ||
     code === "PAYMENT_FAILED"
   ) {
-    return "Ödeme işlemi başlatılamadı. Lütfen daha sonra tekrar dene.";
+    return "Ödeme işlemi başlatılamadı. Lütfen daha sonra tekrar deneyin.";
   }
 
   return code || "İşlem tamamlanamadı.";
@@ -208,13 +209,24 @@ export default function BuyPage(): JSX.Element {
     ? packageParam
     : "credit_10";
 
+  const selected = useMemo(
+    () => packageInfo(pkg),
+    [pkg]
+  );
+
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [paymentProviderActive, setPaymentProviderActive] =
-    useState<boolean>(false);
-  const [paymentConfigLoading, setPaymentConfigLoading] =
-    useState<boolean>(true);
+
+  const [
+    paymentProviderActive,
+    setPaymentProviderActive,
+  ] = useState<boolean>(false);
+
+  const [
+    paymentConfigLoading,
+    setPaymentConfigLoading,
+  ] = useState<boolean>(true);
 
   const [
     serviceAgreementAccepted,
@@ -231,11 +243,6 @@ export default function BuyPage(): JSX.Element {
     setImmediatePerformanceAccepted,
   ] = useState<boolean>(false);
 
-  const selected = useMemo(
-    () => packageInfo(pkg),
-    [pkg]
-  );
-
   const allApprovalsAccepted =
     serviceAgreementAccepted &&
     refundPolicyAccepted &&
@@ -246,16 +253,21 @@ export default function BuyPage(): JSX.Element {
 
     async function loadPaymentConfig(): Promise<void> {
       try {
-        const response = await fetch("/api/payments/config", {
-          method: "GET",
-          cache: "no-store",
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        const response = await fetch(
+          "/api/payments/config",
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
-          throw new Error("PAYMENT_CONFIG_REQUEST_FAILED");
+          throw new Error(
+            "PAYMENT_CONFIG_REQUEST_FAILED"
+          );
         }
 
         const data =
@@ -263,10 +275,11 @@ export default function BuyPage(): JSX.Element {
 
         if (!cancelled) {
           setPaymentProviderActive(
-            data.ok &&
-              data.provider === "iyzico" &&
-              data.active &&
-              data.checkoutEnabled
+            Boolean(
+              data.ok &&
+                data.active &&
+                data.checkoutEnabled
+            )
           );
         }
       } catch {
@@ -291,7 +304,7 @@ export default function BuyPage(): JSX.Element {
     if (paymentConfigLoading) {
       setInfo(null);
       setErr(
-        "Ödeme altyapısı kontrol ediliyor. Lütfen birkaç saniye sonra tekrar dene."
+        "Ödeme altyapısı kontrol ediliyor. Lütfen birkaç saniye sonra tekrar deneyin."
       );
       return;
     }
@@ -299,7 +312,7 @@ export default function BuyPage(): JSX.Element {
     if (!paymentProviderActive) {
       setInfo(null);
       setErr(
-        "iyzico ödeme altyapısı henüz aktif değildir. Bu nedenle ödeme işlemi başlatılamaz."
+        "Online ödeme altyapısı henüz aktif değildir. Bu nedenle şu anda kartla ödeme işlemi başlatılamaz."
       );
       return;
     }
@@ -307,7 +320,7 @@ export default function BuyPage(): JSX.Element {
     if (!allApprovalsAccepted) {
       setInfo(null);
       setErr(
-        "Ödeme işlemine devam etmek için sözleşme ve hizmet onaylarını kabul etmelisin."
+        "Ödeme işlemine devam etmek için sözleşme ve hizmet onaylarını kabul etmelisiniz."
       );
       return;
     }
@@ -317,21 +330,25 @@ export default function BuyPage(): JSX.Element {
     setInfo(null);
 
     try {
-      const response = await fetch("/api/payments/start", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          package: selected.code,
-          serviceAgreementAccepted,
-          refundPolicyAccepted,
-          immediatePerformanceAccepted,
-        }),
-      });
+      const response = await fetch(
+        "/api/payments/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            package: selected.code,
+            serviceAgreementAccepted,
+            refundPolicyAccepted,
+            immediatePerformanceAccepted,
+          }),
+        }
+      );
 
-      const data = (await response.json()) as StartResp;
+      const data =
+        (await response.json()) as StartResp;
 
       if (!response.ok || !data.ok) {
         setErr(
@@ -355,13 +372,13 @@ export default function BuyPage(): JSX.Element {
       }
 
       setInfo(
-        "✅ Güvenli ödeme sayfasına yönlendiriliyorsun..."
+        "✅ Güvenli ödeme sayfasına yönlendiriliyorsunuz..."
       );
 
       window.location.assign(data.redirectUrl);
     } catch {
       setErr(
-        "Bağlantı hatası oluştu. Lütfen internet bağlantını kontrol ederek tekrar dene."
+        "Bağlantı hatası oluştu. İnternet bağlantınızı kontrol ederek tekrar deneyin."
       );
     } finally {
       setLoading(false);
@@ -387,17 +404,17 @@ export default function BuyPage(): JSX.Element {
           background:
             radial-gradient(
               circle at 12% 0%,
-              rgba(124,58,237,.22),
+              rgba(124, 58, 237, 0.22),
               transparent 34%
             ),
             radial-gradient(
               circle at 95% 20%,
-              rgba(14,165,233,.18),
+              rgba(14, 165, 233, 0.18),
               transparent 36%
             ),
             radial-gradient(
               circle at 50% 100%,
-              rgba(236,72,153,.10),
+              rgba(236, 72, 153, 0.10),
               transparent 38%
             );
         }
@@ -408,7 +425,7 @@ export default function BuyPage(): JSX.Element {
           height: 280px;
           border-radius: 999px;
           filter: blur(40px);
-          opacity: .45;
+          opacity: 0.45;
           z-index: -1;
           animation: floatOrb 7s ease-in-out infinite;
         }
@@ -416,24 +433,25 @@ export default function BuyPage(): JSX.Element {
         .orbOne {
           top: 60px;
           right: 70px;
-          background: rgba(124,58,237,.36);
+          background: rgba(124, 58, 237, 0.36);
         }
 
         .orbTwo {
           bottom: 90px;
           left: 20px;
-          background: rgba(14,165,233,.26);
+          background: rgba(14, 165, 233, 0.26);
           animation-delay: -2.2s;
         }
 
         @keyframes floatOrb {
           0%,
           100% {
-            transform: translate3d(0,0,0) scale(1);
+            transform: translate3d(0, 0, 0) scale(1);
           }
 
           50% {
-            transform: translate3d(0,18px,0) scale(1.08);
+            transform: translate3d(0, 18px, 0)
+              scale(1.08);
           }
         }
 
@@ -449,19 +467,20 @@ export default function BuyPage(): JSX.Element {
         .backLink {
           text-decoration: none;
           font-weight: 950;
-          color: rgba(15,23,42,.70);
+          color: rgba(15, 23, 42, 0.70);
           padding: 10px 13px;
           border-radius: 999px;
-          border: 1px solid rgba(15,23,42,.10);
-          background: rgba(255,255,255,.72);
-          box-shadow: 0 10px 25px rgba(15,23,42,.06);
+          border: 1px solid rgba(15, 23, 42, 0.10);
+          background: rgba(255, 255, 255, 0.72);
+          box-shadow:
+            0 10px 25px rgba(15, 23, 42, 0.06);
         }
 
         .checkoutGrid {
           display: grid;
           grid-template-columns:
             minmax(0, 1.15fr)
-            minmax(320px, .85fr);
+            minmax(320px, 0.85fr);
           gap: 18px;
           align-items: start;
         }
@@ -475,24 +494,26 @@ export default function BuyPage(): JSX.Element {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          border: 1px solid rgba(255,255,255,.72);
+          border:
+            1px solid rgba(255, 255, 255, 0.72);
           background:
             linear-gradient(
               135deg,
-              rgba(255,255,255,.88),
-              rgba(255,255,255,.58)
+              rgba(255, 255, 255, 0.88),
+              rgba(255, 255, 255, 0.58)
             ),
             radial-gradient(
               circle at 10% 0%,
-              rgba(124,58,237,.24),
+              rgba(124, 58, 237, 0.24),
               transparent 40%
             ),
             radial-gradient(
               circle at 100% 20%,
-              rgba(14,165,233,.16),
+              rgba(14, 165, 233, 0.16),
               transparent 42%
             );
-          box-shadow: 0 30px 90px rgba(15,23,42,.12);
+          box-shadow:
+            0 30px 90px rgba(15, 23, 42, 0.12);
           backdrop-filter: blur(18px);
         }
 
@@ -501,21 +522,23 @@ export default function BuyPage(): JSX.Element {
           background:
             radial-gradient(
               circle at 0% 0%,
-              rgba(250,204,21,.26),
+              rgba(250, 204, 21, 0.26),
               transparent 32%
             ),
             radial-gradient(
               circle at 100% 10%,
-              rgba(168,85,247,.38),
+              rgba(168, 85, 247, 0.38),
               transparent 44%
             ),
             linear-gradient(
               135deg,
-              rgba(15,23,42,.98),
-              rgba(67,56,202,.94)
+              rgba(15, 23, 42, 0.98),
+              rgba(67, 56, 202, 0.94)
             );
-          border-color: rgba(255,255,255,.22);
-          box-shadow: 0 34px 105px rgba(67,56,202,.28);
+          border-color:
+            rgba(255, 255, 255, 0.22);
+          box-shadow:
+            0 34px 105px rgba(67, 56, 202, 0.28);
         }
 
         .checkoutHero::after {
@@ -526,27 +549,31 @@ export default function BuyPage(): JSX.Element {
             linear-gradient(
               90deg,
               transparent,
-              rgba(255,255,255,.50),
+              rgba(255, 255, 255, 0.50),
               transparent
             );
-          transform: rotate(13deg) translateX(-58%);
-          animation: shineMove 6s ease-in-out infinite;
+          transform:
+            rotate(13deg) translateX(-58%);
+          animation:
+            shineMove 6s ease-in-out infinite;
           pointer-events: none;
         }
 
         @keyframes shineMove {
           0%,
           55% {
-            transform: rotate(13deg) translateX(-62%);
+            transform:
+              rotate(13deg) translateX(-62%);
             opacity: 0;
           }
 
           70% {
-            opacity: .75;
+            opacity: 0.75;
           }
 
           100% {
-            transform: rotate(13deg) translateX(62%);
+            transform:
+              rotate(13deg) translateX(62%);
             opacity: 0;
           }
         }
@@ -556,6 +583,13 @@ export default function BuyPage(): JSX.Element {
           z-index: 1;
         }
 
+        .packageTop {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
         .iconBubble {
           width: 64px;
           height: 64px;
@@ -563,20 +597,22 @@ export default function BuyPage(): JSX.Element {
           display: grid;
           place-items: center;
           font-size: 32px;
-          background: rgba(255,255,255,.78);
-          border: 1px solid rgba(15,23,42,.08);
-          box-shadow: 0 18px 45px rgba(15,23,42,.08);
+          background: rgba(255, 255, 255, 0.78);
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          box-shadow:
+            0 18px 45px rgba(15, 23, 42, 0.08);
         }
 
         .premium .iconBubble {
-          background: rgba(255,255,255,.14);
-          border-color: rgba(255,255,255,.20);
+          background: rgba(255, 255, 255, 0.14);
+          border-color:
+            rgba(255, 255, 255, 0.20);
         }
 
         .title {
           margin: 18px 0 0;
           font-size: clamp(36px, 4vw, 58px);
-          line-height: .98;
+          line-height: 0.98;
           letter-spacing: -0.065em;
           font-weight: 1000;
         }
@@ -584,13 +620,13 @@ export default function BuyPage(): JSX.Element {
         .subtitle {
           margin-top: 14px;
           max-width: 650px;
-          opacity: .74;
+          opacity: 0.74;
           font-weight: 850;
           line-height: 1.75;
         }
 
         .premium .subtitle {
-          opacity: .86;
+          opacity: 0.86;
         }
 
         .heroDetails {
@@ -608,20 +644,22 @@ export default function BuyPage(): JSX.Element {
           align-items: start;
           border-radius: 17px;
           padding: 11px 13px;
-          background: rgba(255,255,255,.58);
-          border: 1px solid rgba(255,255,255,.68);
+          background: rgba(255, 255, 255, 0.58);
+          border:
+            1px solid rgba(255, 255, 255, 0.68);
           font-size: 13px;
           line-height: 1.55;
         }
 
         .premium .heroDetail {
-          background: rgba(255,255,255,.10);
-          border-color: rgba(255,255,255,.16);
+          background: rgba(255, 255, 255, 0.10);
+          border-color:
+            rgba(255, 255, 255, 0.16);
         }
 
         .heroDetailLabel {
           font-weight: 1000;
-          opacity: .68;
+          opacity: 0.68;
         }
 
         .heroDetailValue {
@@ -634,8 +672,9 @@ export default function BuyPage(): JSX.Element {
           margin-top: 22px;
           border-radius: 28px;
           padding: 18px;
-          border: 1px solid rgba(255,255,255,.68);
-          background: rgba(255,255,255,.68);
+          border:
+            1px solid rgba(255, 255, 255, 0.68);
+          background: rgba(255, 255, 255, 0.68);
           display: flex;
           justify-content: space-between;
           gap: 12px;
@@ -644,8 +683,15 @@ export default function BuyPage(): JSX.Element {
         }
 
         .premium .priceBox {
-          background: rgba(255,255,255,.12);
-          border-color: rgba(255,255,255,.18);
+          background: rgba(255, 255, 255, 0.12);
+          border-color:
+            rgba(255, 255, 255, 0.18);
+        }
+
+        .priceLabel {
+          opacity: 0.72;
+          font-weight: 950;
+          font-size: 12px;
         }
 
         .price {
@@ -655,41 +701,87 @@ export default function BuyPage(): JSX.Element {
           line-height: 1;
         }
 
+        .creditText {
+          font-weight: 1000;
+          opacity: 0.84;
+        }
+
         .summaryCard {
           border-radius: 34px;
           padding: 22px;
-          border: 1px solid rgba(255,255,255,.72);
-          background: rgba(255,255,255,.76);
-          box-shadow: 0 30px 90px rgba(15,23,42,.10);
+          border:
+            1px solid rgba(255, 255, 255, 0.72);
+          background: rgba(255, 255, 255, 0.76);
+          box-shadow:
+            0 30px 90px rgba(15, 23, 42, 0.10);
           backdrop-filter: blur(18px);
         }
 
-        .iyzicoCheckoutBox {
+        .summaryHead {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          align-items: start;
+        }
+
+        .summaryTitle {
+          font-weight: 1000;
+          font-size: 24px;
+          letter-spacing: -0.035em;
+        }
+
+        .summarySubtitle {
+          opacity: 0.68;
+          font-weight: 850;
+          margin-top: 4px;
+        }
+
+        .secureCheckoutBox {
           margin-top: 16px;
           border-radius: 20px;
-          padding: 14px;
-          border: 1px solid rgba(15,23,42,.09);
-          background: #ffffff;
+          padding: 16px;
+          border: 1px solid rgba(15, 23, 42, 0.09);
+          background:
+            linear-gradient(
+              135deg,
+              rgba(248, 250, 252, 0.98),
+              rgba(238, 242, 255, 0.92)
+            );
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .secureCheckoutIcon {
+          width: 46px;
+          height: 46px;
+          flex: 0 0 46px;
+          border-radius: 16px;
           display: grid;
-          gap: 10px;
-          justify-items: center;
-          text-align: center;
-          overflow: hidden;
+          place-items: center;
+          font-size: 23px;
+          background: rgba(79, 70, 229, 0.10);
+          border:
+            1px solid rgba(79, 70, 229, 0.14);
         }
 
-        .iyzicoCheckoutLabel {
-          color: rgba(15,23,42,.66);
+        .secureCheckoutContent {
+          min-width: 0;
+        }
+
+        .secureCheckoutTitle {
+          color: rgba(15, 23, 42, 0.92);
+          font-size: 14px;
+          font-weight: 1000;
+          line-height: 1.4;
+        }
+
+        .secureCheckoutText {
+          margin-top: 3px;
+          color: rgba(15, 23, 42, 0.64);
           font-size: 11px;
-          font-weight: 900;
-          line-height: 1.5;
-        }
-
-        .iyzicoCheckoutLogo {
-          display: block;
-          width: 100%;
-          max-width: 280px;
-          height: auto;
-          object-fit: contain;
+          font-weight: 850;
+          line-height: 1.55;
         }
 
         .benefitList {
@@ -704,8 +796,9 @@ export default function BuyPage(): JSX.Element {
           gap: 10px;
           border-radius: 18px;
           padding: 12px;
-          background: rgba(255,255,255,.76);
-          border: 1px solid rgba(15,23,42,.08);
+          background: rgba(255, 255, 255, 0.76);
+          border:
+            1px solid rgba(15, 23, 42, 0.08);
           font-weight: 900;
           line-height: 1.5;
         }
@@ -714,8 +807,9 @@ export default function BuyPage(): JSX.Element {
           margin-top: 16px;
           border-radius: 20px;
           overflow: hidden;
-          border: 1px solid rgba(15,23,42,.09);
-          background: rgba(255,255,255,.68);
+          border:
+            1px solid rgba(15, 23, 42, 0.09);
+          background: rgba(255, 255, 255, 0.68);
         }
 
         .orderRow {
@@ -724,7 +818,8 @@ export default function BuyPage(): JSX.Element {
           justify-content: space-between;
           gap: 18px;
           padding: 11px 13px;
-          border-bottom: 1px solid rgba(15,23,42,.07);
+          border-bottom:
+            1px solid rgba(15, 23, 42, 0.07);
           font-size: 13px;
           line-height: 1.5;
         }
@@ -734,18 +829,18 @@ export default function BuyPage(): JSX.Element {
         }
 
         .orderLabel {
-          color: rgba(15,23,42,.66);
+          color: rgba(15, 23, 42, 0.66);
           font-weight: 850;
         }
 
         .orderValue {
-          color: rgba(15,23,42,.92);
+          color: rgba(15, 23, 42, 0.92);
           font-weight: 1000;
           text-align: right;
         }
 
         .orderRow.total {
-          background: rgba(79,70,229,.07);
+          background: rgba(79, 70, 229, 0.07);
           padding-top: 14px;
           padding-bottom: 14px;
         }
@@ -753,7 +848,33 @@ export default function BuyPage(): JSX.Element {
         .orderRow.total .orderLabel,
         .orderRow.total .orderValue {
           font-size: 17px;
-          color: rgba(15,23,42,.96);
+          color: rgba(15, 23, 42, 0.96);
+        }
+
+        .notice {
+          margin-top: 14px;
+          border-radius: 20px;
+          padding: 14px;
+          border:
+            1px solid rgba(59, 130, 246, 0.20);
+          background: rgba(59, 130, 246, 0.08);
+          font-weight: 850;
+          line-height: 1.65;
+          color: rgba(15, 23, 42, 0.78);
+          font-size: 13px;
+        }
+
+        .warningNotice {
+          margin-top: 12px;
+          border-radius: 20px;
+          padding: 14px;
+          border:
+            1px solid rgba(245, 158, 11, 0.24);
+          background: rgba(245, 158, 11, 0.09);
+          font-weight: 850;
+          line-height: 1.65;
+          color: rgba(120, 53, 15, 0.92);
+          font-size: 13px;
         }
 
         .approvalList {
@@ -768,14 +889,17 @@ export default function BuyPage(): JSX.Element {
           gap: 10px;
           border-radius: 18px;
           padding: 12px;
-          border: 1px solid rgba(15,23,42,.09);
-          background: rgba(255,255,255,.70);
+          border:
+            1px solid rgba(15, 23, 42, 0.09);
+          background: rgba(255, 255, 255, 0.70);
           cursor: pointer;
         }
 
         .approvalItem:hover {
-          border-color: rgba(79,70,229,.24);
-          background: rgba(248,250,252,.90);
+          border-color:
+            rgba(79, 70, 229, 0.24);
+          background:
+            rgba(248, 250, 252, 0.90);
         }
 
         .approvalItem input {
@@ -788,7 +912,7 @@ export default function BuyPage(): JSX.Element {
         }
 
         .approvalText {
-          color: rgba(15,23,42,.78);
+          color: rgba(15, 23, 42, 0.78);
           font-size: 12px;
           font-weight: 820;
           line-height: 1.65;
@@ -813,25 +937,59 @@ export default function BuyPage(): JSX.Element {
           background:
             linear-gradient(
               135deg,
-              rgba(79,70,229,.98),
-              rgba(168,85,247,.98)
+              rgba(79, 70, 229, 0.98),
+              rgba(168, 85, 247, 0.98)
             );
-          box-shadow: 0 22px 55px rgba(124,58,237,.25);
+          box-shadow:
+            0 22px 55px rgba(124, 58, 237, 0.25);
           transition:
-            transform .18s ease,
-            box-shadow .18s ease,
-            opacity .18s ease;
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            opacity 0.18s ease;
         }
 
         .payButton:hover:not(:disabled) {
-          transform: translateY(-2px) scale(1.015);
-          box-shadow: 0 28px 70px rgba(124,58,237,.32);
+          transform:
+            translateY(-2px) scale(1.015);
+          box-shadow:
+            0 28px 70px rgba(124, 58, 237, 0.32);
         }
 
         .payButton:disabled {
-          opacity: .52;
+          opacity: 0.52;
           cursor: not-allowed;
           box-shadow: none;
+        }
+
+        .buttonHelp {
+          margin-top: 9px;
+          text-align: center;
+          color: rgba(15, 23, 42, 0.58);
+          font-size: 11px;
+          font-weight: 850;
+          line-height: 1.5;
+        }
+
+        .successBox {
+          margin-top: 14px;
+          border-radius: 18px;
+          padding: 12px;
+          border:
+            1px solid rgba(34, 197, 94, 0.22);
+          background: rgba(34, 197, 94, 0.10);
+          font-weight: 950;
+        }
+
+        .errorBox {
+          margin-top: 14px;
+          border-radius: 18px;
+          padding: 12px;
+          border:
+            1px solid rgba(239, 68, 68, 0.22);
+          background: rgba(239, 68, 68, 0.10);
+          color: #b91c1c;
+          font-weight: 950;
+          line-height: 1.55;
         }
 
         .trustGrid {
@@ -845,54 +1003,18 @@ export default function BuyPage(): JSX.Element {
           border-radius: 16px;
           padding: 10px;
           text-align: center;
-          background: rgba(15,23,42,.04);
-          border: 1px solid rgba(15,23,42,.06);
+          background: rgba(15, 23, 42, 0.04);
+          border:
+            1px solid rgba(15, 23, 42, 0.06);
           font-size: 12px;
           font-weight: 950;
         }
 
-        .notice {
+        .bottomLinks {
           margin-top: 14px;
-          border-radius: 20px;
-          padding: 14px;
-          border: 1px solid rgba(59,130,246,.20);
-          background: rgba(59,130,246,.08);
-          font-weight: 850;
-          line-height: 1.65;
-          color: rgba(15,23,42,.78);
-          font-size: 13px;
-        }
-
-        .warningNotice {
-          margin-top: 12px;
-          border-radius: 20px;
-          padding: 14px;
-          border: 1px solid rgba(245,158,11,.24);
-          background: rgba(245,158,11,.09);
-          font-weight: 850;
-          line-height: 1.65;
-          color: rgba(120,53,15,.92);
-          font-size: 13px;
-        }
-
-        .successBox {
-          margin-top: 14px;
-          border-radius: 18px;
-          padding: 12px;
-          border: 1px solid rgba(34,197,94,.22);
-          background: rgba(34,197,94,.10);
-          font-weight: 950;
-        }
-
-        .errorBox {
-          margin-top: 14px;
-          border-radius: 18px;
-          padding: 12px;
-          border: 1px solid rgba(239,68,68,.22);
-          background: rgba(239,68,68,.10);
-          color: #b91c1c;
-          font-weight: 950;
-          line-height: 1.55;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         @media (max-width: 900px) {
@@ -951,14 +1073,7 @@ export default function BuyPage(): JSX.Element {
           }`}
         >
           <div className="heroInner">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="packageTop">
               <div className="iconBubble">
                 {selected.icon}
               </div>
@@ -1037,13 +1152,7 @@ export default function BuyPage(): JSX.Element {
 
           <div className="priceBox">
             <div>
-              <div
-                style={{
-                  opacity: 0.72,
-                  fontWeight: 950,
-                  fontSize: 12,
-                }}
-              >
+              <div className="priceLabel">
                 Seçilen paket
               </div>
 
@@ -1052,44 +1161,20 @@ export default function BuyPage(): JSX.Element {
               </div>
             </div>
 
-            <div
-              style={{
-                fontWeight: 1000,
-                opacity: 0.84,
-              }}
-            >
+            <div className="creditText">
               {selected.credits} kredi
             </div>
           </div>
         </section>
 
         <aside className="summaryCard">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-              alignItems: "start",
-            }}
-          >
+          <div className="summaryHead">
             <div>
-              <div
-                style={{
-                  fontWeight: 1000,
-                  fontSize: 24,
-                  letterSpacing: "-0.035em",
-                }}
-              >
+              <div className="summaryTitle">
                 Sipariş Özeti
               </div>
 
-              <div
-                style={{
-                  opacity: 0.68,
-                  fontWeight: 850,
-                  marginTop: 4,
-                }}
-              >
+              <div className="summarySubtitle">
                 {selected.title}
               </div>
             </div>
@@ -1099,20 +1184,27 @@ export default function BuyPage(): JSX.Element {
             </span>
           </div>
 
-          <div className="iyzicoCheckoutBox">
-            <div className="iyzicoCheckoutLabel">
-              Ödemeler iyzico güvenli ödeme altyapısı üzerinden
-              gerçekleştirilecektir.
+          <div className="secureCheckoutBox">
+            <div
+              className="secureCheckoutIcon"
+              aria-hidden
+            >
+              🔒
             </div>
 
-            <Image
-              src="/payment/iyzico-checkout.png"
-              alt="iyzico ile Öde"
-              width={720}
-              height={214}
-              className="iyzicoCheckoutLogo"
-              sizes="(max-width: 900px) 100vw, 280px"
-            />
+            <div className="secureCheckoutContent">
+              <div className="secureCheckoutTitle">
+                Güvenli kredi kartı ödemesi
+              </div>
+
+              <div className="secureCheckoutText">
+                Online ödeme altyapısı
+                etkinleştirildiğinde kart bilgileriniz
+                güvenli ödeme sayfası üzerinden
+                işlenecektir. Kart bilgileriniz
+                DişFiyat360 sunucularında saklanmaz.
+              </div>
+            </div>
           </div>
 
           <div className="benefitList">
@@ -1190,21 +1282,25 @@ export default function BuyPage(): JSX.Element {
             <strong>
               Dijital hizmetin teslimi:
             </strong>{" "}
-            Kredi paketlerinde hizmet, satın alınan kredilerin
-            klinik hesabına tanımlanmasıyla teslim edilmiş sayılır.
-            Premium üyelikte hizmet, Premium hakkının etkinleştirilmesi
-            ve paket kapsamındaki kredilerin hesaba tanımlanmasıyla
-            başlar. Kredilerin kullanılması klinik kullanıcısının
+            Kredi paketlerinde hizmet, satın alınan
+            kredilerin klinik hesabına
+            tanımlanmasıyla teslim edilmiş sayılır.
+            Premium üyelikte hizmet, Premium
+            hakkının etkinleştirilmesi ve paket
+            kapsamındaki kredilerin hesaba
+            tanımlanmasıyla başlar. Kredilerin
+            kullanılması klinik kullanıcısının
             tercihine bağlıdır.
           </div>
 
           <div className="warningNotice">
             <strong>
-              iyzico başvuru ve entegrasyon süreci:
+              Online ödeme bilgilendirmesi:
             </strong>{" "}
-            iyzico ödeme bağlantısı henüz etkin değildir. Bu
-            ekranda şu anda karttan tahsilat yapılmaz ve kredi ya
-            da Premium üyelik tanımlanmaz.
+            Sanal POS entegrasyonu henüz etkin
+            değildir. Bu ekranda şu anda karttan
+            tahsilat yapılmaz ve kredi ya da Premium
+            üyelik tanımlanmaz.
           </div>
 
           <div className="approvalList">
@@ -1225,10 +1321,11 @@ export default function BuyPage(): JSX.Element {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Dijital Hizmet Satış ve Kullanım Sözleşmesi
+                  Dijital Hizmet Satış ve Kullanım
+                  Sözleşmesi
                 </Link>
-                ’ni okudum, paket kapsamını ve kullanım
-                koşullarını kabul ediyorum.
+                ’ni okudum, paket kapsamını ve
+                kullanım koşullarını kabul ediyorum.
               </span>
             </label>
 
@@ -1266,7 +1363,9 @@ export default function BuyPage(): JSX.Element {
             <label className="approvalItem">
               <input
                 type="checkbox"
-                checked={immediatePerformanceAccepted}
+                checked={
+                  immediatePerformanceAccepted
+                }
                 onChange={(event) =>
                   setImmediatePerformanceAccepted(
                     event.target.checked
@@ -1275,13 +1374,16 @@ export default function BuyPage(): JSX.Element {
               />
 
               <span className="approvalText">
-                Satın aldığım dijital hizmetin başarılı ödeme
-                onayından sonra elektronik ortamda hemen
-                başlatılmasını ve kredi veya üyelik hakkının
-                hesabıma tanımlanmasını talep ediyorum. Kredi
-                bakiyesinin veya Premium üyelik hakkının hesabıma
-                tanımlanmasıyla dijital hizmetin teslim edilmiş
-                sayılacağını kabul ediyorum.
+                Satın aldığım dijital hizmetin
+                başarılı ödeme onayından sonra
+                elektronik ortamda hemen
+                başlatılmasını ve kredi veya üyelik
+                hakkının hesabıma tanımlanmasını
+                talep ediyorum. Kredi bakiyesinin
+                veya Premium üyelik hakkının
+                hesabıma tanımlanmasıyla dijital
+                hizmetin teslim edilmiş sayılacağını
+                kabul ediyorum.
               </span>
             </label>
           </div>
@@ -1303,24 +1405,16 @@ export default function BuyPage(): JSX.Element {
                 ? "Ödeme altyapısı kontrol ediliyor..."
                 : paymentProviderActive
                   ? `${selected.totalPrice} Güvenli Ödemeye Geç`
-                  : "iyzico Entegrasyonu Hazırlanıyor"}
+                  : "Online Ödeme Yakında Aktif"}
           </button>
 
           {!allApprovalsAccepted && !loading ? (
-            <div
-              style={{
-                marginTop: 9,
-                textAlign: "center",
-                color: "rgba(15,23,42,.58)",
-                fontSize: 11,
-                fontWeight: 850,
-                lineHeight: 1.5,
-              }}
-            >
-              Bilgilendirme, teslimat ve sözleşme metinlerini
-              incelemek için onay kutularını işaretleyebilirsin.
-              iyzico entegrasyonu tamamlanana kadar ödeme işlemi
-              kapalıdır.
+            <div className="buttonHelp">
+              Bilgilendirme, teslimat ve sözleşme
+              metinlerini incelemek için onay
+              kutularını işaretleyebilirsiniz. Sanal
+              POS entegrasyonu tamamlanana kadar
+              online ödeme işlemi kapalıdır.
             </div>
           ) : null}
 
@@ -1342,22 +1436,15 @@ export default function BuyPage(): JSX.Element {
             </div>
 
             <div className="trustItem">
-              🛡️ iyzico güvenli ödeme
+              🛡️ Güvenli ödeme altyapısı
             </div>
 
             <div className="trustItem">
-              💳 Visa ve Mastercard
+              💳 Kredi kartıyla ödeme
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 14,
-              display: "flex",
-              gap: 10,
-              flexWrap: "wrap",
-            }}
-          >
+          <div className="bottomLinks">
             <Link
               href="/panel/abonelik"
               style={ghostLinkStyle()}

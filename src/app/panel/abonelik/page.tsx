@@ -907,10 +907,10 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
 
       <div className="paymentNotice">
         <strong>
-          💳 iyzico güvenli ödeme altyapısı başvuru sürecindedir.
+          💳 Online ödeme altyapısı hazırlanmaktadır.
         </strong>{" "}
         Paketleri, fiyatları ve sözleşme bilgilerini inceleyebilirsin.
-        iyzico ödeme entegrasyonu etkinleştirilene kadar karttan tahsilat
+        Sanal POS entegrasyonu etkinleştirilene kadar karttan tahsilat
         yapılmaz ve hesabına otomatik kredi ya da Premium üyelik
         tanımlanmaz.
       </div>
@@ -985,7 +985,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
                     : chipStyle()
                 }
               >
-                💳 iyzico güvenli ödeme
+                💳 Güvenli kredi kartı ödemesi
               </span>
             </div>
 
