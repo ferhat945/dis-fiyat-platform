@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -412,10 +411,7 @@ export default function ClinicPackagesPage(): JSX.Element {
         }
 
         .paymentBox {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 310px;
-          gap: 24px;
-          align-items: center;
+          display: block;
           padding: 26px;
           border-radius: 28px;
           border: 1px solid rgba(15, 23, 42, 0.08);
@@ -436,21 +432,6 @@ export default function ClinicPackagesPage(): JSX.Element {
           font-size: 13px;
           line-height: 1.8;
           font-weight: 750;
-        }
-
-        .paymentLogoBox {
-          padding: 16px;
-          border-radius: 20px;
-          border: 1px solid rgba(15, 23, 42, 0.08);
-          background: #ffffff;
-          text-align: center;
-        }
-
-        .paymentLogo {
-          width: 100%;
-          max-width: 280px;
-          height: auto;
-          object-fit: contain;
         }
 
         .legalGrid {
@@ -526,13 +507,6 @@ export default function ClinicPackagesPage(): JSX.Element {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .paymentBox {
-            grid-template-columns: 1fr;
-          }
-
-          .paymentLogoBox {
-            max-width: 380px;
-          }
         }
 
         @media (max-width: 650px) {
@@ -751,29 +725,18 @@ export default function ClinicPackagesPage(): JSX.Element {
 
         <section className="section">
           <div className="paymentBox">
-            <div>
-              <div className="paymentTitle">
-                Güvenli ödeme altyapısı
-              </div>
-
-              <div className="paymentText">
-                Online kart ödemelerinin iyzico güvenli ödeme altyapısı
-                üzerinden gerçekleştirilmesi planlanmaktadır. iyzico başvuru
-                ve entegrasyon süreci tamamlanana kadar internet sitesi
-                üzerinden karttan tahsilat yapılmaz ve kullanıcı hesabına
-                otomatik kredi veya Premium üyelik tanımlanmaz.
-              </div>
+            <div className="paymentTitle">
+              Güvenli ödeme altyapısı
             </div>
 
-            <div className="paymentLogoBox">
-              <Image
-                src="/payment/iyzico-checkout.png"
-                alt="iyzico güvenli ödeme altyapısı"
-                width={720}
-                height={214}
-                className="paymentLogo"
-                sizes="(max-width: 650px) 100vw, 280px"
-              />
+            <div className="paymentText">
+              Online kart ödeme altyapısı için Garanti BBVA Sanal POS
+              başvurusu yapılmış olup değerlendirme süreci devam etmektedir.
+              Sanal POS aktif edilene ve teknik entegrasyon tamamlanana kadar
+              internet sitesi üzerinden kartla tahsilat yapılmaz; kullanıcı
+              hesabına otomatik kredi veya Premium üyelik tanımlanmaz.
+              Aktivasyon sonrasında kart bilgileri DişFiyat360 sunucularında
+              saklanmadan banka altyapısı üzerinden işlenecektir.
             </div>
           </div>
         </section>
@@ -810,7 +773,7 @@ export default function ClinicPackagesPage(): JSX.Element {
               Kullanım Koşulları
             </Link>
 
-            <Link href="/gizlilik" className="legalLink">
+            <Link href="/gizlilik-politikasi" className="legalLink">
               Gizlilik Politikası
             </Link>
 
