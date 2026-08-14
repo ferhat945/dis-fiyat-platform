@@ -52,10 +52,11 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "5) Hizmet Aktive Edilmeden Önce İptal",
+    title: "5) İptal ve Cayma Koşulları",
     paragraphs: [
-      "Ödeme tamamlanmış ancak satın alınan kredi paketi veya Premium üyelik henüz klinik hesabına tanımlanmamışsa, iptal talebi incelenebilir.",
-      "Aktivasyon gerçekleşmeden yapılan taleplerde; ödemenin doğrulanması, işlemin başka bir hesaba tanımlanmamış olması ve teknik süreçlerin uygunluğu dikkate alınarak tam iade yapılabilir.",
+      "Satın alınan kredi paketi veya Premium üyelik henüz klinik hesabına tanımlanmamış ve hizmet kullanıma sunulmamışsa, klinik satın alma tarihinden itibaren 14 gün içinde yazılı olarak iptal ve iade talebinde bulunabilir.",
+      "Kredi paketinin veya Premium üyeliğin klinik hesabına tanımlanarak hizmetin kullanıma sunulması ve kliniğin hizmetten yararlanmaya başlaması hâlinde cayma hakkı sona erer. Kullanılmış krediler, görüntülenmiş leadler ve kullanılmış dijital hizmet hakları için iptal veya iade yapılmaz.",
+      "İptal ve iade talepleri ferhatmenekse945@gmail.com adresine yazılı olarak iletilmelidir.",
     ],
   },
   {
@@ -154,9 +155,9 @@ const POLICY_BLOCKS: PolicyBlock[] = [
   {
     title: "17) İade Yöntemi",
     paragraphs: [
-      "İade talebinin kabul edilmesi hâlinde işlem, teknik olarak mümkün olduğu ölçüde ödemenin gerçekleştirildiği ödeme yöntemine yapılır.",
-      "Bankaların, kart kuruluşlarının veya ödeme altyapılarının işlem süreleri nedeniyle iade tutarının hesaba yansıması ayrıca zaman alabilir.",
-      "İade işlemi tamamlandığında satın alınan kredi, üyelik süresi veya ilgili dijital haklar klinik hesabından geri alınabilir.",
+      "İade talebinin kabul edilmesi hâlinde iade işlemi, talebin onaylanmasından itibaren en geç 14 gün içinde başlatılır ve teknik olarak mümkün olduğu ölçüde ödemenin gerçekleştirildiği ödeme yöntemine yapılır.",
+      "Bankaların, kart kuruluşlarının veya ödeme altyapılarının işlem süreleri nedeniyle iade tutarının karta veya hesaba yansıması ayrıca zaman alabilir.",
+      "İade işlemi tamamlandığında, iade edilen işleme ilişkin kullanılmamış kredi bakiyesi, Premium üyelik süresi veya diğer ilgili dijital kullanım hakları klinik hesabından geri alınabilir.",
     ],
   },
   {
