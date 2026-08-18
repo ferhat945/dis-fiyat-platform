@@ -5,23 +5,44 @@ export const dynamic = "force-dynamic";
 
 type PaymentConfigResponse = {
   ok: true;
-  provider: "iyzico";
-  active: boolean;
-  checkoutEnabled: boolean;
+
+  card: {
+    provider: "iyzico";
+    active: boolean;
+    checkoutEnabled: boolean;
+  };
+
+  bankTransfer: {
+    active: boolean;
+  };
 };
 
 export async function GET(): Promise<
   NextResponse<PaymentConfigResponse>
 > {
-  const active =
-    process.env.IYZICO_PAYMENT_ACTIVE === "1";
+  const cardActive =
+    process.env
+      .IYZICO_PAYMENT_ACTIVE === "1";
+
+  const bankTransferActive =
+    process.env
+      .BANK_TRANSFER_ENABLED === "1";
 
   return NextResponse.json(
     {
       ok: true,
-      provider: "iyzico",
-      active,
-      checkoutEnabled: active,
+
+      card: {
+        provider: "iyzico",
+        active: cardActive,
+        checkoutEnabled:
+          cardActive,
+      },
+
+      bankTransfer: {
+        active:
+          bankTransferActive,
+      },
     },
     {
       status: 200,

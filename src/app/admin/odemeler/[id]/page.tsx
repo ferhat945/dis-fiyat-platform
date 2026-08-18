@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/admin-guard";
 import { prisma } from "@/lib/db";
+import BankTransferActions from "./BankTransferActions";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,54 @@ function jsonText(value: unknown): string {
   } catch {
     return String(value);
   }
+}
+
+function providerLabel(provider: string | null): string {
+  if (provider === "bank_transfer") {
+    return "Havale / EFT / FAST";
+  }
+
+  if (provider === "iyzico") {
+    return "iyzico";
+  }
+
+  return provider ?? "—";
+}
+
+function statusLabel(status: string): string {
+  if (status === "awaiting_transfer") {
+    return "Havale bekleniyor";
+  }
+
+  if (status === "transfer_notified") {
+    return "Ödeme bildirildi";
+  }
+
+  if (status === "processing_transfer") {
+    return "Kontrol ediliyor";
+  }
+
+  if (
+    status === "paid" ||
+    status === "success" ||
+    status === "completed"
+  ) {
+    return "Ödendi";
+  }
+
+  if (status === "canceled") {
+    return "İptal edildi";
+  }
+
+  if (status === "failed") {
+    return "Başarısız";
+  }
+
+  if (status === "started") {
+    return "Başlatıldı";
+  }
+
+  return status;
 }
 
 export default async function AdminPaymentDetailPage({
@@ -98,7 +147,7 @@ export default async function AdminPaymentDetailPage({
         </Link>
 
         <span style={statusStyle}>
-          Durum: {payment.status}
+          Durum: {statusLabel(payment.status)}
         </span>
       </div>
 
@@ -167,8 +216,10 @@ export default async function AdminPaymentDetailPage({
         />
 
         <Info
-          label="Sağlayıcı"
-          value={payment.provider ?? "—"}
+          label="Ödeme yöntemi"
+          value={providerLabel(
+            payment.provider
+          )}
         />
 
         <Info
@@ -177,11 +228,11 @@ export default async function AdminPaymentDetailPage({
         />
 
         <Info
-          label="Callback doğrulandı"
+          label="Doğrulama durumu"
           value={
             payment.callbackVerified
-              ? "Evet"
-              : "Hayır"
+              ? "Doğrulandı"
+              : "Bekliyor"
           }
         />
 
@@ -267,6 +318,13 @@ export default async function AdminPaymentDetailPage({
         />
       </section>
 
+      <BankTransferActions
+        paymentId={payment.id}
+        status={payment.status}
+        provider={payment.provider}
+        delivered={Boolean(payment.deliveredAt)}
+      />
+
       <section style={sectionStyle}>
         <h2 style={sectionTitleStyle}>
           Sözleşme Onayları
@@ -299,7 +357,12 @@ export default async function AdminPaymentDetailPage({
             accepted={
               payment.callbackVerified
             }
-            label="Ödeme kuruluşu doğrulaması"
+            label={
+              payment.provider ===
+              "bank_transfer"
+                ? "Banka transferi admin doğrulaması"
+                : "Ödeme kuruluşu doğrulaması"
+            }
           />
         </div>
       </section>
@@ -399,7 +462,12 @@ export default async function AdminPaymentDetailPage({
       />
 
       <JsonSection
-        title="Ödeme Callback Kanıtı"
+        title={
+          payment.provider ===
+          "bank_transfer"
+            ? "Banka Transferi Bildirim / Onay Kanıtı"
+            : "Ödeme Callback Kanıtı"
+        }
         value={payment.callbackPayload}
       />
 
@@ -450,7 +518,10 @@ function Approval({
           : "#475569",
       }}
     >
-      <span>{accepted ? "✅" : "➖"}</span>
+      <span>
+        {accepted ? "✅" : "➖"}
+      </span>
+
       <strong>{label}</strong>
     </div>
   );
@@ -547,7 +618,8 @@ const gridStyle: CSSProperties = {
 const infoStyle: CSSProperties = {
   padding: 13,
   borderRadius: 16,
-  border: "1px solid rgba(15,23,42,.08)",
+  border:
+    "1px solid rgba(15,23,42,.08)",
   background: "white",
 };
 
@@ -568,7 +640,8 @@ const sectionStyle: CSSProperties = {
   marginTop: 16,
   padding: 18,
   borderRadius: 20,
-  border: "1px solid rgba(15,23,42,.08)",
+  border:
+    "1px solid rgba(15,23,42,.08)",
   background: "white",
 };
 
@@ -606,7 +679,8 @@ const movementRowStyle: CSSProperties = {
   gap: 14,
   padding: 13,
   borderRadius: 15,
-  border: "1px solid rgba(15,23,42,.08)",
+  border:
+    "1px solid rgba(15,23,42,.08)",
 };
 
 const smallStyle: CSSProperties = {
@@ -624,8 +698,10 @@ const emptyStyle: CSSProperties = {
   marginTop: 13,
   padding: 18,
   borderRadius: 14,
-  background: "rgba(15,23,42,.04)",
-  color: "rgba(15,23,42,.62)",
+  background:
+    "rgba(15,23,42,.04)",
+  color:
+    "rgba(15,23,42,.62)",
   textAlign: "center",
   fontWeight: 850,
 };
@@ -634,7 +710,8 @@ const errorSectionStyle: CSSProperties = {
   ...sectionStyle,
   border:
     "1px solid rgba(239,68,68,.18)",
-  background: "rgba(239,68,68,.06)",
+  background:
+    "rgba(239,68,68,.06)",
   color: "#991b1b",
 };
 

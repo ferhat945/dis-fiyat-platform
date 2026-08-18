@@ -3,7 +3,11 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type PackageCode =
   | "credit_5"
@@ -11,7 +15,11 @@ type PackageCode =
   | "credit_25"
   | "premium";
 
-type StartResp =
+type PaymentMethod =
+  | "bank_transfer"
+  | "card";
+
+type CardStartResp =
   | {
       ok: true;
       mode: "payment_redirect";
@@ -23,11 +31,56 @@ type StartResp =
       code: string;
     };
 
+type BankTransferStartResp =
+  | {
+      ok: true;
+      mode: "bank_transfer";
+      package: PackageCode;
+      paymentLogId: string;
+      orderNumber: string;
+
+      bank: {
+        bankName: string;
+        accountHolder: string;
+        iban: string;
+      };
+
+      payment: {
+        amount: number;
+        currency: "TRY";
+        amountFormatted: string;
+        description: string;
+      };
+    }
+  | {
+      ok: false;
+      code: string;
+    };
+
+type BankTransferNotifyResp =
+  | {
+      ok: true;
+      status: "transfer_notified";
+      paymentLogId: string;
+      orderNumber: string;
+    }
+  | {
+      ok: false;
+      code: string;
+    };
+
 type PaymentConfigResp = {
   ok: boolean;
-  provider?: string;
-  active: boolean;
-  checkoutEnabled: boolean;
+
+  card?: {
+    provider?: string;
+    active: boolean;
+    checkoutEnabled: boolean;
+  };
+
+  bankTransfer?: {
+    active: boolean;
+  };
 };
 
 type PackageInfo = {
@@ -39,13 +92,34 @@ type PackageInfo = {
   credits: number;
   icon: string;
   badge: string;
-  accent: "blue" | "purple" | "orange" | "premium";
+
+  accent:
+    | "blue"
+    | "purple"
+    | "orange"
+    | "premium";
+
   benefits: string[];
+
   serviceType: string;
   duration: string;
   activation: string;
   renewal: string;
   leadPolicy: string;
+};
+
+type ActiveBankTransfer = {
+  paymentLogId: string;
+  orderNumber: string;
+
+  bankName: string;
+  accountHolder: string;
+  iban: string;
+
+  amountFormatted: string;
+  description: string;
+
+  notified: boolean;
 };
 
 function isPackageCode(
@@ -59,29 +133,45 @@ function isPackageCode(
   );
 }
 
-function packageInfo(pkg: PackageCode): PackageInfo {
+function packageInfo(
+  pkg: PackageCode
+): PackageInfo {
   if (pkg === "credit_5") {
     return {
       code: pkg,
+
       title: "5 Kredi Paketi",
+
       subtitle:
         "Başlangıç için hazırlanmış tek seferlik lead görüntüleme paketi",
+
       price: "1.500 TL",
       totalPrice: "1.500 TL",
+
       credits: 5,
+
       icon: "💎",
       badge: "Başlangıç",
       accent: "blue",
+
       benefits: [
         "5 lead iletişim kaydını görüntüleme hakkı",
         "Abonelik zorunluluğu olmadan kullanım",
-        "Başarılı ödeme onayından sonra aktivasyon",
+        "Ödeme doğrulamasından sonra aktivasyon",
       ],
-      serviceType: "Tek seferlik dijital kredi paketi",
-      duration: "Kredi bakiyesi tükenene kadar",
+
+      serviceType:
+        "Tek seferlik dijital kredi paketi",
+
+      duration:
+        "Kredi bakiyesi tükenene kadar",
+
       activation:
-        "Başarılı ödeme onayından sonra hesaba tanımlanır",
-      renewal: "Otomatik yenilenmez",
+        "Ödeme doğrulandıktan sonra hesaba tanımlanır",
+
+      renewal:
+        "Otomatik yenilenmez",
+
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
@@ -90,25 +180,39 @@ function packageInfo(pkg: PackageCode): PackageInfo {
   if (pkg === "credit_10") {
     return {
       code: pkg,
+
       title: "10 Kredi Paketi",
+
       subtitle:
         "Dengeli kullanım için hazırlanmış tek seferlik kredi paketi",
+
       price: "2.000 TL",
       totalPrice: "2.000 TL",
+
       credits: 10,
+
       icon: "⚡",
       badge: "En Popüler",
       accent: "purple",
+
       benefits: [
         "10 lead iletişim kaydını görüntüleme hakkı",
         "5 kredi paketine göre daha avantajlı birim maliyet",
-        "Başarılı ödeme onayından sonra aktivasyon",
+        "Ödeme doğrulamasından sonra aktivasyon",
       ],
-      serviceType: "Tek seferlik dijital kredi paketi",
-      duration: "Kredi bakiyesi tükenene kadar",
+
+      serviceType:
+        "Tek seferlik dijital kredi paketi",
+
+      duration:
+        "Kredi bakiyesi tükenene kadar",
+
       activation:
-        "Başarılı ödeme onayından sonra hesaba tanımlanır",
-      renewal: "Otomatik yenilenmez",
+        "Ödeme doğrulandıktan sonra hesaba tanımlanır",
+
+      renewal:
+        "Otomatik yenilenmez",
+
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
@@ -117,25 +221,39 @@ function packageInfo(pkg: PackageCode): PackageInfo {
   if (pkg === "credit_25") {
     return {
       code: pkg,
+
       title: "25 Kredi Paketi",
+
       subtitle:
         "Yoğun lead kullanan klinikler için hazırlanmış kredi paketi",
+
       price: "4.000 TL",
       totalPrice: "4.000 TL",
+
       credits: 25,
+
       icon: "🚀",
       badge: "En Avantajlı",
       accent: "orange",
+
       benefits: [
         "25 lead iletişim kaydını görüntüleme hakkı",
         "Paketler arasındaki en düşük birim maliyet",
         "Yoğun lead kullanımı için yüksek kredi bakiyesi",
       ],
-      serviceType: "Tek seferlik dijital kredi paketi",
-      duration: "Kredi bakiyesi tükenene kadar",
+
+      serviceType:
+        "Tek seferlik dijital kredi paketi",
+
+      duration:
+        "Kredi bakiyesi tükenene kadar",
+
       activation:
-        "Başarılı ödeme onayından sonra hesaba tanımlanır",
-      renewal: "Otomatik yenilenmez",
+        "Ödeme doğrulandıktan sonra hesaba tanımlanır",
+
+      renewal:
+        "Otomatik yenilenmez",
+
       leadPolicy:
         "Lead kaydı; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
     };
@@ -143,32 +261,47 @@ function packageInfo(pkg: PackageCode): PackageInfo {
 
   return {
     code: "premium",
+
     title: "Premium Üyelik",
+
     subtitle:
       "30 günlük Premium üyelik, 10 kredi ve uygun lead dağıtımlarında öncelik",
+
     price: "2.500 TL / 30 gün",
     totalPrice: "2.500 TL",
+
     credits: 10,
+
     icon: "👑",
     badge: "Premium",
     accent: "premium",
+
     benefits: [
       "Üyelik başlangıcında 10 kredi",
       "Uygun lead dağıtımlarında standart kliniklere göre öncelik",
       "30 günlük Premium üyelik süresi",
     ],
-    serviceType: "30 günlük dijital Premium üyelik",
-    duration: "Başarılı ödeme onayından itibaren 30 gün",
+
+    serviceType:
+      "30 günlük dijital Premium üyelik",
+
+    duration:
+      "Başarılı ödeme onayından itibaren 30 gün",
+
     activation:
-      "Başarılı ödeme onayından sonra başlatılır",
+      "Ödeme doğrulandıktan sonra başlatılır",
+
     renewal:
       "Otomatik yenilenmez; yeniden satın alınması gerekir",
+
     leadPolicy:
       "Premium öncelik; münhasır lead, belirli sayıda talep, kesin hasta, randevu veya gelir garantisi değildir.",
   };
 }
 
-function errorMessage(code: string): string {
+function errorMessage(
+  code: string
+): string {
   if (
     code === "UNAUTHORIZED" ||
     code === "UNAUTHORIZED_CLINIC"
@@ -180,68 +313,212 @@ function errorMessage(code: string): string {
     code === "INVALID_PACKAGE" ||
     code === "VALIDATION_ERROR"
   ) {
-    return "Gönderilen ödeme veya paket bilgileri doğrulanamadı.";
-  }
-
-  if (code === "CLINIC_NOT_FOUND") {
-    return "Aktif klinik hesabı bulunamadı.";
-  }
-
-  if (code === "PAYMENT_PROVIDER_NOT_ACTIVE") {
-    return "Online ödeme altyapısı henüz aktif değildir. Kartınızdan herhangi bir tahsilat yapılmamış ve hesabınıza kredi veya üyelik hakkı tanımlanmamıştır.";
+    return "Gönderilen paket veya işlem bilgileri doğrulanamadı.";
   }
 
   if (
-    code === "PAYMENT_START_ERROR" ||
-    code === "PAYMENT_FAILED"
+    code === "AGREEMENTS_REQUIRED"
   ) {
-    return "Ödeme işlemi başlatılamadı. Lütfen daha sonra tekrar deneyin.";
+    return "Devam etmek için sözleşme ve hizmet onaylarını kabul etmelisiniz.";
   }
 
-  return code || "İşlem tamamlanamadı.";
+  if (
+    code === "CLINIC_NOT_FOUND"
+  ) {
+    return "Aktif klinik hesabı bulunamadı.";
+  }
+
+  if (
+    code ===
+    "BANK_TRANSFER_NOT_ACTIVE"
+  ) {
+    return "Havale / EFT / FAST ödeme yöntemi şu anda aktif değildir.";
+  }
+
+  if (
+    code ===
+    "BANK_TRANSFER_CONFIG_INVALID"
+  ) {
+    return "Banka transferi hesap bilgileri yapılandırılmamış. Lütfen destek ile iletişime geçin.";
+  }
+
+  if (
+    code ===
+    "BANK_TRANSFER_START_ERROR"
+  ) {
+    return "Banka transferi siparişi oluşturulamadı. Lütfen tekrar deneyin.";
+  }
+
+  if (
+    code ===
+    "BANK_TRANSFER_NOTIFY_ERROR"
+  ) {
+    return "Ödeme bildirimi alınamadı. Lütfen tekrar deneyin.";
+  }
+
+  if (
+    code === "PAYMENT_NOT_FOUND"
+  ) {
+    return "Ödeme kaydı bulunamadı.";
+  }
+
+  if (
+    code ===
+    "PAYMENT_ALREADY_DELIVERED"
+  ) {
+    return "Bu siparişin dijital hakları zaten hesabınıza tanımlanmış.";
+  }
+
+  if (
+    code ===
+    "INVALID_PAYMENT_STATUS"
+  ) {
+    return "Bu sipariş mevcut durumunda ödeme bildirimi almaya uygun değil.";
+  }
+
+  if (
+    code ===
+    "PAYMENT_PROVIDER_NOT_ACTIVE"
+  ) {
+    return "Kartla ödeme altyapısı henüz aktif değildir.";
+  }
+
+  if (
+    code ===
+      "PAYMENT_START_ERROR" ||
+    code ===
+      "PAYMENT_FAILED"
+  ) {
+    return "Kartla ödeme işlemi başlatılamadı. Lütfen daha sonra tekrar deneyin.";
+  }
+
+  return (
+    code ||
+    "İşlem tamamlanamadı."
+  );
+}
+
+function formatIban(
+  value: string
+): string {
+  const normalized =
+    value
+      .replace(/\s+/g, "")
+      .toUpperCase();
+
+  return (
+    normalized
+      .match(/.{1,4}/g)
+      ?.join(" ") ??
+    normalized
+  );
 }
 
 export default function BuyPage(): JSX.Element {
-  const searchParams = useSearchParams();
-  const packageParam = searchParams.get("package");
+  const searchParams =
+    useSearchParams();
 
-  const pkg: PackageCode = isPackageCode(packageParam)
-    ? packageParam
-    : "credit_10";
+  const packageParam =
+    searchParams.get("package");
 
-  const selected = useMemo(
-    () => packageInfo(pkg),
-    [pkg]
-  );
+  const pkg: PackageCode =
+    isPackageCode(packageParam)
+      ? packageParam
+      : "credit_10";
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const selected =
+    useMemo(
+      () => packageInfo(pkg),
+      [pkg]
+    );
 
   const [
-    paymentProviderActive,
-    setPaymentProviderActive,
-  ] = useState<boolean>(false);
+    paymentMethod,
+    setPaymentMethod,
+  ] =
+    useState<PaymentMethod>(
+      "bank_transfer"
+    );
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState<boolean>(false);
+
+  const [
+    notifyLoading,
+    setNotifyLoading,
+  ] =
+    useState<boolean>(false);
+
+  const [
+    err,
+    setErr,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    info,
+    setInfo,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    cardActive,
+    setCardActive,
+  ] =
+    useState<boolean>(false);
+
+  const [
+    bankTransferActive,
+    setBankTransferActive,
+  ] =
+    useState<boolean>(false);
 
   const [
     paymentConfigLoading,
     setPaymentConfigLoading,
-  ] = useState<boolean>(true);
+  ] =
+    useState<boolean>(true);
 
   const [
     serviceAgreementAccepted,
     setServiceAgreementAccepted,
-  ] = useState<boolean>(false);
+  ] =
+    useState<boolean>(false);
 
   const [
     refundPolicyAccepted,
     setRefundPolicyAccepted,
-  ] = useState<boolean>(false);
+  ] =
+    useState<boolean>(false);
 
   const [
     immediatePerformanceAccepted,
     setImmediatePerformanceAccepted,
-  ] = useState<boolean>(false);
+  ] =
+    useState<boolean>(false);
+
+  const [
+    bankTransfer,
+    setBankTransfer,
+  ] =
+    useState<ActiveBankTransfer | null>(
+      null
+    );
+
+  const [
+    copiedField,
+    setCopiedField,
+  ] =
+    useState<
+      "iban" | "description" | null
+    >(null);
 
   const allApprovalsAccepted =
     serviceAgreementAccepted &&
@@ -253,16 +530,19 @@ export default function BuyPage(): JSX.Element {
 
     async function loadPaymentConfig(): Promise<void> {
       try {
-        const response = await fetch(
-          "/api/payments/config",
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
+        const response =
+          await fetch(
+            "/api/payments/config",
+            {
+              method: "GET",
+              cache: "no-store",
+
+              headers: {
+                Accept:
+                  "application/json",
+              },
+            }
+          );
 
         if (!response.ok) {
           throw new Error(
@@ -273,22 +553,58 @@ export default function BuyPage(): JSX.Element {
         const data =
           (await response.json()) as PaymentConfigResp;
 
-        if (!cancelled) {
-          setPaymentProviderActive(
-            Boolean(
-              data.ok &&
-                data.active &&
-                data.checkoutEnabled
-            )
+        if (cancelled) {
+          return;
+        }
+
+        const nextCardActive =
+          Boolean(
+            data.ok &&
+              data.card?.active &&
+              data.card
+                ?.checkoutEnabled
+          );
+
+        const nextBankActive =
+          Boolean(
+            data.ok &&
+              data.bankTransfer
+                ?.active
+          );
+
+        setCardActive(
+          nextCardActive
+        );
+
+        setBankTransferActive(
+          nextBankActive
+        );
+
+        if (
+          nextBankActive
+        ) {
+          setPaymentMethod(
+            "bank_transfer"
+          );
+        } else if (
+          nextCardActive
+        ) {
+          setPaymentMethod(
+            "card"
           );
         }
       } catch {
         if (!cancelled) {
-          setPaymentProviderActive(false);
+          setCardActive(false);
+          setBankTransferActive(
+            false
+          );
         }
       } finally {
         if (!cancelled) {
-          setPaymentConfigLoading(false);
+          setPaymentConfigLoading(
+            false
+          );
         }
       }
     }
@@ -300,90 +616,379 @@ export default function BuyPage(): JSX.Element {
     };
   }, []);
 
-  const startPayment = async (): Promise<void> => {
-    if (paymentConfigLoading) {
-      setInfo(null);
-      setErr(
-        "Ödeme altyapısı kontrol ediliyor. Lütfen birkaç saniye sonra tekrar deneyin."
-      );
-      return;
-    }
+  const copyText =
+    async (
+      value: string,
+      field:
+        | "iban"
+        | "description"
+    ): Promise<void> => {
+      try {
+        await navigator.clipboard.writeText(
+          value
+        );
 
-    if (!paymentProviderActive) {
-      setInfo(null);
-      setErr(
-        "Online ödeme altyapısı henüz aktif değildir. Bu nedenle şu anda kartla ödeme işlemi başlatılamaz."
-      );
-      return;
-    }
+        setCopiedField(
+          field
+        );
 
-    if (!allApprovalsAccepted) {
-      setInfo(null);
-      setErr(
-        "Ödeme işlemine devam etmek için sözleşme ve hizmet onaylarını kabul etmelisiniz."
-      );
-      return;
-    }
-
-    setLoading(true);
-    setErr(null);
-    setInfo(null);
-
-    try {
-      const response = await fetch(
-        "/api/payments/start",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+        window.setTimeout(
+          () => {
+            setCopiedField(
+              null
+            );
           },
-          body: JSON.stringify({
-            package: selected.code,
-            serviceAgreementAccepted,
-            refundPolicyAccepted,
-            immediatePerformanceAccepted,
-          }),
-        }
-      );
-
-      const data =
-        (await response.json()) as StartResp;
-
-      if (!response.ok || !data.ok) {
+          1700
+        );
+      } catch {
         setErr(
-          "İşlem başarısız: " +
-            (data.ok
-              ? "Bilinmeyen hata"
-              : errorMessage(data.code))
+          "Kopyalama işlemi yapılamadı. Bilgiyi elle kopyalayabilirsiniz."
+        );
+      }
+    };
+
+  const startBankTransfer =
+    async (): Promise<void> => {
+      if (
+        paymentConfigLoading
+      ) {
+        setErr(
+          "Ödeme yöntemleri kontrol ediliyor. Lütfen birkaç saniye sonra tekrar deneyin."
         );
         return;
       }
 
       if (
-        data.mode !== "payment_redirect" ||
-        typeof data.redirectUrl !== "string" ||
-        !data.redirectUrl.trim()
+        !bankTransferActive
       ) {
         setErr(
-          "Ödeme yönlendirme adresi oluşturulamadı. Kartınızdan herhangi bir tahsilat yapılmadı."
+          "Havale / EFT / FAST ödeme yöntemi şu anda aktif değildir."
         );
         return;
       }
 
-      setInfo(
-        "✅ Güvenli ödeme sayfasına yönlendiriliyorsunuz..."
-      );
+      if (
+        !allApprovalsAccepted
+      ) {
+        setErr(
+          "Ödeme talimatı oluşturmak için sözleşme ve hizmet onaylarını kabul etmelisiniz."
+        );
+        return;
+      }
 
-      window.location.assign(data.redirectUrl);
-    } catch {
-      setErr(
-        "Bağlantı hatası oluştu. İnternet bağlantınızı kontrol ederek tekrar deneyin."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (
+        bankTransfer
+      ) {
+        return;
+      }
+
+      setLoading(true);
+      setErr(null);
+      setInfo(null);
+
+      try {
+        const response =
+          await fetch(
+            "/api/payments/bank-transfer/start",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Accept:
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  package:
+                    selected.code,
+
+                  serviceAgreementAccepted,
+
+                  refundPolicyAccepted,
+
+                  immediatePerformanceAccepted,
+                }),
+            }
+          );
+
+        const data =
+          (await response.json()) as BankTransferStartResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          setErr(
+            "İşlem başarısız: " +
+              (
+                data.ok
+                  ? "Bilinmeyen hata"
+                  : errorMessage(
+                      data.code
+                    )
+              )
+          );
+
+          return;
+        }
+
+        setBankTransfer({
+          paymentLogId:
+            data.paymentLogId,
+
+          orderNumber:
+            data.orderNumber,
+
+          bankName:
+            data.bank.bankName,
+
+          accountHolder:
+            data.bank
+              .accountHolder,
+
+          iban:
+            data.bank.iban,
+
+          amountFormatted:
+            data.payment
+              .amountFormatted,
+
+          description:
+            data.payment
+              .description,
+
+          notified: false,
+        });
+
+        setInfo(
+          "✅ Banka transferi siparişiniz oluşturuldu. Aşağıdaki bilgileri kullanarak ödemenizi gerçekleştirebilirsiniz."
+        );
+      } catch {
+        setErr(
+          "Banka transferi siparişi oluşturulurken bağlantı hatası oluştu."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  const notifyBankTransfer =
+    async (): Promise<void> => {
+      if (
+        !bankTransfer
+      ) {
+        return;
+      }
+
+      if (
+        bankTransfer.notified
+      ) {
+        return;
+      }
+
+      setNotifyLoading(true);
+      setErr(null);
+      setInfo(null);
+
+      try {
+        const response =
+          await fetch(
+            "/api/payments/bank-transfer/notify",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Accept:
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  paymentLogId:
+                    bankTransfer
+                      .paymentLogId,
+
+                  orderNumber:
+                    bankTransfer
+                      .orderNumber,
+                }),
+            }
+          );
+
+        const data =
+          (await response.json()) as BankTransferNotifyResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          setErr(
+            "Ödeme bildirimi başarısız: " +
+              (
+                data.ok
+                  ? "Bilinmeyen hata"
+                  : errorMessage(
+                      data.code
+                    )
+              )
+          );
+
+          return;
+        }
+
+        setBankTransfer(
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  notified: true,
+                }
+              : current
+        );
+
+        setInfo(
+          "✅ Ödeme bildiriminiz alındı. Banka transferiniz kontrol edildikten sonra kredi veya Premium hakkınız hesabınıza tanımlanacaktır."
+        );
+      } catch {
+        setErr(
+          "Ödeme bildirimi gönderilirken bağlantı hatası oluştu."
+        );
+      } finally {
+        setNotifyLoading(
+          false
+        );
+      }
+    };
+
+  const startCardPayment =
+    async (): Promise<void> => {
+      if (
+        paymentConfigLoading
+      ) {
+        setErr(
+          "Ödeme altyapısı kontrol ediliyor. Lütfen birkaç saniye sonra tekrar deneyin."
+        );
+        return;
+      }
+
+      if (!cardActive) {
+        setErr(
+          "Kartla ödeme altyapısı henüz aktif değildir."
+        );
+        return;
+      }
+
+      if (
+        !allApprovalsAccepted
+      ) {
+        setErr(
+          "Ödeme işlemine devam etmek için sözleşme ve hizmet onaylarını kabul etmelisiniz."
+        );
+        return;
+      }
+
+      setLoading(true);
+      setErr(null);
+      setInfo(null);
+
+      try {
+        const response =
+          await fetch(
+            "/api/payments/start",
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Accept:
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  package:
+                    selected.code,
+
+                  serviceAgreementAccepted,
+
+                  refundPolicyAccepted,
+
+                  immediatePerformanceAccepted,
+                }),
+            }
+          );
+
+        const data =
+          (await response.json()) as CardStartResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          setErr(
+            "İşlem başarısız: " +
+              (
+                data.ok
+                  ? "Bilinmeyen hata"
+                  : errorMessage(
+                      data.code
+                    )
+              )
+          );
+
+          return;
+        }
+
+        if (
+          data.mode !==
+            "payment_redirect" ||
+          typeof data.redirectUrl !==
+            "string" ||
+          !data.redirectUrl.trim()
+        ) {
+          setErr(
+            "Ödeme yönlendirme adresi oluşturulamadı. Kartınızdan herhangi bir tahsilat yapılmadı."
+          );
+          return;
+        }
+
+        setInfo(
+          "✅ Güvenli ödeme sayfasına yönlendiriliyorsunuz..."
+        );
+
+        window.location.assign(
+          data.redirectUrl
+        );
+      } catch {
+        setErr(
+          "Bağlantı hatası oluştu. İnternet bağlantınızı kontrol ederek tekrar deneyin."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  const handlePaymentAction =
+    async (): Promise<void> => {
+      if (
+        paymentMethod ===
+        "bank_transfer"
+      ) {
+        await startBankTransfer();
+        return;
+      }
+
+      await startCardPayment();
+    };
 
   return (
     <div className="buyPage">
@@ -450,8 +1055,7 @@ export default function BuyPage(): JSX.Element {
           }
 
           50% {
-            transform: translate3d(0, 18px, 0)
-              scale(1.08);
+            transform: translate3d(0, 18px, 0) scale(1.08);
           }
         }
 
@@ -472,8 +1076,7 @@ export default function BuyPage(): JSX.Element {
           border-radius: 999px;
           border: 1px solid rgba(15, 23, 42, 0.10);
           background: rgba(255, 255, 255, 0.72);
-          box-shadow:
-            0 10px 25px rgba(15, 23, 42, 0.06);
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
         }
 
         .checkoutGrid {
@@ -494,8 +1097,7 @@ export default function BuyPage(): JSX.Element {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          border:
-            1px solid rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(255, 255, 255, 0.72);
           background:
             linear-gradient(
               135deg,
@@ -512,8 +1114,7 @@ export default function BuyPage(): JSX.Element {
               rgba(14, 165, 233, 0.16),
               transparent 42%
             );
-          box-shadow:
-            0 30px 90px rgba(15, 23, 42, 0.12);
+          box-shadow: 0 30px 90px rgba(15, 23, 42, 0.12);
           backdrop-filter: blur(18px);
         }
 
@@ -535,47 +1136,8 @@ export default function BuyPage(): JSX.Element {
               rgba(15, 23, 42, 0.98),
               rgba(67, 56, 202, 0.94)
             );
-          border-color:
-            rgba(255, 255, 255, 0.22);
-          box-shadow:
-            0 34px 105px rgba(67, 56, 202, 0.28);
-        }
-
-        .checkoutHero::after {
-          content: "";
-          position: absolute;
-          inset: -120px;
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.50),
-              transparent
-            );
-          transform:
-            rotate(13deg) translateX(-58%);
-          animation:
-            shineMove 6s ease-in-out infinite;
-          pointer-events: none;
-        }
-
-        @keyframes shineMove {
-          0%,
-          55% {
-            transform:
-              rotate(13deg) translateX(-62%);
-            opacity: 0;
-          }
-
-          70% {
-            opacity: 0.75;
-          }
-
-          100% {
-            transform:
-              rotate(13deg) translateX(62%);
-            opacity: 0;
-          }
+          border-color: rgba(255, 255, 255, 0.22);
+          box-shadow: 0 34px 105px rgba(67, 56, 202, 0.28);
         }
 
         .heroInner {
@@ -599,14 +1161,12 @@ export default function BuyPage(): JSX.Element {
           font-size: 32px;
           background: rgba(255, 255, 255, 0.78);
           border: 1px solid rgba(15, 23, 42, 0.08);
-          box-shadow:
-            0 18px 45px rgba(15, 23, 42, 0.08);
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
         }
 
         .premium .iconBubble {
           background: rgba(255, 255, 255, 0.14);
-          border-color:
-            rgba(255, 255, 255, 0.20);
+          border-color: rgba(255, 255, 255, 0.20);
         }
 
         .title {
@@ -645,16 +1205,14 @@ export default function BuyPage(): JSX.Element {
           border-radius: 17px;
           padding: 11px 13px;
           background: rgba(255, 255, 255, 0.58);
-          border:
-            1px solid rgba(255, 255, 255, 0.68);
+          border: 1px solid rgba(255, 255, 255, 0.68);
           font-size: 13px;
           line-height: 1.55;
         }
 
         .premium .heroDetail {
           background: rgba(255, 255, 255, 0.10);
-          border-color:
-            rgba(255, 255, 255, 0.16);
+          border-color: rgba(255, 255, 255, 0.16);
         }
 
         .heroDetailLabel {
@@ -672,8 +1230,7 @@ export default function BuyPage(): JSX.Element {
           margin-top: 22px;
           border-radius: 28px;
           padding: 18px;
-          border:
-            1px solid rgba(255, 255, 255, 0.68);
+          border: 1px solid rgba(255, 255, 255, 0.68);
           background: rgba(255, 255, 255, 0.68);
           display: flex;
           justify-content: space-between;
@@ -684,8 +1241,7 @@ export default function BuyPage(): JSX.Element {
 
         .premium .priceBox {
           background: rgba(255, 255, 255, 0.12);
-          border-color:
-            rgba(255, 255, 255, 0.18);
+          border-color: rgba(255, 255, 255, 0.18);
         }
 
         .priceLabel {
@@ -709,19 +1265,10 @@ export default function BuyPage(): JSX.Element {
         .summaryCard {
           border-radius: 34px;
           padding: 22px;
-          border:
-            1px solid rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(255, 255, 255, 0.72);
           background: rgba(255, 255, 255, 0.76);
-          box-shadow:
-            0 30px 90px rgba(15, 23, 42, 0.10);
+          box-shadow: 0 30px 90px rgba(15, 23, 42, 0.10);
           backdrop-filter: blur(18px);
-        }
-
-        .summaryHead {
-          display: flex;
-          justify-content: space-between;
-          gap: 10px;
-          align-items: start;
         }
 
         .summaryTitle {
@@ -736,52 +1283,49 @@ export default function BuyPage(): JSX.Element {
           margin-top: 4px;
         }
 
-        .secureCheckoutBox {
+        .paymentMethods {
           margin-top: 16px;
-          border-radius: 20px;
-          padding: 16px;
-          border: 1px solid rgba(15, 23, 42, 0.09);
-          background:
-            linear-gradient(
-              135deg,
-              rgba(248, 250, 252, 0.98),
-              rgba(238, 242, 255, 0.92)
-            );
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .secureCheckoutIcon {
-          width: 46px;
-          height: 46px;
-          flex: 0 0 46px;
-          border-radius: 16px;
           display: grid;
-          place-items: center;
-          font-size: 23px;
-          background: rgba(79, 70, 229, 0.10);
-          border:
-            1px solid rgba(79, 70, 229, 0.14);
+          gap: 10px;
         }
 
-        .secureCheckoutContent {
-          min-width: 0;
+        .paymentMethod {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 14px;
+          border-radius: 20px;
+          border: 1px solid rgba(15,23,42,.09);
+          background: rgba(255,255,255,.78);
+          cursor: pointer;
         }
 
-        .secureCheckoutTitle {
-          color: rgba(15, 23, 42, 0.92);
-          font-size: 14px;
+        .paymentMethod.active {
+          border-color: rgba(79,70,229,.32);
+          box-shadow: inset 0 0 0 1px rgba(79,70,229,.12);
+          background: rgba(238,242,255,.72);
+        }
+
+        .paymentMethod.disabled {
+          opacity: .55;
+          cursor: not-allowed;
+        }
+
+        .paymentMethod input {
+          margin-top: 4px;
+        }
+
+        .methodTitle {
           font-weight: 1000;
-          line-height: 1.4;
+          color: rgba(15,23,42,.94);
         }
 
-        .secureCheckoutText {
+        .methodText {
           margin-top: 3px;
-          color: rgba(15, 23, 42, 0.64);
           font-size: 11px;
-          font-weight: 850;
           line-height: 1.55;
+          color: rgba(15,23,42,.60);
+          font-weight: 800;
         }
 
         .benefitList {
@@ -797,8 +1341,7 @@ export default function BuyPage(): JSX.Element {
           border-radius: 18px;
           padding: 12px;
           background: rgba(255, 255, 255, 0.76);
-          border:
-            1px solid rgba(15, 23, 42, 0.08);
+          border: 1px solid rgba(15, 23, 42, 0.08);
           font-weight: 900;
           line-height: 1.5;
         }
@@ -807,8 +1350,7 @@ export default function BuyPage(): JSX.Element {
           margin-top: 16px;
           border-radius: 20px;
           overflow: hidden;
-          border:
-            1px solid rgba(15, 23, 42, 0.09);
+          border: 1px solid rgba(15, 23, 42, 0.09);
           background: rgba(255, 255, 255, 0.68);
         }
 
@@ -818,10 +1360,8 @@ export default function BuyPage(): JSX.Element {
           justify-content: space-between;
           gap: 18px;
           padding: 11px 13px;
-          border-bottom:
-            1px solid rgba(15, 23, 42, 0.07);
+          border-bottom: 1px solid rgba(15, 23, 42, 0.07);
           font-size: 13px;
-          line-height: 1.5;
         }
 
         .orderRow:last-child {
@@ -841,39 +1381,17 @@ export default function BuyPage(): JSX.Element {
 
         .orderRow.total {
           background: rgba(79, 70, 229, 0.07);
-          padding-top: 14px;
-          padding-bottom: 14px;
-        }
-
-        .orderRow.total .orderLabel,
-        .orderRow.total .orderValue {
-          font-size: 17px;
-          color: rgba(15, 23, 42, 0.96);
         }
 
         .notice {
           margin-top: 14px;
           border-radius: 20px;
           padding: 14px;
-          border:
-            1px solid rgba(59, 130, 246, 0.20);
+          border: 1px solid rgba(59, 130, 246, 0.20);
           background: rgba(59, 130, 246, 0.08);
           font-weight: 850;
           line-height: 1.65;
           color: rgba(15, 23, 42, 0.78);
-          font-size: 13px;
-        }
-
-        .warningNotice {
-          margin-top: 12px;
-          border-radius: 20px;
-          padding: 14px;
-          border:
-            1px solid rgba(245, 158, 11, 0.24);
-          background: rgba(245, 158, 11, 0.09);
-          font-weight: 850;
-          line-height: 1.65;
-          color: rgba(120, 53, 15, 0.92);
           font-size: 13px;
         }
 
@@ -889,26 +1407,16 @@ export default function BuyPage(): JSX.Element {
           gap: 10px;
           border-radius: 18px;
           padding: 12px;
-          border:
-            1px solid rgba(15, 23, 42, 0.09);
+          border: 1px solid rgba(15, 23, 42, 0.09);
           background: rgba(255, 255, 255, 0.70);
           cursor: pointer;
-        }
-
-        .approvalItem:hover {
-          border-color:
-            rgba(79, 70, 229, 0.24);
-          background:
-            rgba(248, 250, 252, 0.90);
         }
 
         .approvalItem input {
           width: 18px;
           height: 18px;
           margin: 2px 0 0;
-          flex: 0 0 auto;
           accent-color: #4f46e5;
-          cursor: pointer;
         }
 
         .approvalText {
@@ -921,8 +1429,6 @@ export default function BuyPage(): JSX.Element {
         .approvalText a {
           color: #4338ca;
           font-weight: 1000;
-          text-decoration: underline;
-          text-underline-offset: 2px;
         }
 
         .payButton {
@@ -940,42 +1446,96 @@ export default function BuyPage(): JSX.Element {
               rgba(79, 70, 229, 0.98),
               rgba(168, 85, 247, 0.98)
             );
-          box-shadow:
-            0 22px 55px rgba(124, 58, 237, 0.25);
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            opacity 0.18s ease;
-        }
-
-        .payButton:hover:not(:disabled) {
-          transform:
-            translateY(-2px) scale(1.015);
-          box-shadow:
-            0 28px 70px rgba(124, 58, 237, 0.32);
         }
 
         .payButton:disabled {
-          opacity: 0.52;
+          opacity: .52;
           cursor: not-allowed;
-          box-shadow: none;
         }
 
-        .buttonHelp {
-          margin-top: 9px;
-          text-align: center;
-          color: rgba(15, 23, 42, 0.58);
-          font-size: 11px;
+        .bankBox {
+          margin-top: 16px;
+          padding: 17px;
+          border-radius: 24px;
+          border: 1px solid rgba(34,197,94,.22);
+          background:
+            linear-gradient(
+              135deg,
+              rgba(240,253,244,.96),
+              rgba(255,255,255,.94)
+            );
+        }
+
+        .bankTitle {
+          font-size: 18px;
+          font-weight: 1000;
+          color: #14532d;
+        }
+
+        .bankRow {
+          margin-top: 10px;
+          padding: 11px 12px;
+          border-radius: 15px;
+          background: white;
+          border: 1px solid rgba(15,23,42,.08);
+        }
+
+        .bankLabel {
+          font-size: 10px;
+          font-weight: 900;
+          color: rgba(15,23,42,.55);
+        }
+
+        .bankValue {
+          margin-top: 3px;
+          font-weight: 1000;
+          color: rgba(15,23,42,.94);
+          word-break: break-word;
+        }
+
+        .copyButton {
+          margin-top: 7px;
+          border: 1px solid rgba(15,23,42,.10);
+          background: rgba(248,250,252,.95);
+          border-radius: 10px;
+          padding: 7px 10px;
+          font-weight: 900;
+          cursor: pointer;
+        }
+
+        .transferWarning {
+          margin-top: 12px;
+          padding: 12px;
+          border-radius: 15px;
+          background: rgba(245,158,11,.10);
+          color: #92400e;
+          font-size: 12px;
           font-weight: 850;
-          line-height: 1.5;
+          line-height: 1.65;
+        }
+
+        .notifyButton {
+          width: 100%;
+          margin-top: 14px;
+          border: 0;
+          border-radius: 16px;
+          padding: 14px;
+          background: #15803d;
+          color: white;
+          font-weight: 1000;
+          cursor: pointer;
+        }
+
+        .notifyButton:disabled {
+          opacity: .6;
+          cursor: not-allowed;
         }
 
         .successBox {
           margin-top: 14px;
           border-radius: 18px;
           padding: 12px;
-          border:
-            1px solid rgba(34, 197, 94, 0.22);
+          border: 1px solid rgba(34, 197, 94, 0.22);
           background: rgba(34, 197, 94, 0.10);
           font-weight: 950;
         }
@@ -984,29 +1544,9 @@ export default function BuyPage(): JSX.Element {
           margin-top: 14px;
           border-radius: 18px;
           padding: 12px;
-          border:
-            1px solid rgba(239, 68, 68, 0.22);
+          border: 1px solid rgba(239, 68, 68, 0.22);
           background: rgba(239, 68, 68, 0.10);
           color: #b91c1c;
-          font-weight: 950;
-          line-height: 1.55;
-        }
-
-        .trustGrid {
-          margin-top: 14px;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
-        }
-
-        .trustItem {
-          border-radius: 16px;
-          padding: 10px;
-          text-align: center;
-          background: rgba(15, 23, 42, 0.04);
-          border:
-            1px solid rgba(15, 23, 42, 0.06);
-          font-size: 12px;
           font-weight: 950;
         }
 
@@ -1025,21 +1565,15 @@ export default function BuyPage(): JSX.Element {
           .checkoutHero {
             min-height: auto;
           }
-
-          .trustGrid {
-            grid-template-columns: 1fr;
-          }
         }
 
         @media (max-width: 560px) {
           .heroDetail {
             grid-template-columns: 1fr;
-            gap: 3px;
           }
 
           .orderRow {
             flex-direction: column;
-            gap: 3px;
           }
 
           .orderValue {
@@ -1053,7 +1587,7 @@ export default function BuyPage(): JSX.Element {
 
       <div className="topBar">
         <span style={badgeStyle()}>
-          💳 Güvenli Ödeme Alanı
+          🏦 Güvenli Ödeme Alanı
         </span>
 
         <Link
@@ -1067,7 +1601,8 @@ export default function BuyPage(): JSX.Element {
       <div className="checkoutGrid">
         <section
           className={`checkoutHero ${
-            selected.accent === "premium"
+            selected.accent ===
+            "premium"
               ? "premium"
               : ""
           }`}
@@ -1080,7 +1615,8 @@ export default function BuyPage(): JSX.Element {
 
               <span
                 style={
-                  selected.accent === "premium"
+                  selected.accent ===
+                  "premium"
                     ? premiumBadgeStyle()
                     : badgeStyle()
                 }
@@ -1098,55 +1634,38 @@ export default function BuyPage(): JSX.Element {
             </div>
 
             <div className="heroDetails">
-              <div className="heroDetail">
-                <div className="heroDetailLabel">
-                  Hizmet türü
-                </div>
+              <HeroDetail
+                label="Hizmet türü"
+                value={
+                  selected.serviceType
+                }
+              />
 
-                <div className="heroDetailValue">
-                  {selected.serviceType}
-                </div>
-              </div>
+              <HeroDetail
+                label="Kapsam"
+                value={`${selected.credits} kredi`}
+              />
 
-              <div className="heroDetail">
-                <div className="heroDetailLabel">
-                  Kapsam
-                </div>
+              <HeroDetail
+                label="Geçerlilik"
+                value={
+                  selected.duration
+                }
+              />
 
-                <div className="heroDetailValue">
-                  {selected.credits} kredi
-                </div>
-              </div>
+              <HeroDetail
+                label="Aktivasyon"
+                value={
+                  selected.activation
+                }
+              />
 
-              <div className="heroDetail">
-                <div className="heroDetailLabel">
-                  Geçerlilik
-                </div>
-
-                <div className="heroDetailValue">
-                  {selected.duration}
-                </div>
-              </div>
-
-              <div className="heroDetail">
-                <div className="heroDetailLabel">
-                  Aktivasyon
-                </div>
-
-                <div className="heroDetailValue">
-                  {selected.activation}
-                </div>
-              </div>
-
-              <div className="heroDetail">
-                <div className="heroDetailLabel">
-                  Yenileme
-                </div>
-
-                <div className="heroDetailValue">
-                  {selected.renewal}
-                </div>
-              </div>
+              <HeroDetail
+                label="Yenileme"
+                value={
+                  selected.renewal
+                }
+              />
             </div>
           </div>
 
@@ -1168,97 +1687,149 @@ export default function BuyPage(): JSX.Element {
         </section>
 
         <aside className="summaryCard">
-          <div className="summaryHead">
-            <div>
-              <div className="summaryTitle">
-                Sipariş Özeti
-              </div>
-
-              <div className="summarySubtitle">
-                {selected.title}
-              </div>
-            </div>
-
-            <span style={badgeStyle()}>
-              {selected.totalPrice}
-            </span>
+          <div className="summaryTitle">
+            Sipariş Özeti
           </div>
 
-          <div className="secureCheckoutBox">
-            <div
-              className="secureCheckoutIcon"
-              aria-hidden
+          <div className="summarySubtitle">
+            {selected.title}
+          </div>
+
+          <div className="paymentMethods">
+            <label
+              className={`paymentMethod ${
+                paymentMethod ===
+                "bank_transfer"
+                  ? "active"
+                  : ""
+              } ${
+                !bankTransferActive
+                  ? "disabled"
+                  : ""
+              }`}
             >
-              🔒
-            </div>
+              <input
+                type="radio"
+                name="payment-method"
+                disabled={
+                  !bankTransferActive ||
+                  Boolean(
+                    bankTransfer
+                  )
+                }
+                checked={
+                  paymentMethod ===
+                  "bank_transfer"
+                }
+                onChange={() =>
+                  setPaymentMethod(
+                    "bank_transfer"
+                  )
+                }
+              />
 
-            <div className="secureCheckoutContent">
-              <div className="secureCheckoutTitle">
-                Güvenli kredi kartı ödemesi
-              </div>
+              <div>
+                <div className="methodTitle">
+                  🏦 Havale / EFT / FAST
+                </div>
 
-              <div className="secureCheckoutText">
-                Online ödeme altyapısı
-                etkinleştirildiğinde kart bilgileriniz
-                güvenli ödeme sayfası üzerinden
-                işlenecektir. Kart bilgileriniz
-                DişFiyat360 sunucularında saklanmaz.
+                <div className="methodText">
+                  Garanti BBVA işletme
+                  hesabına banka
+                  transferi yaparak ödeme.
+                  Ödeme banka hesabında
+                  doğrulandıktan sonra
+                  paket hesabına
+                  tanımlanır.
+                </div>
               </div>
-            </div>
+            </label>
+
+            <label
+              className={`paymentMethod ${
+                paymentMethod === "card"
+                  ? "active"
+                  : ""
+              } ${
+                !cardActive
+                  ? "disabled"
+                  : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="payment-method"
+                disabled={
+                  !cardActive ||
+                  Boolean(
+                    bankTransfer
+                  )
+                }
+                checked={
+                  paymentMethod ===
+                  "card"
+                }
+                onChange={() =>
+                  setPaymentMethod(
+                    "card"
+                  )
+                }
+              />
+
+              <div>
+                <div className="methodTitle">
+                  💳 Kredi / Banka Kartı
+                </div>
+
+                <div className="methodText">
+                  {cardActive
+                    ? "Kartla güvenli online ödeme."
+                    : "Sanal POS entegrasyonu tamamlandığında aktif olacaktır."}
+                </div>
+              </div>
+            </label>
           </div>
 
           <div className="benefitList">
-            {selected.benefits.map((benefit) => (
-              <div
-                className="benefit"
-                key={benefit}
-              >
-                <span>✅</span>
-                <span>{benefit}</span>
-              </div>
-            ))}
+            {selected.benefits.map(
+              (benefit) => (
+                <div
+                  className="benefit"
+                  key={benefit}
+                >
+                  <span>✅</span>
+                  <span>{benefit}</span>
+                </div>
+              )
+            )}
           </div>
 
           <div className="orderTable">
-            <div className="orderRow">
-              <span className="orderLabel">
-                Paket
-              </span>
+            <OrderRow
+              label="Paket"
+              value={
+                selected.title
+              }
+            />
 
-              <span className="orderValue">
-                {selected.title}
-              </span>
-            </div>
+            <OrderRow
+              label="Kredi miktarı"
+              value={`${selected.credits} kredi`}
+            />
 
-            <div className="orderRow">
-              <span className="orderLabel">
-                Kredi miktarı
-              </span>
+            <OrderRow
+              label="Hizmet süresi"
+              value={
+                selected.duration
+              }
+            />
 
-              <span className="orderValue">
-                {selected.credits} kredi
-              </span>
-            </div>
-
-            <div className="orderRow">
-              <span className="orderLabel">
-                Hizmet süresi
-              </span>
-
-              <span className="orderValue">
-                {selected.duration}
-              </span>
-            </div>
-
-            <div className="orderRow">
-              <span className="orderLabel">
-                Yenileme
-              </span>
-
-              <span className="orderValue">
-                {selected.renewal}
-              </span>
-            </div>
+            <OrderRow
+              label="Yenileme"
+              value={
+                selected.renewal
+              }
+            />
 
             <div className="orderRow total">
               <span className="orderLabel">
@@ -1278,143 +1849,292 @@ export default function BuyPage(): JSX.Element {
             {selected.leadPolicy}
           </div>
 
-          <div className="notice">
-            <strong>
-              Dijital hizmetin teslimi:
-            </strong>{" "}
-            Kredi paketlerinde hizmet, satın alınan
-            kredilerin klinik hesabına
-            tanımlanmasıyla teslim edilmiş sayılır.
-            Premium üyelikte hizmet, Premium
-            hakkının etkinleştirilmesi ve paket
-            kapsamındaki kredilerin hesaba
-            tanımlanmasıyla başlar. Kredilerin
-            kullanılması klinik kullanıcısının
-            tercihine bağlıdır.
-          </div>
+          {!bankTransfer ? (
+            <>
+              <div className="approvalList">
+                <ApprovalCheckbox
+                  checked={
+                    serviceAgreementAccepted
+                  }
+                  onChange={
+                    setServiceAgreementAccepted
+                  }
+                >
+                  <Link
+                    href="/mesafeli-satis-sozlesmesi"
+                    target="_blank"
+                  >
+                    Dijital Hizmet Satış ve
+                    Kullanım Sözleşmesi
+                  </Link>
+                  ’ni okudum ve kabul
+                  ediyorum.
+                </ApprovalCheckbox>
 
-          <div className="warningNotice">
-            <strong>
-              Online ödeme bilgilendirmesi:
-            </strong>{" "}
-            Sanal POS entegrasyonu henüz etkin
-            değildir. Bu ekranda şu anda karttan
-            tahsilat yapılmaz ve kredi ya da Premium
-            üyelik tanımlanmaz.
-          </div>
+                <ApprovalCheckbox
+                  checked={
+                    refundPolicyAccepted
+                  }
+                  onChange={
+                    setRefundPolicyAccepted
+                  }
+                >
+                  <Link
+                    href="/teslimat-iade"
+                    target="_blank"
+                  >
+                    Teslimat ve İade
+                    Şartları
+                  </Link>
+                  ’nı ve{" "}
+                  <Link
+                    href="/iptal-iade"
+                    target="_blank"
+                  >
+                    İptal ve İade
+                    Politikası
+                  </Link>
+                  ’nı okudum ve kabul
+                  ediyorum.
+                </ApprovalCheckbox>
 
-          <div className="approvalList">
-            <label className="approvalItem">
-              <input
-                type="checkbox"
-                checked={serviceAgreementAccepted}
-                onChange={(event) =>
-                  setServiceAgreementAccepted(
-                    event.target.checked
+                <ApprovalCheckbox
+                  checked={
+                    immediatePerformanceAccepted
+                  }
+                  onChange={
+                    setImmediatePerformanceAccepted
+                  }
+                >
+                  Ödeme doğrulandıktan
+                  sonra dijital hizmetin
+                  hemen başlatılmasını ve
+                  satın aldığım kredi veya
+                  üyelik hakkının hesabıma
+                  tanımlanmasını talep
+                  ediyorum.
+                </ApprovalCheckbox>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  void handlePaymentAction()
+                }
+                disabled={
+                  loading ||
+                  paymentConfigLoading ||
+                  !allApprovalsAccepted ||
+                  (
+                    paymentMethod ===
+                      "bank_transfer" &&
+                    !bankTransferActive
+                  ) ||
+                  (
+                    paymentMethod ===
+                      "card" &&
+                    !cardActive
                   )
                 }
-              />
+                className="payButton"
+              >
+                {loading
+                  ? "İşlem hazırlanıyor..."
+                  : paymentConfigLoading
+                    ? "Ödeme yöntemleri kontrol ediliyor..."
+                    : paymentMethod ===
+                        "bank_transfer"
+                      ? `${selected.totalPrice} için Havale / EFT Talimatı Oluştur`
+                      : `${selected.totalPrice} Kartla Öde`}
+              </button>
+            </>
+          ) : null}
 
-              <span className="approvalText">
-                <Link
-                  href="/mesafeli-satis-sozlesmesi"
-                  target="_blank"
-                  rel="noopener noreferrer"
+          {bankTransfer ? (
+            <div className="bankBox">
+              <div className="bankTitle">
+                🏦 Banka Transferi
+              </div>
+
+              <div className="bankRow">
+                <div className="bankLabel">
+                  BANKA
+                </div>
+
+                <div className="bankValue">
+                  {bankTransfer.bankName}
+                </div>
+              </div>
+
+              <div className="bankRow">
+                <div className="bankLabel">
+                  HESAP SAHİBİ
+                </div>
+
+                <div className="bankValue">
+                  {
+                    bankTransfer.accountHolder
+                  }
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 11,
+                    color:
+                      "rgba(15,23,42,.58)",
+                    fontWeight: 800,
+                  }}
                 >
-                  Dijital Hizmet Satış ve Kullanım
-                  Sözleşmesi
-                </Link>
-                ’ni okudum, paket kapsamını ve
-                kullanım koşullarını kabul ediyorum.
-              </span>
-            </label>
+                  DişFiyat360
+                </div>
+              </div>
 
-            <label className="approvalItem">
-              <input
-                type="checkbox"
-                checked={refundPolicyAccepted}
-                onChange={(event) =>
-                  setRefundPolicyAccepted(
-                    event.target.checked
-                  )
-                }
-              />
+              <div className="bankRow">
+                <div className="bankLabel">
+                  IBAN
+                </div>
 
-              <span className="approvalText">
-                <Link
-                  href="/teslimat-iade"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div className="bankValue">
+                  {formatIban(
+                    bankTransfer.iban
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="copyButton"
+                  onClick={() =>
+                    void copyText(
+                      bankTransfer.iban,
+                      "iban"
+                    )
+                  }
                 >
-                  Teslimat ve İade Şartları
-                </Link>
-                ’nı ve{" "}
-                <Link
-                  href="/iptal-iade"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {copiedField === "iban"
+                    ? "✓ Kopyalandı"
+                    : "IBAN'ı Kopyala"}
+                </button>
+              </div>
+
+              <div className="bankRow">
+                <div className="bankLabel">
+                  GÖNDERİLECEK TUTAR
+                </div>
+
+                <div
+                  className="bankValue"
+                  style={{
+                    fontSize: 21,
+                  }}
                 >
-                  İptal ve İade Politikası
-                </Link>
-                ’nı okudum ve kabul ediyorum.
-              </span>
-            </label>
+                  {
+                    bankTransfer.amountFormatted
+                  }
+                </div>
+              </div>
 
-            <label className="approvalItem">
-              <input
-                type="checkbox"
-                checked={
-                  immediatePerformanceAccepted
-                }
-                onChange={(event) =>
-                  setImmediatePerformanceAccepted(
-                    event.target.checked
-                  )
-                }
-              />
+              <div className="bankRow">
+                <div className="bankLabel">
+                  TRANSFER AÇIKLAMASI
+                </div>
 
-              <span className="approvalText">
-                Satın aldığım dijital hizmetin
-                başarılı ödeme onayından sonra
-                elektronik ortamda hemen
-                başlatılmasını ve kredi veya üyelik
-                hakkının hesabıma tanımlanmasını
-                talep ediyorum. Kredi bakiyesinin
-                veya Premium üyelik hakkının
-                hesabıma tanımlanmasıyla dijital
-                hizmetin teslim edilmiş sayılacağını
-                kabul ediyorum.
-              </span>
-            </label>
-          </div>
+                <div className="bankValue">
+                  {
+                    bankTransfer.description
+                  }
+                </div>
 
-          <button
-            type="button"
-            onClick={() => void startPayment()}
-            disabled={
-              loading ||
-              paymentConfigLoading ||
-              !allApprovalsAccepted ||
-              !paymentProviderActive
-            }
-            className="payButton"
-          >
-            {loading
-              ? "Güvenli ödeme hazırlanıyor..."
-              : paymentConfigLoading
-                ? "Ödeme altyapısı kontrol ediliyor..."
-                : paymentProviderActive
-                  ? `${selected.totalPrice} Güvenli Ödemeye Geç`
-                  : "Online Ödeme Yakında Aktif"}
-          </button>
+                <button
+                  type="button"
+                  className="copyButton"
+                  onClick={() =>
+                    void copyText(
+                      bankTransfer.description,
+                      "description"
+                    )
+                  }
+                >
+                  {copiedField ===
+                  "description"
+                    ? "✓ Kopyalandı"
+                    : "Açıklamayı Kopyala"}
+                </button>
+              </div>
 
-          {!allApprovalsAccepted && !loading ? (
-            <div className="buttonHelp">
-              Bilgilendirme, teslimat ve sözleşme
-              metinlerini incelemek için onay
-              kutularını işaretleyebilirsiniz. Sanal
-              POS entegrasyonu tamamlanana kadar
-              online ödeme işlemi kapalıdır.
+              <div className="transferWarning">
+                <strong>
+                  Önemli:
+                </strong>{" "}
+                Ödemenizin doğru klinik
+                hesabıyla
+                eşleştirilebilmesi için
+                banka transferinin
+                açıklama alanına{" "}
+                <strong>
+                  {
+                    bankTransfer.description
+                  }
+                </strong>{" "}
+                kodunu aynen yazınız.
+              </div>
+
+              {!bankTransfer.notified ? (
+                <button
+                  type="button"
+                  className="notifyButton"
+                  disabled={
+                    notifyLoading
+                  }
+                  onClick={() =>
+                    void notifyBankTransfer()
+                  }
+                >
+                  {notifyLoading
+                    ? "Bildirim gönderiliyor..."
+                    : "✓ Ödemeyi Yaptım"}
+                </button>
+              ) : (
+                <div
+                  className="successBox"
+                  style={{
+                    marginTop: 14,
+                  }}
+                >
+                  ✅ Ödeme bildiriminiz
+                  alınmıştır.
+                  <br />
+                  <br />
+                  Banka transferi
+                  kontrol edildikten sonra
+                  satın aldığınız kredi
+                  veya Premium hakkı
+                  hesabınıza
+                  tanımlanacaktır.
+                </div>
+              )}
+
+              <div
+                style={{
+                  marginTop: 11,
+                  fontSize: 11,
+                  lineHeight: 1.6,
+                  color:
+                    "rgba(15,23,42,.60)",
+                  fontWeight: 800,
+                }}
+              >
+                DişFiyat360 bu işlem
+                sırasında kart bilgisi,
+                banka şifresi veya
+                internet bankacılığı
+                giriş bilgisi istemez.
+                Transfer işlemini kendi
+                bankanızın mobil veya
+                internet bankacılığı
+                üzerinden
+                gerçekleştirirsiniz.
+              </div>
             </div>
           ) : null}
 
@@ -1430,20 +2150,6 @@ export default function BuyPage(): JSX.Element {
             </div>
           ) : null}
 
-          <div className="trustGrid">
-            <div className="trustItem">
-              🔒 SSL korumalı bağlantı
-            </div>
-
-            <div className="trustItem">
-              🛡️ Güvenli ödeme altyapısı
-            </div>
-
-            <div className="trustItem">
-              💳 Kredi kartıyla ödeme
-            </div>
-          </div>
-
           <div className="bottomLinks">
             <Link
               href="/panel/abonelik"
@@ -1453,15 +2159,85 @@ export default function BuyPage(): JSX.Element {
             </Link>
 
             <Link
-              href="/panel/leadler"
+              href="/panel/islemler"
               style={ghostLinkStyle()}
             >
-              Leadler →
+              İşlem Geçmişi →
             </Link>
           </div>
         </aside>
       </div>
     </div>
+  );
+}
+
+function HeroDetail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): JSX.Element {
+  return (
+    <div className="heroDetail">
+      <div className="heroDetailLabel">
+        {label}
+      </div>
+
+      <div className="heroDetailValue">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function OrderRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): JSX.Element {
+  return (
+    <div className="orderRow">
+      <span className="orderLabel">
+        {label}
+      </span>
+
+      <span className="orderValue">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ApprovalCheckbox({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: (
+    value: boolean
+  ) => void;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <label className="approvalItem">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) =>
+          onChange(
+            event.target.checked
+          )
+        }
+      />
+
+      <span className="approvalText">
+        {children}
+      </span>
+    </label>
   );
 }
 
@@ -1472,12 +2248,16 @@ function badgeStyle(): CSSProperties {
     gap: 8,
     padding: "8px 12px",
     borderRadius: 999,
+
     border:
       "1px solid rgba(15,23,42,0.10)",
+
     background:
       "rgba(255,255,255,0.78)",
+
     fontWeight: 950,
     fontSize: 12,
+
     boxShadow:
       "0 10px 22px rgba(15,23,42,0.06)",
   };
@@ -1486,9 +2266,12 @@ function badgeStyle(): CSSProperties {
 function premiumBadgeStyle(): CSSProperties {
   return {
     ...badgeStyle(),
+
     color: "white",
+
     border:
       "1px solid rgba(255,255,255,0.18)",
+
     background:
       "rgba(255,255,255,0.14)",
   };
@@ -1497,16 +2280,24 @@ function premiumBadgeStyle(): CSSProperties {
 function ghostLinkStyle(): CSSProperties {
   return {
     flex: "1 1 130px",
+
     textAlign: "center",
+
     textDecoration: "none",
+
     padding: "11px 12px",
+
     borderRadius: 16,
+
     border:
       "1px solid rgba(15,23,42,0.10)",
+
     background:
       "rgba(255,255,255,0.72)",
+
     color:
       "rgba(15,23,42,0.86)",
+
     fontWeight: 950,
   };
 }
