@@ -92,7 +92,10 @@ type StoredDentalAnalysis = {
 function isRecord(
   value: unknown,
 ): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+  return (
+    typeof value === "object" &&
+    value !== null
+  );
 }
 
 function isStringArray(
@@ -101,9 +104,88 @@ function isStringArray(
   return (
     Array.isArray(value) &&
     value.every(
-      (item) => typeof item === "string",
+      (item) =>
+        typeof item === "string",
     )
   );
+}
+
+function normalizeTurkishMobilePhone(
+  value: string,
+): string | null {
+  let digits = value.replace(/\D/g, "");
+
+  if (digits.startsWith("0090")) {
+    digits = digits.slice(4);
+  } else if (
+    digits.startsWith("90") &&
+    digits.length === 12
+  ) {
+    digits = digits.slice(2);
+  }
+
+  if (
+    digits.startsWith("0") &&
+    digits.length === 11
+  ) {
+    digits = digits.slice(1);
+  }
+
+  if (!/^5\d{9}$/.test(digits)) {
+    return null;
+  }
+
+  return `+90${digits}`;
+}
+
+function formatTurkishMobileInput(
+  value: string,
+): string {
+  let digits = value.replace(/\D/g, "");
+
+  if (digits.startsWith("0090")) {
+    digits = digits.slice(4);
+  } else if (
+    digits.startsWith("90")
+  ) {
+    digits = digits.slice(2);
+  }
+
+  if (
+    digits.startsWith("5")
+  ) {
+    digits = `0${digits}`;
+  }
+
+  if (
+    digits &&
+    !digits.startsWith("0")
+  ) {
+    digits = `0${digits}`;
+  }
+
+  digits = digits.slice(0, 11);
+
+  const first =
+    digits.slice(0, 4);
+
+  const second =
+    digits.slice(4, 7);
+
+  const third =
+    digits.slice(7, 9);
+
+  const fourth =
+    digits.slice(9, 11);
+
+  return [
+    first,
+    second,
+    third,
+    fourth,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function parseStoredDentalAnalysis(
@@ -118,13 +200,15 @@ function parseStoredDentalAnalysis(
     }
 
     if (
-      typeof parsed.createdAt !== "string" ||
+      typeof parsed.createdAt !==
+        "string" ||
       !isRecord(parsed.analysis)
     ) {
       return null;
     }
 
-    const analysis = parsed.analysis;
+    const analysis =
+      parsed.analysis;
 
     if (
       typeof analysis.suitableImage !==
@@ -135,26 +219,34 @@ function parseStoredDentalAnalysis(
         analysis.visibleObservations,
       ) ||
       !isStringArray(
-        analysis.suggestedTreatmentCategories,
+        analysis
+          .suggestedTreatmentCategories,
       ) ||
-      typeof analysis.summary !== "string" ||
-      !isStringArray(analysis.limitations) ||
-      typeof analysis.disclaimer !== "string"
+      typeof analysis.summary !==
+        "string" ||
+      !isStringArray(
+        analysis.limitations,
+      ) ||
+      typeof analysis.disclaimer !==
+        "string"
     ) {
       return null;
     }
 
     if (
-      analysis.imageQuality !== "good" &&
+      analysis.imageQuality !==
+        "good" &&
       analysis.imageQuality !==
         "acceptable" &&
-      analysis.imageQuality !== "poor"
+      analysis.imageQuality !==
+        "poor"
     ) {
       return null;
     }
 
     return {
-      createdAt: parsed.createdAt,
+      createdAt:
+        parsed.createdAt,
 
       analysis: {
         suitableImage:
@@ -164,12 +256,15 @@ function parseStoredDentalAnalysis(
           analysis.imageQuality,
 
         visibleObservations:
-          analysis.visibleObservations,
+          analysis
+            .visibleObservations,
 
         suggestedTreatmentCategories:
-          analysis.suggestedTreatmentCategories,
+          analysis
+            .suggestedTreatmentCategories,
 
-        summary: analysis.summary,
+        summary:
+          analysis.summary,
 
         limitations:
           analysis.limitations,
@@ -193,7 +288,9 @@ function formatAiAnalysisForLead(
   ];
 
   if (
-    analysis.visibleObservations.length > 0
+    analysis
+      .visibleObservations.length >
+    0
   ) {
     parts.push(
       "",
@@ -205,15 +302,18 @@ function formatAiAnalysisForLead(
   }
 
   if (
-    analysis.suggestedTreatmentCategories
+    analysis
+      .suggestedTreatmentCategories
       .length > 0
   ) {
     parts.push(
       "",
       "Görüşülebilecek hizmet kategorileri:",
-      ...analysis.suggestedTreatmentCategories.map(
-        (item) => `- ${item}`,
-      ),
+      ...analysis
+        .suggestedTreatmentCategories
+        .map(
+          (item) => `- ${item}`,
+        ),
     );
   }
 
@@ -222,28 +322,41 @@ function formatAiAnalysisForLead(
     "Not: Bu metin tıbbi teşhis değildir. Kesin değerlendirme diş hekimi muayenesiyle yapılır.",
   );
 
-  return parts.join("\n").slice(0, 1500);
+  return parts
+    .join("\n")
+    .slice(0, 1500);
 }
 
 function combineLeadMessage(
   userMessage: string,
-  analysis: DentalAnalysis | null,
+  analysis:
+    | DentalAnalysis
+    | null,
 ): string | undefined {
   const cleanUserMessage =
     userMessage.trim();
 
   if (!analysis) {
-    return cleanUserMessage || undefined;
+    return (
+      cleanUserMessage ||
+      undefined
+    );
   }
 
   const aiText =
-    formatAiAnalysisForLead(analysis);
+    formatAiAnalysisForLead(
+      analysis,
+    );
 
-  const combined = cleanUserMessage
-    ? `HASTA NOTU\n${cleanUserMessage}\n\n${aiText}`
-    : aiText;
+  const combined =
+    cleanUserMessage
+      ? `HASTA NOTU\n${cleanUserMessage}\n\n${aiText}`
+      : aiText;
 
-  return combined.slice(0, 1950);
+  return combined.slice(
+    0,
+    1950,
+  );
 }
 
 export default function OfferForm({
@@ -255,28 +368,53 @@ export default function OfferForm({
   const [service, setService] =
     useState<string>("");
 
-  const [fullName, setFullName] =
-    useState<string>("");
+  const [
+    fullName,
+    setFullName,
+  ] = useState<string>("");
 
   const [phone, setPhone] =
     useState<string>("");
 
+  const [
+    phoneTouched,
+    setPhoneTouched,
+  ] =
+    useState<boolean>(false);
+
   const [email, setEmail] =
     useState<string>("");
 
-  const [message, setMessage] =
+  const [
+    message,
+    setMessage,
+  ] =
     useState<string>("");
 
-  const [intent, setIntent] =
-    useState<LeadIntent>("hemen");
+  const [
+    intent,
+    setIntent,
+  ] =
+    useState<LeadIntent>(
+      "hemen",
+    );
 
-  const [consent, setConsent] =
+  const [
+    consent,
+    setConsent,
+  ] =
     useState<boolean>(false);
 
-  const [website, setWebsite] =
+  const [
+    website,
+    setWebsite,
+  ] =
     useState<string>("");
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState<boolean>(false);
 
   const [ok, setOk] =
@@ -285,52 +423,93 @@ export default function OfferForm({
   const [err, setErr] =
     useState<string>("");
 
-  const [aiAnalysis, setAiAnalysis] =
-    useState<DentalAnalysis | null>(null);
+  const [
+    aiAnalysis,
+    setAiAnalysis,
+  ] =
+    useState<DentalAnalysis | null>(
+      null,
+    );
 
-  const [aiContextLoaded, setAiContextLoaded] =
+  const [
+    aiContextLoaded,
+    setAiContextLoaded,
+  ] =
     useState<boolean>(false);
 
   const isDirect =
-    Boolean(directClinic?.id);
-
-  const directCities = useMemo(() => {
-    if (!directClinic) {
-      return [];
-    }
-
-    const cities = new Set<string>();
-
-    for (const coverage of directClinic.coverages) {
-      cities.add(coverage.city);
-    }
-
-    return Array.from(cities.values()).sort(
-      (a, b) => a.localeCompare(b),
+    Boolean(
+      directClinic?.id,
     );
-  }, [directClinic]);
+
+  const normalizedPhone =
+    useMemo(
+      () =>
+        normalizeTurkishMobilePhone(
+          phone,
+        ),
+      [phone],
+    );
+
+  const phoneIsValid =
+    Boolean(
+      normalizedPhone,
+    );
+
+  const directCities =
+    useMemo(() => {
+      if (!directClinic) {
+        return [];
+      }
+
+      const cities =
+        new Set<string>();
+
+      for (
+        const coverage of
+        directClinic.coverages
+      ) {
+        cities.add(
+          coverage.city,
+        );
+      }
+
+      return Array.from(
+        cities.values(),
+      ).sort((a, b) =>
+        a.localeCompare(b),
+      );
+    }, [directClinic]);
 
   const directServicesByCity =
     useMemo(() => {
       const map =
-        new Map<string, string[]>();
+        new Map<
+          string,
+          string[]
+        >();
 
       if (!directClinic) {
         return map;
       }
 
       for (
-        const coverage of directClinic.coverages
+        const coverage of
+        directClinic.coverages
       ) {
         const services =
-          map.get(coverage.city) ?? [];
+          map.get(
+            coverage.city,
+          ) ?? [];
 
         if (
           !services.includes(
             coverage.service,
           )
         ) {
-          services.push(coverage.service);
+          services.push(
+            coverage.service,
+          );
         }
 
         map.set(
@@ -339,12 +518,21 @@ export default function OfferForm({
         );
       }
 
-      for (const [key, services] of map) {
-        services.sort((a, b) =>
-          a.localeCompare(b),
+      for (
+        const [
+          key,
+          services,
+        ] of map
+      ) {
+        services.sort(
+          (a, b) =>
+            a.localeCompare(b),
         );
 
-        map.set(key, services);
+        map.set(
+          key,
+          services,
+        );
       }
 
       return map;
@@ -358,11 +546,12 @@ export default function OfferForm({
     const firstCity =
       directCities[0] ?? "";
 
-    const services = firstCity
-      ? directServicesByCity.get(
-          firstCity,
-        ) ?? []
-      : [];
+    const services =
+      firstCity
+        ? directServicesByCity.get(
+            firstCity,
+          ) ?? []
+        : [];
 
     const firstService =
       services[0] ?? "";
@@ -372,7 +561,9 @@ export default function OfferForm({
     }
 
     if (firstService) {
-      setService(firstService);
+      setService(
+        firstService,
+      );
     }
   }, [
     directClinic,
@@ -384,10 +575,6 @@ export default function OfferForm({
     let cancelled = false;
 
     async function loadAiContext(): Promise<void> {
-      /*
-        State güncellemelerini effect'in senkron
-        gövdesinden ayırır.
-      */
       await Promise.resolve();
 
       if (cancelled) {
@@ -401,19 +588,25 @@ export default function OfferForm({
           );
 
         if (!rawValue) {
-          setAiContextLoaded(true);
+          setAiContextLoaded(
+            true,
+          );
           return;
         }
 
         const storedAnalysis =
-          parseStoredDentalAnalysis(rawValue);
+          parseStoredDentalAnalysis(
+            rawValue,
+          );
 
         if (!storedAnalysis) {
           window.sessionStorage.removeItem(
             AI_SESSION_STORAGE_KEY,
           );
 
-          setAiContextLoaded(true);
+          setAiContextLoaded(
+            true,
+          );
           return;
         }
 
@@ -423,8 +616,11 @@ export default function OfferForm({
           ).getTime();
 
         const isExpired =
-          !Number.isFinite(createdAtMs) ||
-          Date.now() - createdAtMs >
+          !Number.isFinite(
+            createdAtMs,
+          ) ||
+          Date.now() -
+            createdAtMs >
             60 * 60 * 1000;
 
         if (isExpired) {
@@ -432,16 +628,23 @@ export default function OfferForm({
             AI_SESSION_STORAGE_KEY,
           );
 
-          setAiContextLoaded(true);
+          setAiContextLoaded(
+            true,
+          );
           return;
         }
 
         setAiAnalysis(
           storedAnalysis.analysis,
         );
-        setAiContextLoaded(true);
+
+        setAiContextLoaded(
+          true,
+        );
       } catch {
-        setAiContextLoaded(true);
+        setAiContextLoaded(
+          true,
+        );
       }
     }
 
@@ -452,58 +655,82 @@ export default function OfferForm({
     };
   }, []);
 
-  const cityOptions = useMemo(() => {
-    if (isDirect) {
-      return directCities.map(
-        (citySlug) => ({
-          slug: citySlug,
-          label: cityLabel(citySlug),
-        }),
-      );
-    }
+  const cityOptions =
+    useMemo(() => {
+      if (isDirect) {
+        return directCities.map(
+          (citySlug) => ({
+            slug: citySlug,
+            label:
+              cityLabel(
+                citySlug,
+              ),
+          }),
+        );
+      }
 
-    return (
-      CITIES as readonly string[]
-    ).map((citySlug) => ({
-      slug: citySlug,
-      label: cityLabel(citySlug),
-    }));
-  }, [isDirect, directCities]);
+      return (
+        CITIES as readonly string[]
+      ).map((citySlug) => ({
+        slug: citySlug,
+        label:
+          cityLabel(
+            citySlug,
+          ),
+      }));
+    }, [
+      isDirect,
+      directCities,
+    ]);
 
-  const serviceOptions = useMemo(() => {
-    if (isDirect) {
-      const services = city
-        ? directServicesByCity.get(city) ??
-          []
-        : [];
+  const serviceOptions =
+    useMemo(() => {
+      if (isDirect) {
+        const services =
+          city
+            ? directServicesByCity.get(
+                city,
+              ) ?? []
+            : [];
 
-      return services.map(
+        return services.map(
+          (serviceSlug) => ({
+            slug:
+              serviceSlug,
+
+            label:
+              serviceLabel(
+                serviceSlug,
+              ),
+          }),
+        );
+      }
+
+      return (
+        SERVICES as readonly string[]
+      ).map(
         (serviceSlug) => ({
-          slug: serviceSlug,
+          slug:
+            serviceSlug,
+
           label:
-            serviceLabel(serviceSlug),
+            serviceLabel(
+              serviceSlug,
+            ),
         }),
       );
-    }
-
-    return (
-      SERVICES as readonly string[]
-    ).map((serviceSlug) => ({
-      slug: serviceSlug,
-      label:
-        serviceLabel(serviceSlug),
-    }));
-  }, [
-    isDirect,
-    city,
-    directServicesByCity,
-  ]);
+    }, [
+      isDirect,
+      city,
+      directServicesByCity,
+    ]);
 
   function readApiError(
     data: unknown,
   ): string | null {
     if (
-      typeof data !== "object" ||
+      typeof data !==
+        "object" ||
       data === null
     ) {
       return null;
@@ -543,6 +770,21 @@ export default function OfferForm({
     }
   }
 
+  function handlePhoneChange(
+    value: string,
+  ): void {
+    const formatted =
+      formatTurkishMobileInput(
+        value,
+      );
+
+    setPhone(formatted);
+
+    if (err) {
+      setErr("");
+    }
+  }
+
   async function onSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> {
@@ -550,6 +792,20 @@ export default function OfferForm({
 
     setErr("");
     setOk(false);
+    setPhoneTouched(true);
+
+    const phoneForApi =
+      normalizeTurkishMobilePhone(
+        phone,
+      );
+
+    if (!phoneForApi) {
+      setErr(
+        "Lütfen geçerli bir Türkiye cep telefonu numarası girin. Örnek: 0531 917 17 39",
+      );
+
+      return;
+    }
 
     const leadMessage =
       combineLeadMessage(
@@ -559,34 +815,53 @@ export default function OfferForm({
 
     const payload = {
       clinicId:
-        directClinic?.id ?? undefined,
+        directClinic?.id ??
+        undefined,
 
-      city: normalizeSlug(city),
-      service: normalizeSlug(service),
+      city:
+        normalizeSlug(city),
 
-      fullName: fullName.trim(),
-      phone: phone.trim(),
+      service:
+        normalizeSlug(
+          service,
+        ),
+
+      fullName:
+        fullName.trim(),
+
+      /*
+       * Frontend tarafında +90 formatına
+       * normalize edilir.
+       *
+       * API aynı numarayı tekrar doğrular.
+       */
+      phone:
+        phoneForApi,
 
       email:
-        email.trim() || undefined,
+        email.trim() ||
+        undefined,
 
-      message: leadMessage,
+      message:
+        leadMessage,
 
       intent,
 
-      source: aiAnalysis
-        ? "ai_dental"
-        : isDirect
-          ? "clinic_direct_form"
-          : "web",
+      source:
+        aiAnalysis
+          ? "ai_dental"
+          : isDirect
+            ? "clinic_direct_form"
+            : "web",
 
       website,
 
       consent,
 
-      consentTextVersion: aiAnalysis
-        ? "v1-ai-dental"
-        : "v1",
+      consentTextVersion:
+        aiAnalysis
+          ? "v1-ai-dental"
+          : "v1",
 
       when: intent,
     };
@@ -602,12 +877,9 @@ export default function OfferForm({
     }
 
     if (!payload.fullName) {
-      setErr("Ad Soyad zorunlu.");
-      return;
-    }
-
-    if (!payload.phone) {
-      setErr("Telefon zorunlu.");
+      setErr(
+        "Ad Soyad zorunlu.",
+      );
       return;
     }
 
@@ -621,36 +893,47 @@ export default function OfferForm({
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/leads",
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          "/api/leads",
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify(
+                payload,
+              ),
           },
-
-          body: JSON.stringify(payload),
-        },
-      );
+        );
 
       const data: unknown =
         await response
           .json()
-          .catch(() => ({}));
+          .catch(
+            () => ({}),
+          );
 
       if (!response.ok) {
         const errorMessage =
-          readApiError(data) ??
+          readApiError(
+            data,
+          ) ??
           "Gönderim başarısız. Lütfen tekrar dene.";
 
-        throw new Error(errorMessage);
+        throw new Error(
+          errorMessage,
+        );
       }
 
       setOk(true);
       setFullName("");
       setPhone("");
+      setPhoneTouched(false);
       setEmail("");
       setMessage("");
       setIntent("hemen");
@@ -673,9 +956,12 @@ export default function OfferForm({
         setCity("");
         setService("");
       }
-    } catch (caughtError: unknown) {
+    } catch (
+      caughtError: unknown
+    ) {
       setErr(
-        caughtError instanceof Error
+        caughtError instanceof
+          Error
           ? caughtError.message
           : "Beklenmeyen hata oluştu.",
       );
@@ -687,7 +973,11 @@ export default function OfferForm({
   return (
     <>
       {ok ? (
-        <div className={styles.alertOk}>
+        <div
+          className={
+            styles.alertOk
+          }
+        >
           Form alındı ✅{" "}
           {isDirect
             ? "Seçtiğiniz kliniğe iletildi."
@@ -696,74 +986,127 @@ export default function OfferForm({
       ) : null}
 
       {err ? (
-        <div className={styles.alertErr}>
+        <div
+          className={
+            styles.alertErr
+          }
+        >
           {err}
         </div>
       ) : null}
 
-      {aiContextLoaded && aiAnalysis ? (
+      {aiContextLoaded &&
+      aiAnalysis ? (
         <div
           style={{
-            margin: "0 0 18px",
+            margin:
+              "0 0 18px",
+
             padding: 16,
+
             border:
               "1px solid rgba(102, 83, 210, 0.18)",
+
             borderRadius: 16,
+
             background:
               "linear-gradient(135deg, rgba(246,244,255,0.96), rgba(241,249,255,0.96))",
+
             boxShadow:
               "0 12px 28px rgba(55, 43, 110, 0.07)",
           }}
         >
           <div
             style={{
-              display: "flex",
-              alignItems: "flex-start",
+              display:
+                "flex",
+
+              alignItems:
+                "flex-start",
+
               justifyContent:
                 "space-between",
+
               gap: 12,
             }}
           >
             <div>
               <strong
                 style={{
-                  display: "block",
-                  color: "#403c73",
-                  fontSize: 14,
-                  fontWeight: 900,
+                  display:
+                    "block",
+
+                  color:
+                    "#403c73",
+
+                  fontSize:
+                    14,
+
+                  fontWeight:
+                    900,
                 }}
               >
-                ✨ AI ön değerlendirmeniz
+                ✨ AI ön
+                değerlendirmeniz
                 forma eklendi
               </strong>
 
               <p
                 style={{
-                  margin: "7px 0 0",
-                  color: "#67687a",
-                  fontSize: 13,
-                  lineHeight: 1.55,
+                  margin:
+                    "7px 0 0",
+
+                  color:
+                    "#67687a",
+
+                  fontSize:
+                    13,
+
+                  lineHeight:
+                    1.55,
                 }}
               >
-                {aiAnalysis.summary}
+                {
+                  aiAnalysis.summary
+                }
               </p>
             </div>
 
             <button
               type="button"
-              onClick={removeAiAnalysis}
-              disabled={loading}
+              onClick={
+                removeAiAnalysis
+              }
+              disabled={
+                loading
+              }
               style={{
-                flex: "0 0 auto",
-                padding: "7px 10px",
+                flex:
+                  "0 0 auto",
+
+                padding:
+                  "7px 10px",
+
                 border:
                   "1px solid rgba(90, 79, 172, 0.16)",
-                borderRadius: 10,
-                background: "#ffffff",
-                color: "#6e658d",
-                fontSize: 11,
-                fontWeight: 800,
-                cursor: "pointer",
+
+                borderRadius:
+                  10,
+
+                background:
+                  "#ffffff",
+
+                color:
+                  "#6e658d",
+
+                fontSize:
+                  11,
+
+                fontWeight:
+                  800,
+
+                cursor:
+                  "pointer",
               }}
             >
               Kaldır
@@ -772,25 +1115,37 @@ export default function OfferForm({
 
           <div
             style={{
-              marginTop: 10,
-              color: "#8a8996",
-              fontSize: 11,
-              lineHeight: 1.5,
+              marginTop:
+                10,
+
+              color:
+                "#8a8996",
+
+              fontSize:
+                11,
+
+              lineHeight:
+                1.5,
             }}
           >
-            Fotoğraf kliniklere gönderilmez.
-            Yalnızca yukarıdaki metinsel özet
+            Fotoğraf kliniklere
+            gönderilmez. Yalnızca
+            yukarıdaki metinsel özet
             teklif talebine eklenir.
           </div>
         </div>
       ) : null}
 
       <form
-        className={styles.form}
+        className={
+          styles.form
+        }
         onSubmit={onSubmit}
       >
         <div
-          className={styles.hp}
+          className={
+            styles.hp
+          }
           aria-hidden
         >
           <label htmlFor="website">
@@ -800,11 +1155,16 @@ export default function OfferForm({
           <input
             id="website"
             name="website"
-            className={styles.input}
+            className={
+              styles.input
+            }
             value={website}
-            onChange={(event) =>
+            onChange={(
+              event,
+            ) =>
               setWebsite(
-                event.target.value,
+                event.target
+                  .value,
               )
             }
             autoComplete="off"
@@ -812,36 +1172,55 @@ export default function OfferForm({
           />
         </div>
 
-        <div className={styles.grid2}>
-          <div className={styles.field}>
+        <div
+          className={
+            styles.grid2
+          }
+        >
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="city">
               Şehir
             </label>
 
             <select
               id="city"
-              className={styles.select}
+              className={
+                styles.select
+              }
               value={city}
-              onChange={(event) => {
+              onChange={(
+                event,
+              ) => {
                 const nextCity =
-                  event.target.value;
+                  event.target
+                    .value;
 
-                setCity(nextCity);
+                setCity(
+                  nextCity,
+                );
 
-                if (isDirect) {
+                if (
+                  isDirect
+                ) {
                   const nextServices =
                     directServicesByCity.get(
                       nextCity,
                     ) ?? [];
 
                   setService(
-                    nextServices[0] ?? "",
+                    nextServices[0] ??
+                      "",
                   );
                 }
               }}
               disabled={
                 isDirect &&
-                cityOptions.length <= 1
+                cityOptions.length <=
+                  1
               }
             >
               <option value="">
@@ -851,7 +1230,9 @@ export default function OfferForm({
               </option>
 
               {cityOptions.map(
-                (cityOption) => (
+                (
+                  cityOption,
+                ) => (
                   <option
                     key={
                       cityOption.slug
@@ -860,7 +1241,9 @@ export default function OfferForm({
                       cityOption.slug
                     }
                   >
-                    {cityOption.label}
+                    {
+                      cityOption.label
+                    }
                   </option>
                 ),
               )}
@@ -868,32 +1251,46 @@ export default function OfferForm({
 
             {isDirect ? (
               <div
-                className={styles.help}
+                className={
+                  styles.help
+                }
               >
-                Bu form, seçtiğiniz
-                kliniğin şehirlerine göre
+                Bu form,
+                seçtiğiniz
+                kliniğin
+                şehirlerine göre
                 gönderilir.
               </div>
             ) : null}
           </div>
 
-          <div className={styles.field}>
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="service">
               İşlem
             </label>
 
             <select
               id="service"
-              className={styles.select}
+              className={
+                styles.select
+              }
               value={service}
-              onChange={(event) =>
+              onChange={(
+                event,
+              ) =>
                 setService(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               disabled={
                 isDirect &&
-                serviceOptions.length <= 1
+                serviceOptions.length <=
+                  1
               }
             >
               <option value="">
@@ -903,7 +1300,9 @@ export default function OfferForm({
               </option>
 
               {serviceOptions.map(
-                (serviceOption) => (
+                (
+                  serviceOption,
+                ) => (
                   <option
                     key={
                       serviceOption.slug
@@ -922,28 +1321,47 @@ export default function OfferForm({
 
             {isDirect ? (
               <div
-                className={styles.help}
+                className={
+                  styles.help
+                }
               >
-                Bu form sadece seçtiğiniz
-                kliniğe iletilir.
+                Bu form sadece
+                seçtiğiniz
+                kliniğe
+                iletilir.
               </div>
             ) : null}
           </div>
         </div>
 
-        <div className={styles.grid2}>
-          <div className={styles.field}>
+        <div
+          className={
+            styles.grid2
+          }
+        >
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="fullName">
               Ad Soyad
             </label>
 
             <input
               id="fullName"
-              className={styles.input}
-              value={fullName}
-              onChange={(event) =>
+              className={
+                styles.input
+              }
+              value={
+                fullName
+              }
+              onChange={(
+                event,
+              ) =>
                 setFullName(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               placeholder="Ad Soyad"
@@ -951,44 +1369,111 @@ export default function OfferForm({
             />
           </div>
 
-          <div className={styles.field}>
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="phone">
-              Telefon
+              Cep Telefonu
             </label>
 
             <input
               id="phone"
-              className={styles.input}
+              name="phone"
+              className={
+                styles.input
+              }
               value={phone}
-              onChange={(event) =>
-                setPhone(
-                  event.target.value,
+              onChange={(
+                event,
+              ) =>
+                handlePhoneChange(
+                  event.target
+                    .value,
+                )
+              }
+              onBlur={() =>
+                setPhoneTouched(
+                  true,
                 )
               }
               placeholder="05xx xxx xx xx"
-              inputMode="tel"
+              inputMode="numeric"
               autoComplete="tel"
+              maxLength={14}
+              aria-invalid={
+                phoneTouched &&
+                !phoneIsValid
+              }
+              aria-describedby="phone-help"
             />
 
-            <div className={styles.help}>
-              Örn: 05xx xxx xx xx
+            <div
+              id="phone-help"
+              className={
+                styles.help
+              }
+              style={
+                phoneTouched &&
+                phone &&
+                !phoneIsValid
+                  ? {
+                      color:
+                        "#b91c1c",
+
+                      fontWeight:
+                        850,
+                    }
+                  : phoneIsValid
+                    ? {
+                        color:
+                          "#15803d",
+
+                        fontWeight:
+                          850,
+                      }
+                    : undefined
+              }
+            >
+              {phoneTouched &&
+              phone &&
+              !phoneIsValid
+                ? "Geçerli bir Türkiye cep telefonu numarası girin. Örnek: 0531 917 17 39"
+                : phoneIsValid
+                  ? "✓ Cep telefonu formatı geçerli."
+                  : "Kliniklerin size ulaşabilmesi için aktif cep telefonu numaranızı girin."}
             </div>
           </div>
         </div>
 
-        <div className={styles.grid2}>
-          <div className={styles.field}>
+        <div
+          className={
+            styles.grid2
+          }
+        >
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="email">
-              E-posta (opsiyonel)
+              E-posta
+              (opsiyonel)
             </label>
 
             <input
               id="email"
-              className={styles.input}
+              className={
+                styles.input
+              }
               value={email}
-              onChange={(event) =>
+              onChange={(
+                event,
+              ) =>
                 setEmail(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               placeholder="ornek@mail.com"
@@ -997,16 +1482,27 @@ export default function OfferForm({
             />
           </div>
 
-          <div className={styles.field}>
+          <div
+            className={
+              styles.field
+            }
+          >
             <label htmlFor="intent">
-              Ne zaman düşünüyorsunuz?
+              Ne zaman
+              düşünüyorsunuz?
             </label>
 
             <select
               id="intent"
-              className={styles.select}
-              value={intent}
-              onChange={(event) =>
+              className={
+                styles.select
+              }
+              value={
+                intent
+              }
+              onChange={(
+                event,
+              ) =>
                 setIntent(
                   event.target
                     .value as LeadIntent,
@@ -1014,12 +1510,20 @@ export default function OfferForm({
               }
             >
               {INTENT_OPTIONS.map(
-                (option) => (
+                (
+                  option,
+                ) => (
                   <option
-                    key={option.value}
-                    value={option.value}
+                    key={
+                      option.value
+                    }
+                    value={
+                      option.value
+                    }
                   >
-                    {option.label}
+                    {
+                      option.label
+                    }
                   </option>
                 ),
               )}
@@ -1027,46 +1531,72 @@ export default function OfferForm({
           </div>
         </div>
 
-        <div className={styles.field}>
+        <div
+          className={
+            styles.field
+          }
+        >
           <label htmlFor="message">
             Not (opsiyonel)
           </label>
 
           <input
             id="message"
-            className={styles.input}
+            className={
+              styles.input
+            }
             value={message}
-            onChange={(event) =>
+            onChange={(
+              event,
+            ) =>
               setMessage(
-                event.target.value,
+                event.target
+                  .value,
               )
             }
             placeholder="Örn: akşam arayın / üst çene / korkum var..."
           />
 
           {aiAnalysis ? (
-            <div className={styles.help}>
-              Kendi notunuz, AI özetiyle
-              birlikte kliniğe iletilir.
+            <div
+              className={
+                styles.help
+              }
+            >
+              Kendi notunuz,
+              AI özetiyle
+              birlikte kliniğe
+              iletilir.
             </div>
           ) : null}
         </div>
 
-        <label className={styles.kvkkRow}>
+        <label
+          className={
+            styles.kvkkRow
+          }
+        >
           <input
             type="checkbox"
-            checked={consent}
-            onChange={(event) =>
+            checked={
+              consent
+            }
+            onChange={(
+              event,
+            ) =>
               setConsent(
-                event.target.checked,
+                event.target
+                  .checked,
               )
             }
           />
 
           <span>
-            KVKK aydınlatma metnini
-            okudum ve iletişime
-            geçilmesine onay veriyorum.{" "}
+            KVKK aydınlatma
+            metnini okudum ve
+            iletişime
+            geçilmesine onay
+            veriyorum.{" "}
             <Link
               className={
                 styles.inlineLink
@@ -1080,11 +1610,17 @@ export default function OfferForm({
           </span>
         </label>
 
-        <div className={styles.btnRow}>
+        <div
+          className={
+            styles.btnRow
+          }
+        >
           <button
             className={`${styles.btn} ${styles.btnPrimary}`}
             type="submit"
-            disabled={loading}
+            disabled={
+              loading
+            }
           >
             {loading
               ? "Gönderiliyor..."
