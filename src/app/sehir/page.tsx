@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CITIES, cityLabel } from "@/lib/seo-data";
 import styles from "./page.module.css";
 
-export const dynamic = "force-dynamic";
+
 
 type CityItem = {
   slug: string;

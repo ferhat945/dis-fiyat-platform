@@ -1,34 +1,86 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cityLabel, isKnownCity, normalizeSlug } from "@/lib/seo-data";
+
+import {
+  CITIES,
+  cityLabel,
+  isKnownCity,
+  normalizeSlug,
+} from "@/lib/seo-data";
+
 import CityServicesClient from "./CityServicesClient";
 
-export const dynamic = "force-dynamic";
+export function generateStaticParams(): Array<{
+  city: string;
+}> {
+  return CITIES.map((city) => ({
+    city,
+  }));
+}
 
 type PageProps = {
-  params: Promise<{ city: string }>;
+  params: Promise<{
+    city: string;
+  }>;
 };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { city } = await params;
-  const citySlug = normalizeSlug(city);
-  const ok = isKnownCity(citySlug);
 
-  const titleCity = ok ? cityLabel(citySlug) : "Şehir";
+  const citySlug =
+    normalizeSlug(city);
+
+  if (!isKnownCity(citySlug)) {
+    return {
+      title:
+        "Şehir bulunamadı | DişFiyat360",
+
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const cityName =
+    cityLabel(citySlug);
 
   return {
-    title: `${titleCity} | Hizmetler | DişFiyat360`,
-    description: `${titleCity} için hizmet seç, KVKK onaylı form ile kliniklerden teklif al. Kesin fiyat muayene sonrası netleşir.`,
-    alternates: { canonical: `/sehir/${citySlug}` },
-    robots: ok ? { index: true, follow: true } : { index: false, follow: false },
+    title:
+      `${cityName} Diş Tedavileri ve Klinikleri | DişFiyat360`,
+
+    description:
+      `${cityName} için diş tedavisi hizmetini seç, fiyat ve tedavi bilgilerini incele, KVKK onaylı form ile uygun kliniklerden ücretsiz teklif al. Kesin fiyat muayene sonrası netleşir.`,
+
+    alternates: {
+      canonical:
+        `/sehir/${citySlug}`,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
   };
 }
 
-export default async function CityServicesPage({ params }: PageProps): Promise<JSX.Element> {
+export default async function CityServicesPage({
+  params,
+}: PageProps): Promise<JSX.Element> {
   const { city } = await params;
-  const citySlug = normalizeSlug(city);
 
-  if (!isKnownCity(citySlug)) return notFound();
+  const citySlug =
+    normalizeSlug(city);
 
-  return <CityServicesClient citySlug={citySlug} />;
+  if (!isKnownCity(citySlug)) {
+    return notFound();
+  }
+
+  return (
+    <CityServicesClient
+      citySlug={citySlug}
+    />
+  );
 }

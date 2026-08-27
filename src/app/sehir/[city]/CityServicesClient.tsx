@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { SERVICES, cityLabel, isKnownCity, normalizeSlug, serviceLabel } from "@/lib/seo-data";
 import styles from "./page.module.css";
 
-export const dynamic = "force-dynamic";
+
 
 type Props = {
   citySlug: string;

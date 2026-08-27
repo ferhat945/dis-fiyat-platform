@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import ServicesClient from "./ServicesClient";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Hizmetler | DişFiyat360",
-  description: "İşlemini seç, sonra şehir seçerek KVKK onaylı form ile kliniklerden teklif al.",
-  alternates: { canonical: "/hizmetler" },
+  description:
+    "Diş tedavisi ve estetik diş hekimliği hizmetlerini incele. İşlemini ve şehrini seçerek KVKK onaylı form ile kliniklerden ücretsiz teklif al.",
+  alternates: {
+    canonical: "/hizmetler",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function ServicesPage(): JSX.Element {
