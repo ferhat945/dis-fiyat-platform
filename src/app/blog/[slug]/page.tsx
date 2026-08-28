@@ -136,22 +136,15 @@ function headingId(
 }
 
 /*
- * BLOG İÇİ BİÇİMLENDİRME
+ * Blog içeriklerinde desteklenen format:
  *
- * Bundan sonra kullanabileceğin:
- *
- * {implant yazımıza}(/blog/ornek)
- * {Adana hizmet sayfası}(/sehir/adana)
- * {Kaynak}(https://ornek.com)
- *
- * Ayrıca:
+ * [metin](/site-ici-adres)
+ * [metin](https://dis-site.com)
  * **kalın**
  * *italik*
  *
- * Eski bloglar bozulmasın diye şu eski format da
- * çalışmaya devam eder:
- *
- * [metin](/adres)
+ * Linklerde köşeli parantez ve URL
+ * ziyaretçiye gösterilmez.
  */
 function renderInline(
   text: string,
@@ -161,7 +154,7 @@ function renderInline(
   > = [];
 
   const pattern =
-    /\{([^{}]+)\}\((\/[^)\s]+|https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((\/[^)\s]+|https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+    /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -170,7 +163,10 @@ function renderInline(
   while (
     (match = pattern.exec(text)) !== null
   ) {
-    if (match.index > lastIndex) {
+    if (
+      match.index >
+      lastIndex
+    ) {
       parts.push(
         text.slice(
           lastIndex,
@@ -179,25 +175,19 @@ function renderInline(
       );
     }
 
-    const linkLabel =
-      match[1] ??
-      match[3];
-
-    const linkUrl =
-      match[2] ??
-      match[4];
-
     if (
-      linkLabel !== undefined &&
-      linkUrl !== undefined
+      match[1] !== undefined &&
+      match[2] !== undefined
     ) {
       const label =
-        linkLabel.trim();
+        match[1].trim();
 
       const url =
-        linkUrl.trim();
+        match[2].trim();
 
-      if (url.startsWith("/")) {
+      if (
+        url.startsWith("/")
+      ) {
         parts.push(
           <Link
             key={`link-${key}`}
@@ -209,7 +199,10 @@ function renderInline(
             {label}
           </Link>,
         );
-      } else {
+      } else if (
+        url.startsWith("http://") ||
+        url.startsWith("https://")
+      ) {
         parts.push(
           <a
             key={`link-${key}`}
@@ -223,29 +216,33 @@ function renderInline(
             {label}
           </a>,
         );
+      } else {
+        parts.push(
+          match[0],
+        );
       }
 
       key += 1;
     } else if (
-      match[5] !== undefined
+      match[3] !== undefined
     ) {
       parts.push(
         <strong
           key={`bold-${key}`}
         >
-          {match[5]}
+          {match[3]}
         </strong>,
       );
 
       key += 1;
     } else if (
-      match[6] !== undefined
+      match[4] !== undefined
     ) {
       parts.push(
         <em
           key={`italic-${key}`}
         >
-          {match[6]}
+          {match[4]}
         </em>,
       );
 
@@ -261,7 +258,9 @@ function renderInline(
     text.length
   ) {
     parts.push(
-      text.slice(lastIndex),
+      text.slice(
+        lastIndex,
+      ),
     );
   }
 
@@ -272,7 +271,7 @@ function renderContent(
   content: string,
 ): JSX.Element[] {
   const lines =
-    content.split("\n");
+    content.split(/\r?\n/);
 
   const elements:
     JSX.Element[] = [];
@@ -324,7 +323,7 @@ function renderContent(
       }
 
       /*
-       * ### Başlık
+       * ### Alt başlık
        */
       if (
         trimmed.startsWith(
@@ -346,12 +345,16 @@ function renderContent(
         }
 
         elements.push(
-          <h2
-            key={`h2-${index}`}
-            id={headingId(text)}
+          <h3
+            key={`h3-${index}`}
+            id={headingId(
+              text,
+            )}
           >
-            {renderInline(text)}
-          </h2>,
+            {renderInline(
+              text,
+            )}
+          </h3>,
         );
 
         return;
@@ -382,9 +385,13 @@ function renderContent(
         elements.push(
           <h2
             key={`h2-${index}`}
-            id={headingId(text)}
+            id={headingId(
+              text,
+            )}
           >
-            {renderInline(text)}
+            {renderInline(
+              text,
+            )}
           </h2>,
         );
 
@@ -466,7 +473,9 @@ export async function generateMetadata({
     await params;
 
   const post =
-    await getBlogPost(slug);
+    await getBlogPost(
+      slug,
+    );
 
   if (
     !post ||
@@ -484,11 +493,6 @@ export async function generateMetadata({
   }
 
   return {
-    /*
-     * Root layout zaten
-     * "| DişFiyat360"
-     * ekliyor.
-     */
     title:
       `${post.title} | Blog`,
 
@@ -517,7 +521,9 @@ export default async function BlogDetail({
     await params;
 
   const post =
-    await getBlogPost(slug);
+    await getBlogPost(
+      slug,
+    );
 
   if (
     !post ||
