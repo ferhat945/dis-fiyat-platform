@@ -3780,3 +3780,63 @@ img { max-width: 100%; height: auto; }
     max-width: 280px;
   }
 }
+
+/* =========================================
+   BLOG İÇERİK BİÇİMLENDİRME
+========================================= */
+
+.blogContentArea {
+  color: rgba(15, 23, 42, 0.88);
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.blogP {
+  margin: 0 0 16px;
+}
+
+.blogH2 {
+  margin: 32px 0 14px;
+  font-size: 25px;
+  line-height: 1.3;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: rgba(15, 23, 42, 0.96);
+  scroll-margin-top: 100px;
+}
+
+.blogUl {
+  margin: 0 0 18px 22px;
+  padding: 0;
+}
+
+.blogUl li {
+  margin-bottom: 7px;
+  line-height: 1.75;
+}
+
+.blogContentArea strong {
+  font-weight: 950;
+  color: rgba(15, 23, 42, 0.96);
+}
+
+.blogContentArea em {
+  font-style: italic;
+}
+
+.blogLink {
+  color: #4338ca !important;
+  font-weight: 850;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1.5px !important;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+.blogLink:hover {
+  color: #312e81 !important;
+  opacity: 0.82;
+}
