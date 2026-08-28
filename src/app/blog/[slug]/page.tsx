@@ -1,11 +1,13 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { prisma } from "@/lib/db";
 import { normalizeSlug } from "@/lib/seo-data";
 import { absUrl } from "@/lib/site-url";
+
+import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +17,21 @@ type PageProps = {
   }>;
 };
 
-/* -----------------------------------
-   Yardımcı Fonksiyonlar
------------------------------------- */
+type BlogPostData = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  publishedAt: Date | null;
+  updatedAt: Date;
+  isPublished: boolean;
+  clinic: {
+    id: string;
+    name: string;
+    isActive: boolean;
+  } | null;
+};
 
 function clinicSlug(
   name: string,
@@ -30,19 +44,37 @@ function clinicSlug(
   return `${base}--${id}`;
 }
 
-function wordCount(s: string): number {
-  return (s ?? "")
-    .trim()
-    .split(/\s+/)
+function wordCount(
+  text: string,
+): number {
+  const clean = text
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!clean) {
+    return 0;
+  }
+
+  return clean
+    .split(" ")
     .filter(Boolean).length;
 }
 
 function readingMinutes(
   text: string,
 ): number {
+  const count = wordCount(text);
+
+  if (count <= 0) {
+    return 1;
+  }
+
   return Math.max(
     1,
-    Math.round(wordCount(text) / 200),
+    Math.min(
+      30,
+      Math.round(count / 200),
+    ),
   );
 }
 
@@ -55,35 +87,71 @@ function detectCategory(
       "tr-TR",
     );
 
-  if (text.includes("implant")) {
+  if (
+    text.includes("implant")
+  ) {
     return "İmplant";
   }
 
-  if (text.includes("kanal")) {
+  if (
+    text.includes("kanal")
+  ) {
     return "Kanal";
   }
 
-  if (text.includes("dolgu")) {
+  if (
+    text.includes("dolgu")
+  ) {
     return "Dolgu";
   }
 
-  if (text.includes("zirkonyum")) {
+  if (
+    text.includes("zirkonyum")
+  ) {
     return "Zirkonyum";
   }
 
-  if (text.includes("lamina")) {
+  if (
+    text.includes("lamina")
+  ) {
     return "Lamina";
   }
 
-  if (text.includes("ortodont")) {
+  if (
+    text.includes("ortodont")
+  ) {
     return "Ortodonti";
+  }
+
+  if (
+    text.includes("beyazlat")
+  ) {
+    return "Beyazlatma";
+  }
+
+  if (
+    text.includes("protez")
+  ) {
+    return "Protez";
+  }
+
+  if (
+    text.includes("diş eti") ||
+    text.includes("dis eti")
+  ) {
+    return "Diş Eti";
   }
 
   return "Genel";
 }
 
-function headingId(text: string): string {
-  return normalizeSlug(text) || "bolum";
+function headingId(
+  text: string,
+): string {
+  return (
+    normalizeSlug(text) ||
+    "bolum"
+  );
 }
 
 function extractHeadings(
@@ -91,24 +159,27 @@ function extractHeadings(
 ): string[] {
   return content
     .split("\n")
-    .filter((line) =>
-      line.trim().startsWith("##"),
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.startsWith("## ") ||
+        line.startsWith("### "),
     )
     .map((line) =>
       line
-        .replace(/^#+\s*/, "")
+        .replace(/^#{2,3}\s+/, "")
         .trim(),
     )
     .filter(Boolean);
 }
 
 /*
- * Satır içi markdown:
+ * Desteklenen satır içi biçimler:
  *
- * [metin](/adres) -> iç link
- * [metin](https://...) -> dış link
- * **metin** -> kalın
- * *metin* -> italik
+ * [metin](/adres)
+ * [metin](https://...)
+ * **kalın**
+ * *italik*
  */
 function renderInline(
   text: string,
@@ -125,9 +196,13 @@ function renderInline(
   let key = 0;
 
   while (
-    (match = pattern.exec(text)) !== null
+    (match =
+      pattern.exec(text)) !== null
   ) {
-    if (match.index > lastIndex) {
+    if (
+      match.index >
+      lastIndex
+    ) {
       parts.push(
         text.slice(
           lastIndex,
@@ -136,19 +211,31 @@ function renderInline(
       );
     }
 
+    /*
+     * Markdown link
+     */
     if (
-      match[1] !== undefined &&
-      match[2] !== undefined
+      match[1] !==
+        undefined &&
+      match[2] !==
+        undefined
     ) {
-      const label = match[1];
-      const url = match[2];
+      const label =
+        match[1];
 
-      if (url.startsWith("/")) {
+      const url =
+        match[2];
+
+      if (
+        url.startsWith("/")
+      ) {
         parts.push(
           <Link
             key={`link-${key}`}
             href={url}
-            className="blogLink"
+            className={
+              styles.blogLink
+            }
           >
             {label}
           </Link>,
@@ -158,7 +245,9 @@ function renderInline(
           <a
             key={`link-${key}`}
             href={url}
-            className="blogLink"
+            className={
+              styles.blogLink
+            }
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -168,8 +257,14 @@ function renderInline(
       }
 
       key += 1;
-    } else if (
-      match[3] !== undefined
+    }
+
+    /*
+     * **kalın**
+     */
+    else if (
+      match[3] !==
+      undefined
     ) {
       parts.push(
         <strong
@@ -180,8 +275,14 @@ function renderInline(
       );
 
       key += 1;
-    } else if (
-      match[4] !== undefined
+    }
+
+    /*
+     * *italik*
+     */
+    else if (
+      match[4] !==
+      undefined
     ) {
       parts.push(
         <em
@@ -198,9 +299,14 @@ function renderInline(
       pattern.lastIndex;
   }
 
-  if (lastIndex < text.length) {
+  if (
+    lastIndex <
+    text.length
+  ) {
     parts.push(
-      text.slice(lastIndex),
+      text.slice(
+        lastIndex,
+      ),
     );
   }
 
@@ -213,8 +319,8 @@ function renderContent(
   const lines =
     content.split("\n");
 
-  const elements: JSX.Element[] =
-    [];
+  const elements:
+    JSX.Element[] = [];
 
   let listBuffer: Array<{
     text: string;
@@ -229,12 +335,12 @@ function renderContent(
     }
 
     const firstLine =
-      listBuffer[0]?.line ?? 0;
+      listBuffer[0]?.line ??
+      0;
 
     elements.push(
       <ul
         key={`list-${firstLine}`}
-        className="blogUl"
       >
         {listBuffer.map(
           (item) => (
@@ -263,9 +369,12 @@ function renderContent(
         return;
       }
 
+      /*
+       * ### Başlık
+       */
       if (
         trimmed.startsWith(
-          "##",
+          "### ",
         )
       ) {
         flushList();
@@ -273,7 +382,7 @@ function renderContent(
         const text =
           trimmed
             .replace(
-              /^#+\s*/,
+              /^###\s+/,
               "",
             )
             .trim();
@@ -284,17 +393,61 @@ function renderContent(
 
         elements.push(
           <h2
-            key={`heading-${index}`}
-            id={headingId(text)}
-            className="blogH2"
+            key={`h2-${index}`}
+            id={headingId(
+              text,
+            )}
           >
-            {renderInline(text)}
+            {renderInline(
+              text,
+            )}
           </h2>,
         );
 
         return;
       }
 
+      /*
+       * ## Başlık
+       */
+      if (
+        trimmed.startsWith(
+          "## ",
+        )
+      ) {
+        flushList();
+
+        const text =
+          trimmed
+            .replace(
+              /^##\s+/,
+              "",
+            )
+            .trim();
+
+        if (!text) {
+          return;
+        }
+
+        elements.push(
+          <h2
+            key={`h2-${index}`}
+            id={headingId(
+              text,
+            )}
+          >
+            {renderInline(
+              text,
+            )}
+          </h2>,
+        );
+
+        return;
+      }
+
+      /*
+       * - Liste
+       */
       if (
         trimmed.startsWith(
           "- ",
@@ -314,8 +467,7 @@ function renderContent(
 
       elements.push(
         <p
-          key={`paragraph-${index}`}
-          className="blogP"
+          key={`p-${index}`}
         >
           {renderInline(
             trimmed,
@@ -330,16 +482,15 @@ function renderContent(
   return elements;
 }
 
-/* -----------------------------------
-   Blog verisi
------------------------------------- */
-
 const getBlogPost = cache(
-  async (slug: string) => {
+  async (
+    slug: string,
+  ): Promise<BlogPostData | null> => {
     return prisma.blogPost.findUnique({
       where: {
         slug,
       },
+
       select: {
         id: true,
         slug: true,
@@ -362,24 +513,24 @@ const getBlogPost = cache(
   },
 );
 
-/* -----------------------------------
-   Metadata
------------------------------------- */
-
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } =
+    await params;
 
   const post =
-    await getBlogPost(slug);
+    await getBlogPost(
+      slug,
+    );
 
   if (
     !post ||
     !post.isPublished
   ) {
     return {
-      title: "Yazı bulunamadı",
+      title:
+        "Yazı bulunamadı",
 
       robots: {
         index: false,
@@ -390,24 +541,22 @@ export async function generateMetadata({
 
   return {
     /*
-     * Root layout zaten:
-     *
-     * %s | DişFiyat360
-     *
-     * eklediği için burada marka
-     * tekrar yazılmaz.
+     * Root layout zaten
+     * "| DişFiyat360"
+     * ekliyor.
      */
     title:
       `${post.title} | Blog`,
 
     description:
       post.excerpt ??
-      `${post.title} hakkında DişFiyat360 bilgilendirme yazısı.`,
+      `${post.title} hakkında bilgilendirici içerik.`,
 
     alternates: {
-      canonical: absUrl(
-        `/blog/${post.slug}`,
-      ),
+      canonical:
+        absUrl(
+          `/blog/${post.slug}`,
+        ),
     },
 
     robots: {
@@ -417,23 +566,22 @@ export async function generateMetadata({
   };
 }
 
-/* -----------------------------------
-   Ana Sayfa
------------------------------------- */
-
 export default async function BlogDetail({
   params,
 }: PageProps): Promise<JSX.Element> {
-  const { slug } = await params;
+  const { slug } =
+    await params;
 
   const post =
-    await getBlogPost(slug);
+    await getBlogPost(
+      slug,
+    );
 
   if (
     !post ||
     !post.isPublished
   ) {
-    return notFound();
+    notFound();
   }
 
   const clinic =
@@ -441,17 +589,20 @@ export default async function BlogDetail({
       ? post.clinic
       : null;
 
-  const clinicHref = clinic
-    ? `/klinikler/${encodeURIComponent(
-        clinicSlug(
-          clinic.name,
-          clinic.id,
-        ),
-      )}`
-    : null;
+  const clinicHref =
+    clinic
+      ? `/klinikler/${encodeURIComponent(
+          clinicSlug(
+            clinic.name,
+            clinic.id,
+          ),
+        )}`
+      : null;
 
   const minutes =
-    readingMinutes(post.content);
+    readingMinutes(
+      post.content,
+    );
 
   const category =
     detectCategory(
@@ -464,33 +615,30 @@ export default async function BlogDetail({
       post.content,
     );
 
+  const publishedDate =
+    post.publishedAt
+      ? new Intl.DateTimeFormat(
+          "tr-TR",
+          {
+            dateStyle:
+              "long",
+          },
+        ).format(
+          post.publishedAt,
+        )
+      : null;
+
   const faqItems = [
     {
       q: "Diş tedavisi fiyatı neye göre değişir?",
       a: "Muayene bulguları, kullanılan malzeme ve tedavi planına göre değişir.",
     },
+
     {
       q: "Kesin fiyat ne zaman belli olur?",
       a: "Kesin fiyat muayene sonrası netleşir.",
     },
   ];
-
-  const faqJsonLd = {
-    "@context":
-      "https://schema.org",
-    "@type": "FAQPage",
-
-    mainEntity:
-      faqItems.map((item) => ({
-        "@type": "Question",
-        name: item.q,
-
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.a,
-        },
-      })),
-  };
 
   const articleJsonLd = {
     "@context":
@@ -534,8 +682,39 @@ export default async function BlogDetail({
     },
   };
 
+  const faqJsonLd = {
+    "@context":
+      "https://schema.org",
+
+    "@type":
+      "FAQPage",
+
+    mainEntity:
+      faqItems.map(
+        (item) => ({
+          "@type":
+            "Question",
+
+          name:
+            item.q,
+
+          acceptedAnswer: {
+            "@type":
+              "Answer",
+
+            text:
+              item.a,
+          },
+        }),
+      ),
+  };
+
   return (
-    <main className="blogWrap">
+    <main
+      className={
+        styles.wrap
+      }
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -556,132 +735,389 @@ export default async function BlogDetail({
         }}
       />
 
-      <div className="blogTopBar">
-        <Link href="/blog">
-          ← Blog
-        </Link>
-
-        <Link
-          href="/teklif-al"
-          className="blogPrimaryBtn"
+      <div
+        className={
+          styles.container
+        }
+      >
+        <div
+          className={
+            styles.topRow
+          }
         >
-          Teklif Al →
-        </Link>
-      </div>
-
-      <div className="blogHeader">
-        <div className="blogBadges">
-          <span>
-            {category}
-          </span>
-
-          <span>
-            ⏱ {minutes} dk
-          </span>
-        </div>
-
-        <h1>
-          {post.title}
-        </h1>
-
-        {post.excerpt ? (
-          <p className="blogExcerpt">
-            {post.excerpt}
-          </p>
-        ) : null}
-      </div>
-
-      {headings.length > 0 ? (
-        <nav
-          className="blogToc"
-          aria-label="İçindekiler"
-        >
-          <div className="blogTocTitle">
-            İçindekiler
-          </div>
-
-          {headings.map(
-            (heading, index) => (
-              <a
-                key={`${heading}-${index}`}
-                href={`#${headingId(
-                  heading,
-                )}`}
-              >
-                {heading}
-              </a>
-            ),
-          )}
-        </nav>
-      ) : null}
-
-      <article className="blogContentArea">
-        {renderContent(
-          post.content,
-        )}
-      </article>
-
-      <div className="blogCtaInline">
-        <div>
-          <strong>
-            Diş tedavisi için teklif
-            almak ister misin?
-          </strong>
-
-          <div>
-            KVKK onaylı formu
-            doldur, klinikler seni
-            arasın.
-          </div>
-        </div>
-
-        <Link
-          href="/teklif-al"
-          className="blogPrimaryBtn"
-        >
-          Teklif Al →
-        </Link>
-      </div>
-
-      {clinic &&
-      clinicHref ? (
-        <div className="blogClinicBox">
-          <div>
-            Bu yazı{" "}
-            <strong>
-              {clinic.name}
-            </strong>{" "}
-            tarafından yayınlandı.
-          </div>
-
-          <Link
-            href={clinicHref}
+          <div
+            className={
+              styles.breadcrumb
+            }
           >
-            Klinik Profili →
-          </Link>
-        </div>
-      ) : null}
+            <Link href="/">
+              Ana Sayfa
+            </Link>
 
-      <div className="blogFaq">
-        <h2>
-          Sık Sorulan Sorular
-        </h2>
+            <span>
+              /
+            </span>
 
-        {faqItems.map(
-          (item) => (
-            <details
-              key={item.q}
+            <Link href="/blog">
+              Blog
+            </Link>
+          </div>
+
+          <div
+            className={
+              styles.actions
+            }
+          >
+            <Link
+              href="/blog"
+              className={
+                styles.backBtn
+              }
             >
-              <summary>
-                {item.q}
-              </summary>
+              ← Blog
+            </Link>
 
-              <p>
-                {item.a}
-              </p>
-            </details>
-          ),
-        )}
+            <Link
+              href="/teklif-al"
+              className={`${styles.btn} ${styles.btnPrimary}`}
+            >
+              Teklif Al →
+            </Link>
+          </div>
+        </div>
+
+        <section
+          className={
+            styles.shell
+          }
+        >
+          <div
+            className={
+              styles.inner
+            }
+          >
+            <div>
+              <div
+                className={
+                  styles.headerCard
+                }
+              >
+                <div
+                  className={
+                    styles.kickers
+                  }
+                >
+                  <span
+                    className={`${styles.badge} ${styles.badgeBlog}`}
+                  >
+                    📝 Blog
+                  </span>
+
+                  <span
+                    className={
+                      styles.badge
+                    }
+                  >
+                    {category}
+                  </span>
+
+                  <span
+                    className={
+                      styles.badge
+                    }
+                  >
+                    ⏱️ {minutes} dk
+                  </span>
+                </div>
+
+                <h1
+                  className={
+                    styles.h1
+                  }
+                >
+                  {post.title}
+                </h1>
+
+                <div
+                  className={
+                    styles.metaLine
+                  }
+                >
+                  {publishedDate ? (
+                    <>
+                      <span>
+                        📅 {publishedDate}
+                      </span>
+
+                      <span
+                        className={
+                          styles.dot
+                        }
+                      />
+                    </>
+                  ) : null}
+
+                  <span>
+                    Bilgilendirici içerik
+                  </span>
+                </div>
+
+                {post.excerpt ? (
+                  <div
+                    className={
+                      styles.excerptCard
+                    }
+                  >
+                    {post.excerpt}
+                  </div>
+                ) : null}
+
+                {clinic &&
+                clinicHref ? (
+                  <div
+                    className={
+                      styles.publisherCard
+                    }
+                  >
+                    <div
+                      className={
+                        styles.publisherTitle
+                      }
+                    >
+                      🏥 {clinic.name}
+                    </div>
+
+                    <div
+                      className={
+                        styles.publisherSub
+                      }
+                    >
+                      Bu içerik platformdaki
+                      klinik profiliyle
+                      ilişkilendirilmiştir.
+                    </div>
+
+                    <div
+                      className={
+                        styles.publisherBtns
+                      }
+                    >
+                      <Link
+                        href={
+                          clinicHref
+                        }
+                        className={
+                          styles.btn
+                        }
+                      >
+                        Klinik Profili →
+                      </Link>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {headings.length >
+              0 ? (
+                <div
+                  className={
+                    styles.articleCard
+                  }
+                  style={{
+                    marginTop:
+                      12,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight:
+                        950,
+                      marginBottom:
+                        8,
+                    }}
+                  >
+                    İçindekiler
+                  </div>
+
+                  <div
+                    style={{
+                      display:
+                        "grid",
+                      gap: 6,
+                    }}
+                  >
+                    {headings.map(
+                      (
+                        heading,
+                        index,
+                      ) => (
+                        <a
+                          key={`${heading}-${index}`}
+                          href={`#${headingId(
+                            heading,
+                          )}`}
+                          className={
+                            styles.blogLink
+                          }
+                        >
+                          {heading}
+                        </a>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              <article
+                className={
+                  styles.articleCard
+                }
+              >
+                <div
+                  className={
+                    styles.article
+                  }
+                >
+                  {renderContent(
+                    post.content,
+                  )}
+                </div>
+              </article>
+
+              <div
+                className={
+                  styles.note
+                }
+              >
+                Bu içerik bilgilendirme
+                amaçlıdır; tıbbi teşhis
+                veya tedavi tavsiyesi
+                değildir. Kesin fiyat
+                muayene sonrası ilgili
+                klinik tarafından
+                belirlenir.
+              </div>
+            </div>
+
+            <aside
+              className={
+                styles.sidebar
+              }
+            >
+              <div
+                className={
+                  styles.sideCard
+                }
+              >
+                <div
+                  className={
+                    styles.sideTitle
+                  }
+                >
+                  Teklif almak ister
+                  misin?
+                </div>
+
+                <div
+                  className={
+                    styles.sideDesc
+                  }
+                >
+                  Şehir ve hizmetini
+                  seçerek KVKK onaylı
+                  form ile uygun
+                  kliniklerden teklif
+                  isteyebilirsin.
+                </div>
+
+                <div
+                  className={
+                    styles.ctaCol
+                  }
+                >
+                  <Link
+                    href="/teklif-al"
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                  >
+                    Ücretsiz Teklif Al →
+                  </Link>
+
+                  <Link
+                    href="/sehir"
+                    className={
+                      styles.btn
+                    }
+                  >
+                    Şehirleri Gör
+                  </Link>
+
+                  <Link
+                    href="/hizmetler"
+                    className={
+                      styles.btn
+                    }
+                  >
+                    Hizmetleri Gör
+                  </Link>
+                </div>
+              </div>
+
+              <div
+                className={
+                  styles.sideCard
+                }
+              >
+                <div
+                  className={
+                    styles.sideTitle
+                  }
+                >
+                  Sık Sorulan Sorular
+                </div>
+
+                <div
+                  className={
+                    styles.sideDesc
+                  }
+                >
+                  {faqItems.map(
+                    (item) => (
+                      <details
+                        key={
+                          item.q
+                        }
+                        style={{
+                          marginBottom:
+                            10,
+                        }}
+                      >
+                        <summary
+                          style={{
+                            cursor:
+                              "pointer",
+                            fontWeight:
+                              900,
+                          }}
+                        >
+                          {item.q}
+                        </summary>
+
+                        <div
+                          style={{
+                            marginTop:
+                              6,
+                          }}
+                        >
+                          {item.a}
+                        </div>
+                      </details>
+                    ),
+                  )}
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
       </div>
     </main>
   );
