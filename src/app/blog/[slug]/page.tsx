@@ -87,51 +87,35 @@ function detectCategory(
       "tr-TR",
     );
 
-  if (
-    text.includes("implant")
-  ) {
+  if (text.includes("implant")) {
     return "İmplant";
   }
 
-  if (
-    text.includes("kanal")
-  ) {
+  if (text.includes("kanal")) {
     return "Kanal";
   }
 
-  if (
-    text.includes("dolgu")
-  ) {
+  if (text.includes("dolgu")) {
     return "Dolgu";
   }
 
-  if (
-    text.includes("zirkonyum")
-  ) {
+  if (text.includes("zirkonyum")) {
     return "Zirkonyum";
   }
 
-  if (
-    text.includes("lamina")
-  ) {
+  if (text.includes("lamina")) {
     return "Lamina";
   }
 
-  if (
-    text.includes("ortodont")
-  ) {
+  if (text.includes("ortodont")) {
     return "Ortodonti";
   }
 
-  if (
-    text.includes("beyazlat")
-  ) {
+  if (text.includes("beyazlat")) {
     return "Beyazlatma";
   }
 
-  if (
-    text.includes("protez")
-  ) {
+  if (text.includes("protez")) {
     return "Protez";
   }
 
@@ -148,38 +132,26 @@ function detectCategory(
 function headingId(
   text: string,
 ): string {
-  return (
-    normalizeSlug(text) ||
-    "bolum"
-  );
-}
-
-function extractHeadings(
-  content: string,
-): string[] {
-  return content
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(
-      (line) =>
-        line.startsWith("## ") ||
-        line.startsWith("### "),
-    )
-    .map((line) =>
-      line
-        .replace(/^#{2,3}\s+/, "")
-        .trim(),
-    )
-    .filter(Boolean);
+  return normalizeSlug(text) || "bolum";
 }
 
 /*
- * Desteklenen satır içi biçimler:
+ * BLOG İÇİ BİÇİMLENDİRME
  *
- * [metin](/adres)
- * [metin](https://...)
+ * Bundan sonra kullanabileceğin:
+ *
+ * {implant yazımıza}(/blog/ornek)
+ * {Adana hizmet sayfası}(/sehir/adana)
+ * {Kaynak}(https://ornek.com)
+ *
+ * Ayrıca:
  * **kalın**
  * *italik*
+ *
+ * Eski bloglar bozulmasın diye şu eski format da
+ * çalışmaya devam eder:
+ *
+ * [metin](/adres)
  */
 function renderInline(
   text: string,
@@ -189,20 +161,16 @@ function renderInline(
   > = [];
 
   const pattern =
-    /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+    /\{([^{}]+)\}\((\/[^)\s]+|https?:\/\/[^)\s]+)\)|\[([^\]]+)\]\((\/[^)\s]+|https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
 
   while (
-    (match =
-      pattern.exec(text)) !== null
+    (match = pattern.exec(text)) !== null
   ) {
-    if (
-      match.index >
-      lastIndex
-    ) {
+    if (match.index > lastIndex) {
       parts.push(
         text.slice(
           lastIndex,
@@ -211,24 +179,25 @@ function renderInline(
       );
     }
 
-    /*
-     * Markdown link
-     */
+    const linkLabel =
+      match[1] ??
+      match[3];
+
+    const linkUrl =
+      match[2] ??
+      match[4];
+
     if (
-      match[1] !==
-        undefined &&
-      match[2] !==
-        undefined
+      linkLabel !== undefined &&
+      linkUrl !== undefined
     ) {
       const label =
-        match[1];
+        linkLabel.trim();
 
       const url =
-        match[2];
+        linkUrl.trim();
 
-      if (
-        url.startsWith("/")
-      ) {
+      if (url.startsWith("/")) {
         parts.push(
           <Link
             key={`link-${key}`}
@@ -257,38 +226,26 @@ function renderInline(
       }
 
       key += 1;
-    }
-
-    /*
-     * **kalın**
-     */
-    else if (
-      match[3] !==
-      undefined
+    } else if (
+      match[5] !== undefined
     ) {
       parts.push(
         <strong
           key={`bold-${key}`}
         >
-          {match[3]}
+          {match[5]}
         </strong>,
       );
 
       key += 1;
-    }
-
-    /*
-     * *italik*
-     */
-    else if (
-      match[4] !==
-      undefined
+    } else if (
+      match[6] !== undefined
     ) {
       parts.push(
         <em
           key={`italic-${key}`}
         >
-          {match[4]}
+          {match[6]}
         </em>,
       );
 
@@ -304,9 +261,7 @@ function renderInline(
     text.length
   ) {
     parts.push(
-      text.slice(
-        lastIndex,
-      ),
+      text.slice(lastIndex),
     );
   }
 
@@ -335,8 +290,7 @@ function renderContent(
     }
 
     const firstLine =
-      listBuffer[0]?.line ??
-      0;
+      listBuffer[0]?.line ?? 0;
 
     elements.push(
       <ul
@@ -394,13 +348,9 @@ function renderContent(
         elements.push(
           <h2
             key={`h2-${index}`}
-            id={headingId(
-              text,
-            )}
+            id={headingId(text)}
           >
-            {renderInline(
-              text,
-            )}
+            {renderInline(text)}
           </h2>,
         );
 
@@ -432,13 +382,9 @@ function renderContent(
         elements.push(
           <h2
             key={`h2-${index}`}
-            id={headingId(
-              text,
-            )}
+            id={headingId(text)}
           >
-            {renderInline(
-              text,
-            )}
+            {renderInline(text)}
           </h2>,
         );
 
@@ -520,9 +466,7 @@ export async function generateMetadata({
     await params;
 
   const post =
-    await getBlogPost(
-      slug,
-    );
+    await getBlogPost(slug);
 
   if (
     !post ||
@@ -573,9 +517,7 @@ export default async function BlogDetail({
     await params;
 
   const post =
-    await getBlogPost(
-      slug,
-    );
+    await getBlogPost(slug);
 
   if (
     !post ||
@@ -607,11 +549,6 @@ export default async function BlogDetail({
   const category =
     detectCategory(
       post.title,
-      post.content,
-    );
-
-  const headings =
-    extractHeadings(
       post.content,
     );
 
@@ -916,57 +853,6 @@ export default async function BlogDetail({
                   </div>
                 ) : null}
               </div>
-
-              {headings.length >
-              0 ? (
-                <div
-                  className={
-                    styles.articleCard
-                  }
-                  style={{
-                    marginTop:
-                      12,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight:
-                        950,
-                      marginBottom:
-                        8,
-                    }}
-                  >
-                    İçindekiler
-                  </div>
-
-                  <div
-                    style={{
-                      display:
-                        "grid",
-                      gap: 6,
-                    }}
-                  >
-                    {headings.map(
-                      (
-                        heading,
-                        index,
-                      ) => (
-                        <a
-                          key={`${heading}-${index}`}
-                          href={`#${headingId(
-                            heading,
-                          )}`}
-                          className={
-                            styles.blogLink
-                          }
-                        >
-                          {heading}
-                        </a>
-                      ),
-                    )}
-                  </div>
-                </div>
-              ) : null}
 
               <article
                 className={
