@@ -1,8 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
-type ClinicMini = { id: string; name: string; email: string; isActive: boolean };
+type ClinicMini = {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+};
 
 type SubRow = {
   id: string;
@@ -12,11 +20,54 @@ type SubRow = {
   quotaUsed: number;
   startedAt: Date;
   expiresAt: Date;
-  clinic: { name: string; email: string };
+
+  clinic: {
+    name: string;
+    email: string;
+  };
 };
 
+type FilterMode =
+  | "all"
+  | "active"
+  | "expired";
+
 function jsonHeaders(): HeadersInit {
-  return { "Content-Type": "application/json" };
+  return {
+    "Content-Type":
+      "application/json",
+  };
+}
+
+function formatDate(
+  value: Date
+): string {
+  return new Intl.DateTimeFormat(
+    "tr-TR",
+    {
+      dateStyle: "short",
+    }
+  ).format(
+    new Date(value)
+  );
+}
+
+function statusClass(
+  status: string
+): string {
+  if (
+    status === "active"
+  ) {
+    return "adminBadge adminBadgeSuccess";
+  }
+
+  if (
+    status === "expired"
+  ) {
+    return "adminBadge adminBadgeDanger";
+  }
+
+  return "adminBadge adminBadgeNeutral";
 }
 
 export default function AdminSubscriptionsClient({
@@ -26,141 +77,784 @@ export default function AdminSubscriptionsClient({
   initialClinics: ClinicMini[];
   initialSubs: SubRow[];
 }): JSX.Element {
-  const clinics = useMemo(() => initialClinics.filter((c) => c.isActive), [initialClinics]);
-  const [subs, setSubs] = useState<SubRow[]>(initialSubs);
+  const clinics =
+    useMemo(
+      () =>
+        initialClinics.filter(
+          (clinic) =>
+            clinic.isActive
+        ),
+      [initialClinics]
+    );
 
-  const [clinicId, setClinicId] = useState(clinics[0]?.id ?? "");
-  const [quotaAdd, setQuotaAdd] = useState(10);
-  const [days, setDays] = useState(30);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [
+    subs,
+    setSubs,
+  ] =
+    useState<SubRow[]>(
+      initialSubs
+    );
+
+  const [
+    clinicId,
+    setClinicId,
+  ] =
+    useState<string>(
+      clinics[0]?.id ?? ""
+    );
+
+  const [
+    quotaAdd,
+    setQuotaAdd,
+  ] =
+    useState<number>(10);
+
+  const [
+    days,
+    setDays,
+  ] =
+    useState<number>(30);
+
+  const [
+    search,
+    setSearch,
+  ] =
+    useState<string>("");
+
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<FilterMode>(
+      "all"
+    );
+
+  const [
+    err,
+    setErr,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState<boolean>(
+      false
+    );
+
+  const filteredSubs =
+    useMemo(() => {
+      const q =
+        search
+          .trim()
+          .toLocaleLowerCase(
+            "tr-TR"
+          );
+
+      return subs.filter(
+        (sub) => {
+          if (
+            filter ===
+              "active" &&
+            sub.status !==
+              "active"
+          ) {
+            return false;
+          }
+
+          if (
+            filter ===
+              "expired" &&
+            sub.status !==
+              "expired"
+          ) {
+            return false;
+          }
+
+          if (!q) {
+            return true;
+          }
+
+          const haystack = [
+            sub.clinic.name,
+            sub.clinic.email,
+            sub.status,
+            sub.id,
+            sub.clinicId,
+          ]
+            .join(" ")
+            .toLocaleLowerCase(
+              "tr-TR"
+            );
+
+          return haystack.includes(
+            q
+          );
+        }
+      );
+    }, [
+      subs,
+      search,
+      filter,
+    ]);
 
   async function refresh(): Promise<void> {
-    const r = await fetch("/api/admin/subscriptions", { cache: "no-store" });
-    const j: { ok: boolean; subscriptions?: SubRow[]; code?: string } = (await r.json()) as {
-      ok: boolean;
-      subscriptions?: SubRow[];
-      code?: string;
-    };
+    const response =
+      await fetch(
+        "/api/admin/subscriptions",
+        {
+          cache:
+            "no-store",
+        }
+      );
 
-    if (!r.ok || !j.ok) {
-      setErr(j.code ?? `REFRESH_FAILED_HTTP_${r.status}`);
+    const json =
+      (await response.json()) as {
+        ok: boolean;
+        subscriptions?: SubRow[];
+        code?: string;
+      };
+
+    if (
+      !response.ok ||
+      !json.ok
+    ) {
+      setErr(
+        json.code ??
+          `REFRESH_FAILED_HTTP_${response.status}`
+      );
+
       return;
     }
 
-    if (j.subscriptions) setSubs(j.subscriptions);
+    if (
+      json.subscriptions
+    ) {
+      setSubs(
+        json.subscriptions
+      );
+    }
   }
 
   async function grant(): Promise<void> {
+    if (
+      loading ||
+      !clinicId ||
+      quotaAdd < 1 ||
+      days < 1
+    ) {
+      return;
+    }
+
     setErr(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
-      const r = await fetch("/api/admin/subscriptions", {
-        method: "POST",
-        headers: jsonHeaders(),
-        body: JSON.stringify({ clinicId, quotaAdd, days }),
-      });
+      const response =
+        await fetch(
+          "/api/admin/subscriptions",
+          {
+            method: "POST",
+            headers:
+              jsonHeaders(),
 
-      const j: { ok: boolean; code?: string } = (await r.json()) as { ok: boolean; code?: string };
+            body:
+              JSON.stringify({
+                clinicId,
+                quotaAdd,
+                days,
+              }),
+          }
+        );
 
-      if (!r.ok || !j.ok) {
-        setErr(j.code ?? `GRANT_FAILED_HTTP_${r.status}`);
+      const json =
+        (await response.json()) as {
+          ok: boolean;
+          code?: string;
+        };
+
+      if (
+        !response.ok ||
+        !json.ok
+      ) {
+        setErr(
+          json.code ??
+            `GRANT_FAILED_HTTP_${response.status}`
+        );
+
         return;
       }
 
+      setSuccess(
+        "Kota başarıyla tanımlandı."
+      );
+
       await refresh();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "NETWORK_ERROR");
+    } catch (error) {
+      setErr(
+        error instanceof Error
+          ? error.message
+          : "NETWORK_ERROR"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ display: "grid", gap: 14 }}>
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Kota Yükle (Manuel)</div>
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>
+              Manuel Kota Tanımla
+            </h2>
 
-        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          <select value={clinicId} onChange={(e) => setClinicId(e.target.value)} style={inp()}>
-            {clinics.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.email})
-              </option>
-            ))}
-          </select>
+            <p>
+              Bir kliniğe belirli süre
+              için yeni kota ekle.
+            </p>
+          </div>
 
+          <span className="adminBadge adminBadgeInfo">
+            Admin İşlemi
+          </span>
+        </div>
+
+        <div className="adminCardBody">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(240px,1.6fr) repeat(2,minmax(150px,.7fr))",
+              gap: 10,
+            }}
+          >
+            <Field label="Klinik">
+              <select
+                className="adminSelect"
+                value={clinicId}
+                onChange={(
+                  event
+                ) =>
+                  setClinicId(
+                    event.target
+                      .value
+                  )
+                }
+              >
+                {clinics.length ===
+                0 ? (
+                  <option value="">
+                    Aktif klinik yok
+                  </option>
+                ) : (
+                  clinics.map(
+                    (clinic) => (
+                      <option
+                        key={
+                          clinic.id
+                        }
+                        value={
+                          clinic.id
+                        }
+                      >
+                        {
+                          clinic.name
+                        }{" "}
+                        (
+                        {
+                          clinic.email
+                        }
+                        )
+                      </option>
+                    )
+                  )
+                )}
+              </select>
+            </Field>
+
+            <Field label="Kota">
+              <input
+                type="number"
+                min={1}
+                className="adminInput"
+                value={quotaAdd}
+                onChange={(
+                  event
+                ) =>
+                  setQuotaAdd(
+                    Number(
+                      event
+                        .target
+                        .value
+                    )
+                  )
+                }
+              />
+            </Field>
+
+            <Field label="Süre (gün)">
+              <input
+                type="number"
+                min={1}
+                className="adminInput"
+                value={days}
+                onChange={(
+                  event
+                ) =>
+                  setDays(
+                    Number(
+                      event
+                        .target
+                        .value
+                    )
+                  )
+                }
+              />
+            </Field>
+          </div>
+
+          {err ? (
+            <Message
+              tone="error"
+              text={`Hata: ${err}`}
+            />
+          ) : null}
+
+          {success ? (
+            <Message
+              tone="success"
+              text={success}
+            />
+          ) : null}
+
+          <div
+            style={{
+              marginTop: 14,
+              display: "flex",
+              justifyContent:
+                "space-between",
+              gap: 12,
+              alignItems:
+                "center",
+              flexWrap:
+                "wrap",
+            }}
+          >
+            <span
+              style={{
+                color: "#98a2b3",
+                fontSize: 9,
+                lineHeight: 1.6,
+              }}
+            >
+              Bu işlem mevcut admin
+              subscription API akışını
+              kullanır.
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                void grant()
+              }
+              disabled={
+                loading ||
+                !clinicId ||
+                quotaAdd < 1 ||
+                days < 1
+              }
+              className="adminButton adminButtonPrimary"
+            >
+              {loading
+                ? "Tanımlanıyor..."
+                : "Kota Tanımla →"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>
+              Abonelik Kayıtları
+            </h2>
+
+            <p>
+              Son abonelik ve kota
+              hareketlerini takip et.
+            </p>
+          </div>
+
+          <span className="adminBadge adminBadgeNeutral">
+            {filteredSubs.length} kayıt
+          </span>
+        </div>
+
+        <div
+          style={{
+            padding: "13px 16px",
+            display: "flex",
+            gap: 10,
+            flexWrap:
+              "wrap",
+            borderBottom:
+              "1px solid #e7eaf0",
+            background:
+              "#fafbfc",
+          }}
+        >
           <input
-            type="number"
-            value={quotaAdd}
-            onChange={(e) => setQuotaAdd(Number(e.target.value))}
-            style={inp()}
-            min={1}
+            className="adminInput"
+            value={search}
+            onChange={(
+              event
+            ) =>
+              setSearch(
+                event.target
+                  .value
+              )
+            }
+            placeholder="Klinik, e-posta, durum veya ID ara..."
+            style={{
+              flex:
+                "1 1 300px",
+            }}
           />
 
-          <input type="number" value={days} onChange={(e) => setDays(Number(e.target.value))} style={inp()} min={1} />
+          <select
+            className="adminSelect"
+            value={filter}
+            onChange={(
+              event
+            ) =>
+              setFilter(
+                event.target
+                  .value as FilterMode
+              )
+            }
+            style={{
+              width: 160,
+            }}
+          >
+            <option value="all">
+              Tüm Kayıtlar
+            </option>
+
+            <option value="active">
+              Aktif
+            </option>
+
+            <option value="expired">
+              Süresi Dolmuş
+            </option>
+          </select>
+
+          <button
+            type="button"
+            className="adminButton adminButtonSecondary"
+            onClick={() =>
+              void refresh()
+            }
+          >
+            Yenile
+          </button>
         </div>
 
-        {err && <div style={{ color: "crimson", marginTop: 8, fontWeight: 800 }}>Hata: {err}</div>}
+        {filteredSubs.length ===
+        0 ? (
+          <div className="adminEmptyState">
+            <strong>
+              Abonelik bulunamadı
+            </strong>
 
-        <button
-          onClick={grant}
-          disabled={loading || !clinicId || quotaAdd < 1 || days < 1}
-          style={btnPrimary()}
-        >
-          {loading ? "Yükleniyor..." : "Kota Yükle"}
-        </button>
-      </div>
+            <p>
+              Filtreye uygun abonelik
+              kaydı bulunmuyor.
+            </p>
+          </div>
+        ) : (
+          <div className="adminTableScroll">
+            <table
+              className="adminTable"
+              style={{
+                minWidth: 1000,
+              }}
+            >
+              <thead>
+                <tr>
+                  <th>Klinik</th>
+                  <th>Durum</th>
+                  <th>Kullanılan</th>
+                  <th>Toplam</th>
+                  <th>Kalan</th>
+                  <th>Kullanım</th>
+                  <th>Başlangıç</th>
+                  <th>Bitiş</th>
+                </tr>
+              </thead>
 
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Son Abonelikler</div>
+              <tbody>
+                {filteredSubs.map(
+                  (sub) => {
+                    const remaining =
+                      Math.max(
+                        0,
+                        sub.quotaTotal -
+                          sub.quotaUsed
+                      );
 
-        <div style={{ display: "grid", gap: 10 }}>
-          {subs.map((s) => {
-            const remaining = Math.max(0, s.quotaTotal - s.quotaUsed);
-            return (
-              <div key={s.id} style={{ border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                  <div style={{ fontWeight: 900 }}>
-                    {s.clinic.name} <span style={{ opacity: 0.7 }}>({s.clinic.email})</span>
-                  </div>
-                  <div style={{ opacity: 0.7 }}>
-                    {new Date(s.startedAt).toLocaleDateString("tr-TR")} →{" "}
-                    {new Date(s.expiresAt).toLocaleDateString("tr-TR")}
-                  </div>
-                </div>
+                    const percent =
+                      sub.quotaTotal >
+                      0
+                        ? Math.min(
+                            100,
+                            Math.round(
+                              (sub.quotaUsed /
+                                sub.quotaTotal) *
+                                100
+                            )
+                          )
+                        : 0;
 
-                <div style={{ marginTop: 6 }}>
-                  <strong>Durum:</strong> {s.status} &nbsp; | &nbsp;
-                  <strong>Kullanılan:</strong> {s.quotaUsed} &nbsp; | &nbsp;
-                  <strong>Toplam:</strong> {s.quotaTotal} &nbsp; | &nbsp;
-                  <strong>Kalan:</strong> {remaining}
-                </div>
+                    return (
+                      <tr
+                        key={
+                          sub.id
+                        }
+                      >
+                        <td>
+                          <div
+                            style={{
+                              color:
+                                "#101828",
+                              fontWeight:
+                                800,
+                            }}
+                          >
+                            {
+                              sub.clinic
+                                .name
+                            }
+                          </div>
 
-                <div style={{ marginTop: 8, opacity: 0.65, fontSize: 12 }}>ID: {s.id}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                          <div
+                            style={{
+                              marginTop:
+                                3,
+                              color:
+                                "#98a2b3",
+                              fontSize:
+                                8,
+                            }}
+                          >
+                            {
+                              sub.clinic
+                                .email
+                            }
+                          </div>
+                        </td>
+
+                        <td>
+                          <span
+                            className={statusClass(
+                              sub.status
+                            )}
+                          >
+                            {
+                              sub.status
+                            }
+                          </span>
+                        </td>
+
+                        <td>
+                          <strong>
+                            {
+                              sub.quotaUsed
+                            }
+                          </strong>
+                        </td>
+
+                        <td>
+                          {
+                            sub.quotaTotal
+                          }
+                        </td>
+
+                        <td>
+                          <span
+                            className={
+                              remaining >
+                              0
+                                ? "adminBadge adminBadgeSuccess"
+                                : "adminBadge adminBadgeDanger"
+                            }
+                          >
+                            {
+                              remaining
+                            }
+                          </span>
+                        </td>
+
+                        <td>
+                          <div
+                            style={{
+                              minWidth:
+                                130,
+                            }}
+                          >
+                            <div
+                              style={{
+                                height: 6,
+                                overflow:
+                                  "hidden",
+                                borderRadius:
+                                  999,
+                                background:
+                                  "#f2f4f7",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: `${percent}%`,
+                                  height:
+                                    "100%",
+                                  borderRadius:
+                                    999,
+                                  background:
+                                    percent >=
+                                    90
+                                      ? "#f04438"
+                                      : percent >=
+                                          65
+                                        ? "#f79009"
+                                        : "#12b76a",
+                                }}
+                              />
+                            </div>
+
+                            <div
+                              style={{
+                                marginTop:
+                                  4,
+                                color:
+                                  "#98a2b3",
+                                fontSize:
+                                  8,
+                              }}
+                            >
+                              {
+                                percent
+                              }
+                              %
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          {formatDate(
+                            sub.startedAt
+                          )}
+                        </td>
+
+                        <td>
+                          {formatDate(
+                            sub.expiresAt
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-function inp(): React.CSSProperties {
-  return { padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd" };
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <label
+      style={{
+        display: "grid",
+        gap: 6,
+      }}
+    >
+      <span
+        style={{
+          color: "#475467",
+          fontSize: 9,
+          fontWeight: 750,
+        }}
+      >
+        {label}
+      </span>
+
+      {children}
+    </label>
+  );
 }
 
-function btnPrimary(): React.CSSProperties {
-  return {
-    marginTop: 10,
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #111",
-    background: "#111",
-    color: "#fff",
-    fontWeight: 900,
-    opacity: 1,
-  };
+function Message({
+  tone,
+  text,
+}: {
+  tone:
+    | "success"
+    | "error";
+  text: string;
+}): JSX.Element {
+  const success =
+    tone === "success";
+
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        padding: 11,
+        border: success
+          ? "1px solid #abefc6"
+          : "1px solid #fecdca",
+        borderRadius: 11,
+        background: success
+          ? "#ecfdf3"
+          : "#fef3f2",
+        color: success
+          ? "#067647"
+          : "#b42318",
+        fontSize: 10,
+        fontWeight: 750,
+      }}
+    >
+      {text}
+    </div>
+  );
 }

@@ -1,171 +1,460 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/admin-guard";
-import { prisma } from "@/lib/db";
 import React from "react";
 
-export const dynamic = "force-dynamic";
+import { requireAdmin } from "@/lib/admin-guard";
+import { prisma } from "@/lib/db";
+
+export const dynamic =
+  "force-dynamic";
+
+function formatDate(
+  value: Date | null
+): string {
+  if (!value) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    "tr-TR",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    }
+  ).format(value);
+}
 
 export default async function AdminBlogListPage(): Promise<React.ReactElement> {
   await requireAdmin();
 
-  const posts = await prisma.blogPost.findMany({
-    orderBy: [{ isPublished: "desc" }, { publishedAt: "desc" }, { updatedAt: "desc" }],
-    take: 300,
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      isPublished: true,
-      publishedAt: true,
-      updatedAt: true,
-    },
-  });
+  const posts =
+    await prisma.blogPost.findMany({
+      orderBy: [
+        {
+          isPublished:
+            "desc",
+        },
+        {
+          publishedAt:
+            "desc",
+        },
+        {
+          updatedAt:
+            "desc",
+        },
+      ],
+
+      take: 300,
+
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        isPublished: true,
+        publishedAt: true,
+        updatedAt: true,
+
+        clinic: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+  const publishedCount =
+    posts.filter(
+      (post) =>
+        post.isPublished
+    ).length;
+
+  const draftCount =
+    posts.length -
+    publishedCount;
+
+  const clinicPostCount =
+    posts.filter(
+      (post) =>
+        Boolean(
+          post.clinic
+        )
+    ).length;
 
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ opacity: 0.7, fontWeight: 900 }}>Admin / Blog</div>
-          <h1 style={{ fontSize: 26, fontWeight: 950, margin: "6px 0 0 0" }}>Blog Yönetimi</h1>
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <section className="adminStatsGrid">
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Toplam Yazı
+          </div>
+
+          <div className="adminStatValue">
+            {posts.length}
+          </div>
+
+          <div className="adminStatMeta">
+            Sistemdeki blog yazıları
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <Link
-            href="/admin/blog/new"
-            style={{
-              textDecoration: "none",
-              fontWeight: 950,
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid #111",
-              background: "#111",
-              color: "#fff",
-            }}
-          >
-            Yeni Yazı →
-          </Link>
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Yayında
+          </div>
 
-          <Link
-            href="/blog"
-            style={{
-              textDecoration: "none",
-              fontWeight: 950,
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid #ddd",
-              background: "#fff",
-              color: "#111",
-            }}
-          >
-            Blog’u Gör →
-          </Link>
+          <div className="adminStatValue">
+            {publishedCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Ziyaretçiye açık yazılar
+          </div>
         </div>
-      </div>
 
-      <div
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Taslak
+          </div>
+
+          <div className="adminStatValue">
+            {draftCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Henüz yayınlanmamış
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Klinik Yazısı
+          </div>
+
+          <div className="adminStatValue">
+            {clinicPostCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Kliniğe bağlı içerikler
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="adminCard"
         style={{
-          marginTop: 14,
-          border: "1px solid rgba(15,23,42,0.10)",
-          background: "rgba(255,255,255,0.72)",
-          borderRadius: 22,
-          padding: 14,
-          boxShadow: "0 10px 22px rgba(15,23,42,0.05)",
+          overflow: "hidden",
+          border: 0,
+          color: "white",
+          background:
+            "linear-gradient(135deg,#101828,#18233d 62%,#4338ca 150%)",
         }}
       >
-        <div style={{ fontWeight: 950, marginBottom: 10 }}>
-          Toplam: <span style={{ opacity: 0.75 }}>{posts.length}</span>
+        <div
+          style={{
+            padding: 24,
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems:
+              "center",
+            gap: 20,
+            flexWrap:
+              "wrap",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color:
+                  "rgba(255,255,255,.45)",
+                fontSize: 9,
+                fontWeight: 750,
+              }}
+            >
+              İÇERİK MERKEZİ
+            </div>
+
+            <h2
+              style={{
+                margin:
+                  "7px 0 0",
+                fontSize: 24,
+                letterSpacing:
+                  "-.04em",
+              }}
+            >
+              Blog içeriklerini yönet.
+            </h2>
+
+            <p
+              style={{
+                maxWidth: 570,
+                margin:
+                  "8px 0 0",
+                color:
+                  "rgba(255,255,255,.55)",
+                fontSize: 10,
+                lineHeight: 1.7,
+              }}
+            >
+              Yeni SEO içerikleri oluştur,
+              mevcut yazıları düzenle ve
+              yayın durumlarını takip et.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 9,
+              flexWrap:
+                "wrap",
+            }}
+          >
+            <Link
+              href="/admin/blog/new"
+              className="adminButton"
+              style={{
+                background:
+                  "white",
+                color:
+                  "#101828",
+              }}
+            >
+              + Yeni Yazı
+            </Link>
+
+            <Link
+              href="/blog"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="adminButton"
+              style={{
+                border:
+                  "1px solid rgba(255,255,255,.14)",
+                background:
+                  "rgba(255,255,255,.06)",
+                color: "white",
+              }}
+            >
+              Blogu Gör ↗
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>
+              Blog Yazıları
+            </h2>
+
+            <p>
+              Son 300 içerik kaydı.
+            </p>
+          </div>
+
+          <span className="adminBadge adminBadgeNeutral">
+            {posts.length} kayıt
+          </span>
         </div>
 
         {posts.length === 0 ? (
-          <div style={{ opacity: 0.75, fontWeight: 800 }}>Henüz blog yazısı yok.</div>
+          <div className="adminEmptyState">
+            <strong>
+              Henüz blog yazısı yok
+            </strong>
+
+            <p>
+              İlk içeriğini oluşturmak
+              için Yeni Yazı butonunu
+              kullan.
+            </p>
+          </div>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
-            {posts.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  border: "1px solid rgba(15,23,42,0.10)",
-                  background: "rgba(255,255,255,0.82)",
-                  borderRadius: 18,
-                  padding: 14,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ minWidth: 260 }}>
-                  <div style={{ fontWeight: 950 }}>{p.title}</div>
-                  <div style={{ opacity: 0.7, fontWeight: 800, marginTop: 4 }}>
-                    /blog/{p.slug}
-                  </div>
+          <div className="adminTableScroll">
+            <table
+              className="adminTable"
+              style={{
+                minWidth: 1050,
+              }}
+            >
+              <thead>
+                <tr>
+                  <th>Yazı</th>
+                  <th>Slug</th>
+                  <th>Yayın Durumu</th>
+                  <th>Yayın Tarihi</th>
+                  <th>Güncelleme</th>
+                  <th>Yazar / Klinik</th>
+                  <th>İşlem</th>
+                </tr>
+              </thead>
 
-                  <div style={{ marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <span
-                      style={{
-                        borderRadius: 999,
-                        padding: "6px 10px",
-                        fontWeight: 900,
-                        fontSize: 12,
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: p.isPublished ? "rgba(16,185,129,0.10)" : "rgba(244,63,94,0.10)",
-                      }}
+              <tbody>
+                {posts.map(
+                  (post) => (
+                    <tr
+                      key={post.id}
                     >
-                      {p.isPublished ? "Yayında" : "Taslak"}
-                    </span>
+                      <td>
+                        <div
+                          style={{
+                            maxWidth:
+                              330,
+                          }}
+                        >
+                          <div
+                            style={{
+                              color:
+                                "#101828",
+                              fontSize:
+                                10,
+                              fontWeight:
+                                800,
+                              lineHeight:
+                                1.45,
+                            }}
+                          >
+                            {
+                              post.title
+                            }
+                          </div>
 
-                    <span
-                      style={{
-                        borderRadius: 999,
-                        padding: "6px 10px",
-                        fontWeight: 850,
-                        fontSize: 12,
-                        border: "1px solid rgba(15,23,42,0.10)",
-                        background: "rgba(255,255,255,0.7)",
-                        opacity: 0.8,
-                      }}
-                    >
-                      Güncelleme: {new Date(p.updatedAt).toLocaleString("tr-TR")}
-                    </span>
-                  </div>
-                </div>
+                          {post.excerpt ? (
+                            <div
+                              style={{
+                                marginTop:
+                                  4,
+                                overflow:
+                                  "hidden",
+                                color:
+                                  "#98a2b3",
+                                fontSize:
+                                  8,
+                                lineHeight:
+                                  1.5,
+                                display:
+                                  "-webkit-box",
+                                WebkitLineClamp:
+                                  2,
+                                WebkitBoxOrient:
+                                  "vertical",
+                              }}
+                            >
+                              {
+                                post.excerpt
+                              }
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                  <Link
-                    href={`/admin/blog/${p.id}`}
-                    style={{
-                      textDecoration: "none",
-                      fontWeight: 950,
-                      padding: "10px 12px",
-                      borderRadius: 12,
-                      border: "1px solid #ddd",
-                      background: "#fff",
-                      color: "#111",
-                    }}
-                  >
-                    Düzenle →
-                  </Link>
+                      <td>
+                        <div
+                          style={{
+                            maxWidth:
+                              220,
+                            overflow:
+                              "hidden",
+                            color:
+                              "#667085",
+                            fontFamily:
+                              "monospace",
+                            fontSize:
+                              8,
+                            textOverflow:
+                              "ellipsis",
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                          title={
+                            post.slug
+                          }
+                        >
+                          /blog/
+                          {post.slug}
+                        </div>
+                      </td>
 
-                  <Link
-                    href={`/blog/${p.slug}`}
-                    style={{
-                      textDecoration: "none",
-                      fontWeight: 950,
-                      padding: "10px 12px",
-                      borderRadius: 12,
-                      border: "1px solid #ddd",
-                      background: "#fff",
-                      color: "#111",
-                    }}
-                  >
-                    Önizleme →
-                  </Link>
-                </div>
-              </div>
-            ))}
+                      <td>
+                        <span
+                          className={
+                            post.isPublished
+                              ? "adminBadge adminBadgeSuccess"
+                              : "adminBadge adminBadgeWarning"
+                          }
+                        >
+                          {post.isPublished
+                            ? "● Yayında"
+                            : "Taslak"}
+                        </span>
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          post.publishedAt
+                        )}
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          post.updatedAt
+                        )}
+                      </td>
+
+                      <td>
+                        <span className="adminBadge adminBadgeNeutral">
+                          {post.clinic
+                            ?.name ??
+                            "DişFiyat360"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            gap: 7,
+                            alignItems:
+                              "center",
+                          }}
+                        >
+                          <Link
+                            href={`/admin/blog/${post.id}`}
+                            className="adminButton adminButtonPrimary"
+                          >
+                            Düzenle
+                          </Link>
+
+                          {post.isPublished ? (
+                            <Link
+                              href={`/blog/${post.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="adminButton adminButtonSecondary"
+                            >
+                              Gör ↗
+                            </Link>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }

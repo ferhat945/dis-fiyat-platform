@@ -28,38 +28,60 @@ export default function BankTransferActions({
   provider,
   delivered,
 }: Props): JSX.Element | null {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState<
       "approve" | "cancel" | null
     >(null);
 
-  const [message, setMessage] =
-    useState<string | null>(null);
+  const [
+    message,
+    setMessage,
+  ] =
+    useState<string | null>(
+      null
+    );
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null
+    );
 
   if (
-    provider !== "bank_transfer" ||
+    provider !==
+      "bank_transfer" ||
     delivered ||
     (
-      status !== "awaiting_transfer" &&
-      status !== "transfer_notified"
+      status !==
+        "awaiting_transfer" &&
+      status !==
+        "transfer_notified"
     )
   ) {
     return null;
   }
 
   async function runAction(
-    action: "approve" | "cancel"
+    action:
+      | "approve"
+      | "cancel"
   ): Promise<void> {
     if (loading) {
       return;
     }
 
-    if (action === "approve") {
+    if (
+      action ===
+      "approve"
+    ) {
       const confirmed =
         window.confirm(
           "Banka hesabında bu siparişin TAM TUTARDA tahsil edildiğini kontrol ettiniz mi?\n\nOnay verdiğiniz anda kredi/Premium hakkı kliniğe tanımlanacaktır."
@@ -70,7 +92,10 @@ export default function BankTransferActions({
       }
     }
 
-    if (action === "cancel") {
+    if (
+      action ===
+      "cancel"
+    ) {
       const confirmed =
         window.confirm(
           "Bu banka transferi siparişini iptal etmek istediğinize emin misiniz?"
@@ -86,20 +111,26 @@ export default function BankTransferActions({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/admin/payments/bank-transfer/${paymentId}/${action}`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-          },
-        }
-      );
+      const response =
+        await fetch(
+          `/api/admin/payments/bank-transfer/${paymentId}/${action}`,
+          {
+            method: "POST",
+
+            headers: {
+              Accept:
+                "application/json",
+            },
+          }
+        );
 
       const data =
         (await response.json()) as ActionResponse;
 
-      if (!response.ok || !data.ok) {
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
         setError(
           data.ok
             ? "İşlem tamamlanamadı."
@@ -109,12 +140,29 @@ export default function BankTransferActions({
         return;
       }
 
-      if (action === "approve") {
-        setMessage(
+      if (
+        action ===
+        "approve"
+      ) {
+        if (
           data.alreadyDelivered
-            ? "Bu ödeme daha önce teslim edilmiş."
-            : "Ödeme onaylandı. Dijital haklar kliniğin hesabına tanımlandı."
-        );
+        ) {
+          setMessage(
+            "Bu ödeme daha önce teslim edilmiş."
+          );
+        } else {
+          const balanceText =
+            data.balanceBefore !=
+              null &&
+            data.balanceAfter !=
+              null
+              ? ` Bakiye: ${data.balanceBefore} → ${data.balanceAfter}.`
+              : "";
+
+          setMessage(
+            `Ödeme onaylandı. Dijital haklar kliniğin hesabına tanımlandı.${balanceText}`
+          );
+        }
       } else {
         setMessage(
           "Banka transferi siparişi iptal edildi."
@@ -133,100 +181,177 @@ export default function BankTransferActions({
 
   return (
     <section
+      className="adminCard"
       style={{
-        marginTop: 16,
-        padding: 18,
-        borderRadius: 20,
+        overflow: "hidden",
         border:
-          "1px solid rgba(245,158,11,.24)",
+          "1px solid #fedf89",
         background:
-          "linear-gradient(135deg,rgba(255,251,235,.96),rgba(255,255,255,.96))",
+          "linear-gradient(135deg,#fffaeb,#fff)",
       }}
     >
       <div
         style={{
-          fontSize: 19,
-          fontWeight: 1000,
-        }}
-      >
-        🏦 Banka Transferi Kontrolü
-      </div>
-
-      <div
-        style={{
-          marginTop: 7,
-          color:
-            "rgba(120,53,15,.82)",
-          fontSize: 13,
-          lineHeight: 1.65,
-          fontWeight: 800,
-        }}
-      >
-        Kredi veya Premium hakkını
-        tanımlamadan önce Garanti BBVA
-        hesabında sipariş tutarının ve ödeme
-        açıklamasının doğru olduğunu kontrol
-        et.
-      </div>
-
-      <div
-        style={{
-          marginTop: 14,
+          padding: 19,
           display: "flex",
-          gap: 10,
+          justifyContent:
+            "space-between",
+          gap: 18,
+          alignItems:
+            "flex-start",
           flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 660,
+          }}
+        >
+          <div
+            style={{
+              display:
+                "flex",
+              alignItems:
+                "center",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                flex: "0 0 40px",
+                display:
+                  "grid",
+                placeItems:
+                  "center",
+                borderRadius:
+                  12,
+                background:
+                  "#fef0c7",
+                color:
+                  "#b54708",
+                fontSize: 18,
+              }}
+            >
+              ₺
+            </div>
+
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  color:
+                    "#7a2e0e",
+                  fontSize: 15,
+                  letterSpacing:
+                    "-.02em",
+                }}
+              >
+                Banka Transferi Kontrolü
+              </h2>
+
+              <div
+                style={{
+                  marginTop: 4,
+                  color:
+                    "#b54708",
+                  fontSize: 9,
+                  fontWeight:
+                    650,
+                }}
+              >
+                Manuel ödeme doğrulaması gerekiyor
+              </div>
+            </div>
+          </div>
+
+          <p
+            style={{
+              margin:
+                "12px 0 0",
+              color:
+                "#93370d",
+              fontSize: 10,
+              lineHeight: 1.7,
+            }}
+          >
+            Kredi veya Premium hakkını
+            tanımlamadan önce banka
+            hesabında sipariş tutarını ve
+            ödeme açıklamasını kontrol et.
+            Onay işlemi dijital hakları
+            kliniğe teslim eder.
+          </p>
+        </div>
+
+        <span className="adminBadge adminBadgeWarning">
+          Manuel Kontrol
+        </span>
+      </div>
+
+      <div
+        style={{
+          padding:
+            "14px 19px 19px",
+          borderTop:
+            "1px solid #fedf89",
+          display: "flex",
+          gap: 9,
+          flexWrap: "wrap",
+          background:
+            "rgba(255,255,255,.55)",
         }}
       >
         <button
           type="button"
-          disabled={loading !== null}
-          onClick={() =>
-            void runAction("approve")
+          disabled={
+            loading !== null
           }
+          onClick={() =>
+            void runAction(
+              "approve"
+            )
+          }
+          className="adminButton"
           style={{
-            border: 0,
-            borderRadius: 14,
-            padding: "12px 16px",
-            background: "#15803d",
+            minHeight: 42,
+            paddingLeft: 16,
+            paddingRight: 16,
+            border:
+              "1px solid #079455",
+            background:
+              "#079455",
             color: "white",
-            fontWeight: 950,
-            cursor:
-              loading
-                ? "not-allowed"
-                : "pointer",
             opacity:
-              loading ? 0.65 : 1,
+              loading
+                ? 0.6
+                : 1,
           }}
         >
-          {loading === "approve"
+          {loading ===
+          "approve"
             ? "Onaylanıyor..."
-            : "✅ Ödemeyi Onayla ve Teslim Et"}
+            : "✓ Ödemeyi Onayla ve Teslim Et"}
         </button>
 
         <button
           type="button"
-          disabled={loading !== null}
-          onClick={() =>
-            void runAction("cancel")
+          disabled={
+            loading !== null
           }
+          onClick={() =>
+            void runAction(
+              "cancel"
+            )
+          }
+          className="adminButton adminButtonDanger"
           style={{
-            border:
-              "1px solid rgba(185,28,28,.20)",
-            borderRadius: 14,
-            padding: "12px 16px",
-            background:
-              "rgba(254,242,242,.95)",
-            color: "#b91c1c",
-            fontWeight: 950,
-            cursor:
-              loading
-                ? "not-allowed"
-                : "pointer",
-            opacity:
-              loading ? 0.65 : 1,
+            minHeight: 42,
           }}
         >
-          {loading === "cancel"
+          {loading ===
+          "cancel"
             ? "İptal ediliyor..."
             : "Ödeme Bulunamadı / İptal Et"}
         </button>
@@ -235,13 +360,17 @@ export default function BankTransferActions({
       {message ? (
         <div
           style={{
-            marginTop: 12,
+            margin:
+              "0 19px 19px",
             padding: 11,
-            borderRadius: 12,
+            border:
+              "1px solid #abefc6",
+            borderRadius: 11,
             background:
-              "rgba(34,197,94,.10)",
-            color: "#166534",
-            fontWeight: 900,
+              "#ecfdf3",
+            color: "#067647",
+            fontSize: 10,
+            fontWeight: 750,
           }}
         >
           {message}
@@ -251,13 +380,17 @@ export default function BankTransferActions({
       {error ? (
         <div
           style={{
-            marginTop: 12,
+            margin:
+              "0 19px 19px",
             padding: 11,
-            borderRadius: 12,
+            border:
+              "1px solid #fecdca",
+            borderRadius: 11,
             background:
-              "rgba(239,68,68,.08)",
-            color: "#b91c1c",
-            fontWeight: 900,
+              "#fef3f2",
+            color: "#b42318",
+            fontSize: 10,
+            fontWeight: 750,
           }}
         >
           {error}

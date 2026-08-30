@@ -1,7 +1,9 @@
-// src/app/admin/leads/LeadsClient.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 type AssignedClinic = {
   id: string;
@@ -20,45 +22,225 @@ type Lead = {
   intent: string;
   source: string | null;
   status: string;
-  createdAt: string; // API JSON ile string gelir
+  createdAt: string;
   assignedClinic: AssignedClinic | null;
 };
 
 type LeadsResp =
-  | { ok: true; leads: Lead[] }
-  | { ok: false; code: string };
+  | {
+      ok: true;
+      leads: Lead[];
+    }
+  | {
+      ok: false;
+      code: string;
+    };
 
-function formatTR(v: string): string {
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleString("tr-TR");
+type FilterMode =
+  | "all"
+  | "assigned"
+  | "unassigned";
+
+function formatTR(
+  value: string
+): string {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(
+    "tr-TR",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    }
+  ).format(date);
 }
 
-function pillStyle(bg: string, border: string, color: string): React.CSSProperties {
-  return {
-    display: "inline-block",
-    padding: "4px 8px",
-    borderRadius: 999,
-    border: `1px solid ${border}`,
-    background: bg,
-    color,
-    fontWeight: 900,
-    fontSize: 12,
-    lineHeight: 1,
-  };
+function formatStatus(
+  status: string
+): string {
+  const normalized =
+    status
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized === "new"
+  ) {
+    return "Yeni";
+  }
+
+  if (
+    normalized === "contacted"
+  ) {
+    return "İletişime Geçildi";
+  }
+
+  if (
+    normalized === "won"
+  ) {
+    return "Kazanıldı";
+  }
+
+  if (
+    normalized === "lost"
+  ) {
+    return "Kaybedildi";
+  }
+
+  return status || "Yeni";
+}
+
+function statusClass(
+  status: string
+): string {
+  const normalized =
+    status
+      .trim()
+      .toLowerCase();
+
+  if (
+    normalized === "won"
+  ) {
+    return "adminBadge adminBadgeSuccess";
+  }
+
+  if (
+    normalized === "lost"
+  ) {
+    return "adminBadge adminBadgeDanger";
+  }
+
+  if (
+    normalized === "contacted"
+  ) {
+    return "adminBadge adminBadgeWarning";
+  }
+
+  return "adminBadge adminBadgeInfo";
+}
+
+function sourceLabel(
+  source: string | null
+): string {
+  if (
+    source ===
+    "clinic_direct"
+  ) {
+    return "Klinik Direkt";
+  }
+
+  if (
+    source ===
+    "ai_analysis"
+  ) {
+    return "AI Analiz";
+  }
+
+  return source || "Genel Form";
+}
+
+function initials(
+  name: string
+): string {
+  const parts =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (
+    parts.length === 0
+  ) {
+    return "L";
+  }
+
+  if (
+    parts.length === 1
+  ) {
+    return parts[0]
+      .slice(0, 1)
+      .toLocaleUpperCase(
+        "tr-TR"
+      );
+  }
+
+  return (
+    `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`
+  ).toLocaleUpperCase(
+    "tr-TR"
+  );
 }
 
 export default function LeadsClient(): JSX.Element {
-  const [adminKey, setAdminKey] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [
+    adminKey,
+    setAdminKey,
+  ] =
+    useState<string>("");
 
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [q, setQ] = useState<string>(""); // basit arama
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState<boolean>(false);
 
-  const load = async (): Promise<void> => {
-    if (!adminKey.trim()) {
-      setErr("Admin key gir.");
+  const [
+    err,
+    setErr,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  const [
+    leads,
+    setLeads,
+  ] =
+    useState<Lead[]>([]);
+
+  const [
+    q,
+    setQ,
+  ] =
+    useState<string>("");
+
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<FilterMode>(
+      "all"
+    );
+
+  const [
+    keyVisible,
+    setKeyVisible,
+  ] =
+    useState<boolean>(
+      false
+    );
+
+  async function load(): Promise<void> {
+    if (
+      !adminKey.trim()
+    ) {
+      setErr(
+        "Admin key gir."
+      );
+
+      return;
+    }
+
+    if (loading) {
       return;
     }
 
@@ -66,205 +248,829 @@ export default function LeadsClient(): JSX.Element {
     setErr(null);
 
     try {
-      const r = await fetch("/api/admin/leads", {
-        method: "GET",
-        headers: { "x-admin-key": adminKey.trim() },
-        cache: "no-store",
-      });
+      const response =
+        await fetch(
+          "/api/admin/leads",
+          {
+            method: "GET",
 
-      const j = (await r.json()) as LeadsResp;
+            headers: {
+              "x-admin-key":
+                adminKey.trim(),
+            },
 
-      if (!r.ok || !j.ok) {
-        setErr(j.ok ? "UNKNOWN" : j.code);
+            cache:
+              "no-store",
+          }
+        );
+
+      const json =
+        (await response.json()) as LeadsResp;
+
+      if (
+        !response.ok ||
+        !json.ok
+      ) {
+        setErr(
+          json.ok
+            ? "UNKNOWN"
+            : json.code
+        );
+
         setLeads([]);
+
         return;
       }
 
-      setLeads(j.leads);
+      setLeads(
+        json.leads
+      );
     } catch {
-      setErr("NETWORK_ERROR");
+      setErr(
+        "NETWORK_ERROR"
+      );
+
       setLeads([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  useEffect(() => {
-    // adminKey değişince hatayı temizle
-    setErr(null);
-  }, [adminKey]);
+  const filtered =
+    useMemo(() => {
+      const search =
+        q
+          .trim()
+          .toLocaleLowerCase(
+            "tr-TR"
+          );
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return leads;
+      return leads.filter(
+        (lead) => {
+          const assigned =
+            Boolean(
+              lead.assignedClinic
+            );
 
-    return leads.filter((l) => {
-      const hay = [
-        l.city,
-        l.service,
-        l.fullName,
-        l.phone,
-        l.email ?? "",
-        l.message ?? "",
-        l.status,
-        l.intent,
-        l.source ?? "",
-        l.assignedClinic?.name ?? "",
-        l.assignedClinic?.email ?? "",
-        l.id,
-      ]
-        .join(" ")
-        .toLowerCase();
+          if (
+            filter ===
+              "assigned" &&
+            !assigned
+          ) {
+            return false;
+          }
 
-      return hay.includes(s);
-    });
-  }, [leads, q]);
+          if (
+            filter ===
+              "unassigned" &&
+            assigned
+          ) {
+            return false;
+          }
+
+          if (!search) {
+            return true;
+          }
+
+          const haystack = [
+            lead.city,
+            lead.service,
+            lead.fullName,
+            lead.phone,
+            lead.email ?? "",
+            lead.message ?? "",
+            lead.status,
+            lead.intent,
+            lead.source ?? "",
+            lead.assignedClinic
+              ?.name ?? "",
+            lead.assignedClinic
+              ?.email ?? "",
+            lead.id,
+          ]
+            .join(" ")
+            .toLocaleLowerCase(
+              "tr-TR"
+            );
+
+          return haystack.includes(
+            search
+          );
+        }
+      );
+    }, [
+      leads,
+      q,
+      filter,
+    ]);
+
+  const assignedCount =
+    useMemo(
+      () =>
+        leads.filter(
+          (lead) =>
+            Boolean(
+              lead.assignedClinic
+            )
+        ).length,
+      [leads]
+    );
+
+  const unassignedCount =
+    Math.max(
+      0,
+      leads.length -
+        assignedCount
+    );
+
+  const todayCount =
+    useMemo(() => {
+      const now =
+        new Date();
+
+      const start =
+        new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+          0
+        );
+
+      return leads.filter(
+        (lead) => {
+          const date =
+            new Date(
+              lead.createdAt
+            );
+
+          return (
+            !Number.isNaN(
+              date.getTime()
+            ) &&
+            date >= start
+          );
+        }
+      ).length;
+    }, [leads]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 1050, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 950, marginBottom: 12 }}>Admin • Leadler</h1>
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <section className="adminStatsGrid">
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Yüklenen Lead
+          </div>
 
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12, marginBottom: 12 }}>
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Admin Key</div>
+          <div className="adminStatValue">
+            {leads.length}
+          </div>
 
-        <input
-          value={adminKey}
-          onChange={(e) => setAdminKey(e.target.value)}
-          placeholder="x-admin-key"
-          style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
-        />
+          <div className="adminStatMeta">
+            APIden yüklenen toplam kayıt
+          </div>
+        </div>
 
-        <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={() => void load()}
-            disabled={loading}
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Bugün
+          </div>
+
+          <div className="adminStatValue">
+            {todayCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Bugün oluşturulan talepler
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Atanmış
+          </div>
+
+          <div className="adminStatValue">
+            {assignedCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Klinik eşleşmesi bulunan
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Atanmamış
+          </div>
+
+          <div className="adminStatValue">
+            {unassignedCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Klinik eşleşmesi bulunmayan
+          </div>
+        </div>
+      </section>
+
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>
+              Lead Verilerini Yükle
+            </h2>
+
+            <p>
+              Admin API anahtarını kullanarak lead kayıtlarını getir.
+            </p>
+          </div>
+
+          <span className="adminBadge adminBadgeInfo">
+            Güvenli API
+          </span>
+        </div>
+
+        <div className="adminCardBody">
+          <div
             style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #111",
-              background: "#111",
-              color: "#fff",
-              fontWeight: 900,
-              cursor: loading ? "not-allowed" : "pointer",
+              display: "grid",
+              gridTemplateColumns:
+                "minmax(260px,1fr) auto",
+              gap: 10,
+              alignItems: "end",
             }}
           >
-            {loading ? "Yükleniyor..." : "Leadleri Yükle"}
-          </button>
+            <label
+              style={{
+                display: "grid",
+                gap: 6,
+              }}
+            >
+              <span
+                style={{
+                  color: "#475467",
+                  fontSize: 9,
+                  fontWeight: 750,
+                }}
+              >
+                ADMIN_KEY
+              </span>
 
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Ara: isim / tel / şehir / hizmet / klinik..."
-            style={{
-              flex: "1 1 320px",
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid #ddd",
-            }}
-          />
+              <div
+                style={{
+                  position:
+                    "relative",
+                }}
+              >
+                <input
+                  type={
+                    keyVisible
+                      ? "text"
+                      : "password"
+                  }
+                  className="adminInput"
+                  value={adminKey}
+                  onChange={(
+                    event
+                  ) => {
+                    setAdminKey(
+                      event
+                        .target
+                        .value
+                    );
+
+                    if (err) {
+                      setErr(null);
+                    }
+                  }}
+                  placeholder="Admin API anahtarı"
+                  style={{
+                    paddingRight:
+                      78,
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setKeyVisible(
+                      (value) =>
+                        !value
+                    )
+                  }
+                  style={{
+                    position:
+                      "absolute",
+                    right: 6,
+                    top: 6,
+                    bottom: 6,
+                    padding:
+                      "0 9px",
+                    border:
+                      "1px solid #e7eaf0",
+                    borderRadius:
+                      8,
+                    background:
+                      "#f9fafb",
+                    color:
+                      "#667085",
+                    fontSize: 8,
+                    fontWeight:
+                      750,
+                    cursor:
+                      "pointer",
+                  }}
+                >
+                  {keyVisible
+                    ? "Gizle"
+                    : "Göster"}
+                </button>
+              </div>
+            </label>
+
+            <button
+              type="button"
+              onClick={() =>
+                void load()
+              }
+              disabled={
+                loading ||
+                !adminKey.trim()
+              }
+              className="adminButton adminButtonPrimary"
+              style={{
+                minHeight: 42,
+                paddingLeft: 17,
+                paddingRight: 17,
+              }}
+            >
+              {loading
+                ? "Yükleniyor..."
+                : "Leadleri Yükle →"}
+            </button>
+          </div>
+
+          {err ? (
+            <div
+              style={{
+                marginTop: 11,
+                padding: 11,
+                border:
+                  "1px solid #fecdca",
+                borderRadius: 11,
+                background:
+                  "#fef3f2",
+                color:
+                  "#b42318",
+                fontSize: 10,
+                fontWeight: 750,
+              }}
+            >
+              Hata: {err}
+            </div>
+          ) : null}
         </div>
-      </div>
+      </section>
 
-      {err && (
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>
+              Lead Yönetimi
+            </h2>
+
+            <p>
+              Hasta taleplerini ara, filtrele ve detaylarını incele.
+            </p>
+          </div>
+
+          <span className="adminBadge adminBadgeNeutral">
+            {filtered.length} /{" "}
+            {leads.length}
+          </span>
+        </div>
+
         <div
           style={{
-            border: "1px solid #f2c9c9",
-            background: "#fff5f5",
-            borderRadius: 12,
-            padding: 12,
-            marginBottom: 12,
-            fontWeight: 800,
+            padding:
+              "13px 16px",
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            borderBottom:
+              "1px solid #e7eaf0",
+            background:
+              "#fafbfc",
           }}
         >
-          <strong>Hata:</strong> {err}
-        </div>
-      )}
+          <input
+            className="adminInput"
+            value={q}
+            onChange={(
+              event
+            ) =>
+              setQ(
+                event.target
+                  .value
+              )
+            }
+            placeholder="İsim, telefon, şehir, hizmet, klinik veya ID ara..."
+            style={{
+              flex:
+                "1 1 320px",
+            }}
+          />
 
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ fontWeight: 950 }}>Kayıtlar</div>
-          <div style={{ opacity: 0.75, fontWeight: 900 }}>
-            Toplam: {filtered.length} / {leads.length}
-          </div>
+          <select
+            className="adminSelect"
+            value={filter}
+            onChange={(
+              event
+            ) =>
+              setFilter(
+                event.target
+                  .value as FilterMode
+              )
+            }
+            style={{
+              width: 170,
+            }}
+          >
+            <option value="all">
+              Tüm Leadler
+            </option>
+
+            <option value="assigned">
+              Atanmış
+            </option>
+
+            <option value="unassigned">
+              Atanmamış
+            </option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() =>
+              void load()
+            }
+            disabled={
+              loading ||
+              !adminKey.trim()
+            }
+            className="adminButton adminButtonSecondary"
+          >
+            Yenile
+          </button>
         </div>
 
         {loading ? (
-          <div style={{ marginTop: 10, opacity: 0.75 }}>Yükleniyor…</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ marginTop: 10, opacity: 0.75 }}>Kayıt yok.</div>
+          <div className="adminEmptyState">
+            <strong>
+              Leadler yükleniyor
+            </strong>
+
+            <p>
+              Kayıtlar sunucudan getiriliyor.
+            </p>
+          </div>
+        ) : filtered.length ===
+          0 ? (
+          <div className="adminEmptyState">
+            <strong>
+              Lead bulunamadı
+            </strong>
+
+            <p>
+              Önce leadleri yükleyebilir veya arama ve filtre kriterlerini değiştirebilirsin.
+            </p>
+          </div>
         ) : (
-          <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-            {filtered.map((l) => {
-              const assigned = Boolean(l.assignedClinic);
-              const statusLabel = (l.status || "new").toLowerCase();
+          <div
+            className="adminTableScroll"
+          >
+            <table
+              className="adminTable"
+              style={{
+                minWidth:
+                  1180,
+              }}
+            >
+              <thead>
+                <tr>
+                  <th>Hasta</th>
+                  <th>Talep</th>
+                  <th>İletişim</th>
+                  <th>Kaynak</th>
+                  <th>Durum</th>
+                  <th>Klinik</th>
+                  <th>Tarih</th>
+                  <th>Lead ID</th>
+                </tr>
+              </thead>
 
-              return (
-                <div key={l.id} style={{ border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                    <div style={{ fontWeight: 950 }}>
-                      {l.city} / {l.service} • {statusLabel}
-                    </div>
-                    <div style={{ opacity: 0.75, fontWeight: 900 }}>{formatTR(l.createdAt)}</div>
-                  </div>
+              <tbody>
+                {filtered.map(
+                  (lead) => {
+                    const assigned =
+                      Boolean(
+                        lead.assignedClinic
+                      );
 
-                  <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                    <div>
-                      <strong>Hasta:</strong> {l.fullName} • <strong>Tel:</strong> {l.phone}
-                      {l.email ? (
-                        <>
-                          {" "}
-                          • <strong>Email:</strong> {l.email}
-                        </>
-                      ) : null}
-                    </div>
-
-                    {l.message ? (
-                      <div style={{ opacity: 0.85 }}>
-                        <strong>Not:</strong> {l.message}
-                      </div>
-                    ) : null}
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <span
-                        style={
-                          assigned
-                            ? pillStyle("rgba(34,197,94,0.10)", "rgba(34,197,94,0.35)", "#166534")
-                            : pillStyle("rgba(239,68,68,0.10)", "rgba(239,68,68,0.35)", "#7f1d1d")
+                    return (
+                      <tr
+                        key={
+                          lead.id
                         }
                       >
-                        {assigned ? "ATANDI" : "ATANMADI"}
-                      </span>
+                        <td>
+                          <div
+                            style={{
+                              display:
+                                "flex",
+                              alignItems:
+                                "center",
+                              gap: 10,
+                              minWidth:
+                                170,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 34,
+                                height: 34,
+                                flex:
+                                  "0 0 34px",
+                                display:
+                                  "grid",
+                                placeItems:
+                                  "center",
+                                borderRadius:
+                                  10,
+                                background:
+                                  "#f0efff",
+                                color:
+                                  "#5148e5",
+                                fontSize:
+                                  10,
+                                fontWeight:
+                                  850,
+                              }}
+                            >
+                              {initials(
+                                lead.fullName
+                              )}
+                            </div>
 
-                      <span style={pillStyle("rgba(15,23,42,0.06)", "rgba(15,23,42,0.12)", "#0f172a")}>
-                        Lead ID: {l.id.slice(0, 10)}…
-                      </span>
-                    </div>
+                            <div>
+                              <div
+                                style={{
+                                  color:
+                                    "#101828",
+                                  fontWeight:
+                                    800,
+                                }}
+                              >
+                                {
+                                  lead.fullName
+                                }
+                              </div>
 
-                    <div style={{ marginTop: 2 }}>
-                      <strong>Atanan Klinik:</strong>{" "}
-                      {l.assignedClinic ? (
-                        <>
-                          {l.assignedClinic.name}{" "}
-                          <span style={{ opacity: 0.75, fontWeight: 800 }}>
-                            ({l.assignedClinic.email})
+                              {lead.message ? (
+                                <div
+                                  title={
+                                    lead.message
+                                  }
+                                  style={{
+                                    marginTop:
+                                      3,
+                                    maxWidth:
+                                      220,
+                                    overflow:
+                                      "hidden",
+                                    color:
+                                      "#98a2b3",
+                                    fontSize:
+                                      8,
+                                    textOverflow:
+                                      "ellipsis",
+                                    whiteSpace:
+                                      "nowrap",
+                                  }}
+                                >
+                                  {
+                                    lead.message
+                                  }
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div
+                            style={{
+                              display:
+                                "grid",
+                              gap: 4,
+                            }}
+                          >
+                            <span className="adminBadge adminBadgeInfo">
+                              {
+                                lead.city
+                              }
+                            </span>
+
+                            <strong
+                              style={{
+                                color:
+                                  "#344054",
+                                fontSize:
+                                  9,
+                              }}
+                            >
+                              {
+                                lead.service
+                              }
+                            </strong>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div
+                            style={{
+                              color:
+                                "#344054",
+                              fontWeight:
+                                700,
+                            }}
+                          >
+                            {
+                              lead.phone
+                            }
+                          </div>
+
+                          <div
+                            style={{
+                              marginTop:
+                                3,
+                              color:
+                                "#98a2b3",
+                              fontSize:
+                                8,
+                            }}
+                          >
+                            {lead.email ??
+                              "E-posta yok"}
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="adminBadge adminBadgeNeutral">
+                            {sourceLabel(
+                              lead.source
+                            )}
                           </span>
-                        </>
-                      ) : (
-                        "Atanmadı"
-                      )}
-                    </div>
 
-                    <div style={{ opacity: 0.7, fontSize: 12, marginTop: 4 }}>
-                      <strong>Kaynak:</strong> {l.source ?? "—"} • <strong>İstek:</strong> {l.intent ?? "—"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                          <div
+                            style={{
+                              marginTop:
+                                4,
+                              color:
+                                "#98a2b3",
+                              fontSize:
+                                8,
+                            }}
+                          >
+                            İstek:{" "}
+                            {
+                              lead.intent
+                            }
+                          </div>
+                        </td>
+
+                        <td>
+                          <span
+                            className={statusClass(
+                              lead.status
+                            )}
+                          >
+                            {formatStatus(
+                              lead.status
+                            )}
+                          </span>
+                        </td>
+
+                        <td>
+                          {assigned &&
+                          lead.assignedClinic ? (
+                            <div>
+                              <span className="adminBadge adminBadgeSuccess">
+                                Atandı
+                              </span>
+
+                              <div
+                                style={{
+                                  marginTop:
+                                    5,
+                                  color:
+                                    "#344054",
+                                  fontSize:
+                                    9,
+                                  fontWeight:
+                                    700,
+                                }}
+                              >
+                                {
+                                  lead
+                                    .assignedClinic
+                                    .name
+                                }
+                              </div>
+
+                              <div
+                                style={{
+                                  marginTop:
+                                    2,
+                                  color:
+                                    "#98a2b3",
+                                  fontSize:
+                                    8,
+                                }}
+                              >
+                                {
+                                  lead
+                                    .assignedClinic
+                                    .email
+                                }
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="adminBadge adminBadgeWarning">
+                              Atanmadı
+                            </span>
+                          )}
+                        </td>
+
+                        <td>
+                          <span
+                            style={{
+                              color:
+                                "#475467",
+                              whiteSpace:
+                                "nowrap",
+                            }}
+                          >
+                            {formatTR(
+                              lead.createdAt
+                            )}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span
+                            title={
+                              lead.id
+                            }
+                            style={{
+                              display:
+                                "inline-block",
+                              maxWidth:
+                                130,
+                              overflow:
+                                "hidden",
+                              color:
+                                "#98a2b3",
+                              fontSize:
+                                8,
+                              fontFamily:
+                                "monospace",
+                              textOverflow:
+                                "ellipsis",
+                              whiteSpace:
+                                "nowrap",
+                            }}
+                          >
+                            {lead.id}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

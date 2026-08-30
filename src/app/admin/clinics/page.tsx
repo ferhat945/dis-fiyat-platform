@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { requireAdmin } from "@/lib/admin-guard";
 import { prisma } from "@/lib/db";
 import AdminClinicsClient from "./ui";
@@ -14,6 +12,7 @@ export default async function AdminClinicsPage(): Promise<JSX.Element> {
       orderBy: {
         createdAt: "desc",
       },
+
       select: {
         id: true,
         name: true,
@@ -24,57 +23,80 @@ export default async function AdminClinicsPage(): Promise<JSX.Element> {
       },
     });
 
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 14,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: 24,
-              fontWeight: 900,
-              margin: 0,
-            }}
-          >
-            Klinikler
-          </h1>
+  const activeCount =
+    clinics.filter(
+      (clinic) => clinic.isActive
+    ).length;
 
-          <div
-            style={{
-              marginTop: 5,
-              opacity: 0.7,
-              fontWeight: 750,
-            }}
-          >
-            Klinik hesaplarını ve durumlarını
-            yönet.
+  const passiveCount =
+    clinics.length - activeCount;
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <section className="adminStatsGrid">
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Toplam Klinik
+          </div>
+
+          <div className="adminStatValue">
+            {clinics.length}
+          </div>
+
+          <div className="adminStatMeta">
+            Sistemde kayıtlı klinikler
           </div>
         </div>
 
-        <Link
-          href="/admin/odemeler"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "10px 14px",
-            borderRadius: 12,
-            color: "white",
-            background: "#111827",
-            textDecoration: "none",
-            fontWeight: 900,
-          }}
-        >
-          💳 Ödeme Kayıtları →
-        </Link>
-      </div>
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Aktif Klinik
+          </div>
+
+          <div className="adminStatValue">
+            {activeCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Lead almaya açık hesaplar
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Pasif Klinik
+          </div>
+
+          <div className="adminStatValue">
+            {passiveCount}
+          </div>
+
+          <div className="adminStatMeta">
+            Şu anda devre dışı
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Aktiflik Oranı
+          </div>
+
+          <div className="adminStatValue">
+            {clinics.length > 0
+              ? Math.round(
+                  (activeCount /
+                    clinics.length) *
+                    100
+                )
+              : 0}
+            %
+          </div>
+
+          <div className="adminStatMeta">
+            Aktif / toplam klinik
+          </div>
+        </div>
+      </section>
 
       <AdminClinicsClient
         initialClinics={clinics}

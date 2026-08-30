@@ -1,6 +1,4 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
-
 import { requireAdmin } from "@/lib/admin-guard";
 import { prisma } from "@/lib/db";
 
@@ -56,7 +54,9 @@ function packageLabel(
   return packageCode || kind || "—";
 }
 
-function statusLabel(status: string): string {
+function statusLabel(
+  status: string
+): string {
   if (
     status === "paid" ||
     status === "success" ||
@@ -67,6 +67,24 @@ function statusLabel(status: string): string {
 
   if (status === "started") {
     return "Başlatıldı";
+  }
+
+  if (
+    status === "awaiting_transfer"
+  ) {
+    return "Havale Bekleniyor";
+  }
+
+  if (
+    status === "transfer_notified"
+  ) {
+    return "Ödeme Bildirildi";
+  }
+
+  if (
+    status === "processing_transfer"
+  ) {
+    return "Kontrol Ediliyor";
   }
 
   if (status === "canceled") {
@@ -80,6 +98,52 @@ function statusLabel(status: string): string {
   return status;
 }
 
+function statusClass(
+  status: string
+): string {
+  if (
+    status === "paid" ||
+    status === "success" ||
+    status === "completed"
+  ) {
+    return "adminBadge adminBadgeSuccess";
+  }
+
+  if (status === "failed") {
+    return "adminBadge adminBadgeDanger";
+  }
+
+  if (
+    status === "canceled" ||
+    status === "awaiting_transfer" ||
+    status === "transfer_notified"
+  ) {
+    return "adminBadge adminBadgeWarning";
+  }
+
+  return "adminBadge adminBadgeInfo";
+}
+
+function providerLabel(
+  provider: string | null
+): string {
+  if (
+    provider === "bank_transfer"
+  ) {
+    return "Havale / EFT";
+  }
+
+  if (provider === "iyzico") {
+    return "iyzico";
+  }
+
+  if (provider === "paytr") {
+    return "PayTR";
+  }
+
+  return provider ?? "—";
+}
+
 export default async function AdminPaymentsPage(): Promise<JSX.Element> {
   await requireAdmin();
 
@@ -88,7 +152,9 @@ export default async function AdminPaymentsPage(): Promise<JSX.Element> {
       orderBy: {
         createdAt: "desc",
       },
+
       take: 300,
+
       select: {
         id: true,
         packageCode: true,
@@ -123,422 +189,448 @@ export default async function AdminPaymentsPage(): Promise<JSX.Element> {
       },
     });
 
-  const successful = payments.filter(
-    (payment) =>
-      payment.status === "paid" ||
-      payment.status === "success" ||
-      payment.status === "completed"
-  ).length;
+  const successful =
+    payments.filter(
+      (payment) =>
+        payment.status === "paid" ||
+        payment.status === "success" ||
+        payment.status === "completed"
+    );
 
-  const delivered = payments.filter(
-    (payment) => payment.deliveredAt
-  ).length;
+  const delivered =
+    payments.filter(
+      (payment) =>
+        Boolean(
+          payment.deliveredAt
+        )
+    );
+
+  const waitingTransfer =
+    payments.filter(
+      (payment) =>
+        payment.status ===
+          "awaiting_transfer" ||
+        payment.status ===
+          "transfer_notified"
+    );
+
+  const totalRevenue =
+    successful.reduce(
+      (sum, payment) =>
+        sum + payment.amount,
+      0
+    );
 
   return (
-    <div style={pageStyle}>
-      <div style={headerStyle}>
-        <div>
-          <div style={kickerStyle}>
-            💳 Ödeme ve teslimat yönetimi
+    <div
+      style={{
+        display: "grid",
+        gap: 16,
+      }}
+    >
+      <section className="adminStatsGrid">
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Toplam Ödeme
           </div>
 
-          <h1 style={titleStyle}>
-            Ödeme Kayıtları
-          </h1>
+          <div className="adminStatValue">
+            {payments.length}
+          </div>
 
-          <p style={descriptionStyle}>
-            Klinik ödeme denemeleri, başarılı
-            işlemler ve dijital hizmet teslim
-            kayıtları.
-          </p>
+          <div className="adminStatMeta">
+            Son 300 ödeme kaydı
+          </div>
         </div>
 
-        <Link
-          href="/admin/clinics"
-          style={backButtonStyle}
-        >
-          Kliniklere Dön
-        </Link>
-      </div>
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Başarılı
+          </div>
 
-      <div style={metricsStyle}>
-        <Metric
-          label="Toplam kayıt"
-          value={payments.length}
-        />
+          <div className="adminStatValue">
+            {successful.length}
+          </div>
 
-        <Metric
-          label="Başarılı ödeme"
-          value={successful}
-        />
+          <div className="adminStatMeta">
+            Tahsilatı başarılı işlemler
+          </div>
+        </div>
 
-        <Metric
-          label="Teslim edilen"
-          value={delivered}
-        />
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Havale Bekleyen
+          </div>
 
-        <Metric
-          label="Teslim bekleyen"
-          value={Math.max(
-            0,
-            successful - delivered
-          )}
-        />
-      </div>
+          <div className="adminStatValue">
+            {waitingTransfer.length}
+          </div>
 
-      <div style={tableShellStyle}>
+          <div className="adminStatMeta">
+            Admin kontrolü gereken
+          </div>
+        </div>
+
+        <div className="adminStatCard">
+          <div className="adminStatLabel">
+            Başarılı Tutar
+          </div>
+
+          <div
+            className="adminStatValue"
+            style={{
+              fontSize: 21,
+              paddingTop: 4,
+            }}
+          >
+            {formatMoney(
+              totalRevenue,
+              "TRY"
+            )}
+          </div>
+
+          <div className="adminStatMeta">
+            Görünen başarılı kayıtlar
+          </div>
+        </div>
+      </section>
+
+      <section className="adminCard">
+        <div className="adminCardHeader">
+          <div>
+            <h2>Ödeme Kayıtları</h2>
+
+            <p>
+              Klinik ödeme denemeleri,
+              tahsilatlar ve dijital
+              hizmet teslim kayıtları.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 7,
+              flexWrap: "wrap",
+            }}
+          >
+            <span className="adminBadge adminBadgeSuccess">
+              {delivered.length} teslim
+            </span>
+
+            <span className="adminBadge adminBadgeNeutral">
+              {payments.length} kayıt
+            </span>
+          </div>
+        </div>
+
         {payments.length === 0 ? (
-          <div style={emptyStyle}>
-            Henüz ödeme kaydı bulunmuyor.
+          <div className="adminEmptyState">
+            <strong>
+              Ödeme kaydı bulunmuyor
+            </strong>
+
+            <p>
+              Klinik ödeme işlemleri
+              başladığında burada
+              görüntülenecek.
+            </p>
           </div>
         ) : (
-          <div style={tableScrollStyle}>
-            <table style={tableStyle}>
+          <div className="adminTableScroll">
+            <table
+              className="adminTable"
+              style={{
+                minWidth: 1260,
+              }}
+            >
               <thead>
                 <tr>
-                  <th style={thStyle}>Tarih</th>
-                  <th style={thStyle}>Klinik</th>
-                  <th style={thStyle}>Sipariş</th>
-                  <th style={thStyle}>Paket</th>
-                  <th style={thStyle}>Tutar</th>
-                  <th style={thStyle}>Durum</th>
-                  <th style={thStyle}>Teslimat</th>
-                  <th style={thStyle}>Bakiye</th>
-                  <th style={thStyle}>Detay</th>
+                  <th>Tarih</th>
+                  <th>Klinik</th>
+                  <th>Sipariş</th>
+                  <th>Paket</th>
+                  <th>Yöntem</th>
+                  <th>Tutar</th>
+                  <th>Durum</th>
+                  <th>Teslimat</th>
+                  <th>Bakiye</th>
+                  <th>Detay</th>
                 </tr>
               </thead>
 
               <tbody>
-                {payments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td style={tdStyle}>
-                      {formatDateTime(
-                        payment.createdAt
-                      )}
-                    </td>
-
-                    <td style={tdStyle}>
-                      <strong>
-                        {payment.clinic.name}
-                      </strong>
-
-                      <div style={subTextStyle}>
-                        {payment.clinic.email}
-                      </div>
-                    </td>
-
-                    <td style={tdStyle}>
-                      <div style={orderStyle}>
-                        {payment.orderNumber ?? "—"}
-                      </div>
-
-                      <div style={subTextStyle}>
-                        {payment.providerRef ?? "—"}
-                      </div>
-                    </td>
-
-                    <td style={tdStyle}>
-                      {packageLabel(
-                        payment.packageCode,
-                        payment.kind
-                      )}
-
-                      <div style={subTextStyle}>
-                        {payment.credits != null
-                          ? `${payment.credits} kredi`
-                          : "—"}
-                      </div>
-                    </td>
-
-                    <td style={tdStyle}>
-                      <strong>
-                        {formatMoney(
-                          payment.amount,
-                          payment.currency
-                        )}
-                      </strong>
-                    </td>
-
-                    <td style={tdStyle}>
-                      <StatusBadge
-                        status={payment.status}
-                      />
-
-                      <div style={subTextStyle}>
-                        Callback:{" "}
-                        {payment.callbackVerified
-                          ? "Doğrulandı"
-                          : "Bekliyor"}
-                      </div>
-                    </td>
-
-                    <td style={tdStyle}>
-                      {payment.deliveredAt ? (
-                        <>
-                          <strong
-                            style={{
-                              color: "#15803d",
-                            }}
-                          >
-                            Teslim edildi
-                          </strong>
-
-                          <div style={subTextStyle}>
-                            {formatDateTime(
-                              payment.deliveredAt
-                            )}
-                          </div>
-                        </>
-                      ) : (
+                {payments.map(
+                  (payment) => (
+                    <tr
+                      key={payment.id}
+                    >
+                      <td>
                         <span
                           style={{
-                            color: "#92400e",
-                            fontWeight: 850,
+                            whiteSpace:
+                              "nowrap",
+                            color:
+                              "#475467",
                           }}
                         >
-                          Teslim kaydı yok
+                          {formatDateTime(
+                            payment.createdAt
+                          )}
                         </span>
-                      )}
-                    </td>
+                      </td>
 
-                    <td style={tdStyle}>
-                      {payment.balanceBefore !=
-                        null &&
-                      payment.balanceAfter != null
-                        ? `${payment.balanceBefore} → ${payment.balanceAfter}`
-                        : "—"}
+                      <td>
+                        <div
+                          style={{
+                            color:
+                              "#101828",
+                            fontWeight:
+                              800,
+                          }}
+                        >
+                          {
+                            payment
+                              .clinic
+                              .name
+                          }
+                        </div>
 
-                      <div style={subTextStyle}>
-                        {
-                          payment._count
-                            .creditTransactions
-                        }{" "}
-                        hareket
-                      </div>
-                    </td>
+                        <div
+                          style={{
+                            marginTop: 3,
+                            color:
+                              "#98a2b3",
+                            fontSize: 8,
+                          }}
+                        >
+                          {
+                            payment
+                              .clinic
+                              .email
+                          }
+                        </div>
+                      </td>
 
-                    <td style={tdStyle}>
-                      <Link
-                        href={`/admin/odemeler/${payment.id}`}
-                        style={detailButtonStyle}
-                      >
-                        İncele →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      <td>
+                        <div
+                          style={{
+                            maxWidth:
+                              190,
+                            overflow:
+                              "hidden",
+                            color:
+                              "#344054",
+                            fontFamily:
+                              "monospace",
+                            fontSize: 9,
+                            fontWeight:
+                              700,
+                            textOverflow:
+                              "ellipsis",
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                          title={
+                            payment.orderNumber ??
+                            ""
+                          }
+                        >
+                          {payment.orderNumber ??
+                            "—"}
+                        </div>
+
+                        <div
+                          style={{
+                            marginTop: 3,
+                            maxWidth:
+                              190,
+                            overflow:
+                              "hidden",
+                            color:
+                              "#98a2b3",
+                            fontSize: 8,
+                            textOverflow:
+                              "ellipsis",
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                        >
+                          {payment.providerRef ??
+                            "Referans yok"}
+                        </div>
+                      </td>
+
+                      <td>
+                        <strong
+                          style={{
+                            color:
+                              "#344054",
+                          }}
+                        >
+                          {packageLabel(
+                            payment.packageCode,
+                            payment.kind
+                          )}
+                        </strong>
+
+                        <div
+                          style={{
+                            marginTop: 3,
+                            color:
+                              "#98a2b3",
+                            fontSize: 8,
+                          }}
+                        >
+                          {payment.credits !=
+                          null
+                            ? `${payment.credits} kredi`
+                            : "—"}
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="adminBadge adminBadgeNeutral">
+                          {providerLabel(
+                            payment.provider
+                          )}
+                        </span>
+                      </td>
+
+                      <td>
+                        <strong
+                          style={{
+                            color:
+                              "#101828",
+                            whiteSpace:
+                              "nowrap",
+                          }}
+                        >
+                          {formatMoney(
+                            payment.amount,
+                            payment.currency
+                          )}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <span
+                          className={statusClass(
+                            payment.status
+                          )}
+                        >
+                          {statusLabel(
+                            payment.status
+                          )}
+                        </span>
+
+                        <div
+                          style={{
+                            marginTop: 5,
+                            color:
+                              payment.callbackVerified
+                                ? "#067647"
+                                : "#98a2b3",
+                            fontSize: 8,
+                            fontWeight:
+                              650,
+                          }}
+                        >
+                          {payment.callbackVerified
+                            ? "✓ Doğrulandı"
+                            : "Doğrulama bekliyor"}
+                        </div>
+                      </td>
+
+                      <td>
+                        {payment.deliveredAt ? (
+                          <>
+                            <span className="adminBadge adminBadgeSuccess">
+                              Teslim edildi
+                            </span>
+
+                            <div
+                              style={{
+                                marginTop:
+                                  4,
+                                color:
+                                  "#98a2b3",
+                                fontSize:
+                                  8,
+                              }}
+                            >
+                              {formatDateTime(
+                                payment.deliveredAt
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="adminBadge adminBadgeWarning">
+                            Teslim bekliyor
+                          </span>
+                        )}
+                      </td>
+
+                      <td>
+                        {payment.balanceBefore !=
+                          null &&
+                        payment.balanceAfter !=
+                          null ? (
+                          <div>
+                            <strong
+                              style={{
+                                color:
+                                  "#344054",
+                              }}
+                            >
+                              {
+                                payment.balanceBefore
+                              }{" "}
+                              →{" "}
+                              {
+                                payment.balanceAfter
+                              }
+                            </strong>
+
+                            <div
+                              style={{
+                                marginTop:
+                                  3,
+                                color:
+                                  "#98a2b3",
+                                fontSize:
+                                  8,
+                              }}
+                            >
+                              {
+                                payment
+                                  ._count
+                                  .creditTransactions
+                              }{" "}
+                              hareket
+                            </div>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      <td>
+                        <Link
+                          href={`/admin/odemeler/${payment.id}`}
+                          className="adminButton adminButtonPrimary"
+                        >
+                          İncele →
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                )}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
-
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}): JSX.Element {
-  return (
-    <div style={metricCardStyle}>
-      <div style={metricLabelStyle}>
-        {label}
-      </div>
-
-      <div style={metricValueStyle}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({
-  status,
-}: {
-  status: string;
-}): JSX.Element {
-  const successful =
-    status === "paid" ||
-    status === "success" ||
-    status === "completed";
-
-  const failed = status === "failed";
-
-  const canceled = status === "canceled";
-
-  return (
-    <span
-      style={{
-        ...statusStyle,
-        color: successful
-          ? "#166534"
-          : failed
-            ? "#b91c1c"
-            : canceled
-              ? "#92400e"
-              : "#1d4ed8",
-        background: successful
-          ? "rgba(34,197,94,.10)"
-          : failed
-            ? "rgba(239,68,68,.10)"
-            : canceled
-              ? "rgba(245,158,11,.10)"
-              : "rgba(59,130,246,.10)",
-      }}
-    >
-      {statusLabel(status)}
-    </span>
-  );
-}
-
-const pageStyle: CSSProperties = {
-  maxWidth: 1400,
-  margin: "0 auto",
-};
-
-const headerStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 16,
-  flexWrap: "wrap",
-};
-
-const kickerStyle: CSSProperties = {
-  display: "inline-flex",
-  padding: "7px 10px",
-  borderRadius: 999,
-  background: "rgba(79,70,229,.08)",
-  color: "#4338ca",
-  fontSize: 12,
-  fontWeight: 900,
-};
-
-const titleStyle: CSSProperties = {
-  margin: "10px 0 0",
-  fontSize: 32,
-  letterSpacing: "-0.035em",
-};
-
-const descriptionStyle: CSSProperties = {
-  margin: "7px 0 0",
-  color: "rgba(15,23,42,.62)",
-  fontWeight: 750,
-};
-
-const backButtonStyle: CSSProperties = {
-  padding: "10px 14px",
-  borderRadius: 12,
-  border: "1px solid rgba(15,23,42,.10)",
-  color: "#111827",
-  background: "white",
-  textDecoration: "none",
-  fontWeight: 900,
-};
-
-const metricsStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit,minmax(180px,1fr))",
-  gap: 12,
-  marginTop: 18,
-};
-
-const metricCardStyle: CSSProperties = {
-  padding: 16,
-  borderRadius: 18,
-  border: "1px solid rgba(15,23,42,.08)",
-  background: "white",
-};
-
-const metricLabelStyle: CSSProperties = {
-  color: "rgba(15,23,42,.60)",
-  fontSize: 12,
-  fontWeight: 850,
-};
-
-const metricValueStyle: CSSProperties = {
-  marginTop: 5,
-  fontSize: 28,
-  fontWeight: 1000,
-};
-
-const tableShellStyle: CSSProperties = {
-  marginTop: 18,
-  borderRadius: 20,
-  border: "1px solid rgba(15,23,42,.08)",
-  background: "white",
-  overflow: "hidden",
-};
-
-const tableScrollStyle: CSSProperties = {
-  overflowX: "auto",
-};
-
-const tableStyle: CSSProperties = {
-  width: "100%",
-  borderCollapse: "collapse",
-  minWidth: 1150,
-};
-
-const thStyle: CSSProperties = {
-  padding: "12px 13px",
-  textAlign: "left",
-  background: "#f8fafc",
-  borderBottom:
-    "1px solid rgba(15,23,42,.08)",
-  fontSize: 11,
-  color: "rgba(15,23,42,.65)",
-  fontWeight: 950,
-};
-
-const tdStyle: CSSProperties = {
-  padding: "13px",
-  borderBottom:
-    "1px solid rgba(15,23,42,.07)",
-  verticalAlign: "top",
-  fontSize: 12,
-};
-
-const subTextStyle: CSSProperties = {
-  marginTop: 3,
-  color: "rgba(15,23,42,.55)",
-  fontSize: 10,
-  fontWeight: 750,
-};
-
-const orderStyle: CSSProperties = {
-  maxWidth: 210,
-  wordBreak: "break-all",
-  fontWeight: 850,
-};
-
-const detailButtonStyle: CSSProperties = {
-  display: "inline-flex",
-  padding: "8px 10px",
-  borderRadius: 10,
-  background: "#111827",
-  color: "white",
-  textDecoration: "none",
-  fontWeight: 900,
-  whiteSpace: "nowrap",
-};
-
-const statusStyle: CSSProperties = {
-  display: "inline-flex",
-  padding: "6px 9px",
-  borderRadius: 999,
-  fontSize: 10,
-  fontWeight: 950,
-};
-
-const emptyStyle: CSSProperties = {
-  padding: 30,
-  textAlign: "center",
-  color: "rgba(15,23,42,.60)",
-  fontWeight: 850,
-};
