@@ -9,8 +9,6 @@ import { notifyClinicNewLead } from "@/lib/lead-notify";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_AUTO_ASSIGNMENTS = 50;
-
 /**
  * Türkiye cep telefonu numarasını tek formata dönüştürür.
  *
@@ -319,13 +317,6 @@ type ApiResp =
   | ApiOk
   | ApiErr;
 
-type CandidateClinic = {
-  id: string;
-  isPremium: boolean;
-  premiumExpiresAt: Date | null;
-  lastAssignedAt: Date | null;
-};
-
 function friendlyError(
   code: string
 ): string {
@@ -342,64 +333,6 @@ function friendlyError(
     default:
       return "Gönderim başarısız. Lütfen tekrar deneyin.";
   }
-}
-
-function isPremiumActive(
-  clinic: CandidateClinic,
-  now: Date
-): boolean {
-  return Boolean(
-    clinic.isPremium &&
-      clinic.premiumExpiresAt &&
-      clinic.premiumExpiresAt.getTime() >
-        now.getTime()
-  );
-}
-
-function rankCandidates(
-  candidates: CandidateClinic[],
-  now: Date
-): CandidateClinic[] {
-  return [...candidates].sort(
-    (a, b) => {
-      const aPremium =
-        isPremiumActive(
-          a,
-          now
-        );
-
-      const bPremium =
-        isPremiumActive(
-          b,
-          now
-        );
-
-      if (
-        aPremium !==
-        bPremium
-      ) {
-        return aPremium
-          ? -1
-          : 1;
-      }
-
-      const aLast =
-        a.lastAssignedAt?.getTime() ??
-        0;
-
-      const bLast =
-        b.lastAssignedAt?.getTime() ??
-        0;
-
-      if (aLast !== bLast) {
-        return aLast - bLast;
-      }
-
-      return a.id.localeCompare(
-        b.id
-      );
-    }
-  );
 }
 
 async function createLeadSafely(
@@ -538,8 +471,6 @@ async function notifyAssignedClinics(
             id: true,
             name: true,
             email: true,
-            isPremium: true,
-            premiumExpiresAt: true,
           },
         }),
 
@@ -564,42 +495,8 @@ async function notifyAssignedClinics(
       return;
     }
 
-    const now =
-      new Date();
-
     const orderedClinics =
-      [...clinics].sort(
-        (a, b) => {
-          const aPremium =
-            Boolean(
-              a.isPremium &&
-                a.premiumExpiresAt &&
-                a.premiumExpiresAt.getTime() >
-                  now.getTime()
-            );
-
-          const bPremium =
-            Boolean(
-              b.isPremium &&
-                b.premiumExpiresAt &&
-                b.premiumExpiresAt.getTime() >
-                  now.getTime()
-            );
-
-          if (
-            aPremium !==
-            bPremium
-          ) {
-            return aPremium
-              ? -1
-              : 1;
-          }
-
-          return a.id.localeCompare(
-            b.id
-          );
-        }
-      );
+      [...clinics];
 
     const results =
       await Promise.allSettled(
@@ -1032,310 +929,96 @@ export async function POST(
     }
 
     /*
-      GENEL TEKLİF FORMU
+      GENEL TEKLİF FORMU — FCFS MARKETPLACE
 
-      - Lead önce oluşturulur
-      - Aktif şehir + hizmet kapsamına sahip klinikler bulunur
-      - Eski abonelik ve kota şartı aranmaz
-      - Uygun kliniklere kilitli olarak atanır
-      - Premium klinikler sıralamada öne alınır
-      - Klinik kredi harcayarak iletişim bilgilerini açar
+      - Lead yalnızca bir kez oluşturulur.
+      - Kliniklere önceden LeadAssignment oluşturulmaz.
+      - Premium / standart dağıtım sıralaması yapılmaz.
+      - lastAssignedAt güncellenmez.
+      - Şehir + hizmet kapsamı uygun kliniklere bildirim gider.
+      - Klinikler lead'i marketplace panelinde kilitli görür.
+      - İlk 3 uygun klinik kredi kullanarak satın alabilir.
+      - LeadAssignment yalnızca başarılı satın alma sırasında oluşturulur.
     */
-    const lead =
-      await createLeadSafely({
-        parsed,
-        ip,
-        ua,
+    const lead = await createLeadSafely({
+      parsed,
+      ip,
+      ua,
+      source: parsed.source,
+    });
 
-        source:
-          parsed.source,
-      });
-
-    let assignedClinicIds:
-      string[] = [];
-
+    /*
+     * Lead'in FCFS marketplace'e oluşturulduğunu logla.
+     * Log yazılamazsa lead'i kaybetmiyoruz.
+     */
     try {
-      assignedClinicIds =
-        await prisma.$transaction(
-          async (
-            tx: Prisma.TransactionClient
-          ) => {
-            const candidateClinics =
-              await tx.clinic.findMany({
-                where: {
-                  isActive:
-                    true,
-
-                  coverages: {
-                    some: {
-                      city:
-                        parsed.city,
-
-                      service:
-                        parsed.service,
-
-                      isActive:
-                        true,
-                    },
-                  },
-                },
-
-                select: {
-                  id: true,
-
-                  isPremium:
-                    true,
-
-                  premiumExpiresAt:
-                    true,
-
-                  lastAssignedAt:
-                    true,
-                },
-
-                take:
-                  MAX_AUTO_ASSIGNMENTS,
-              });
-
-            if (
-              candidateClinics.length ===
-              0
-            ) {
-              await tx.leadDistributionLog.create(
-                {
-                  data: {
-                    leadId:
-                      lead.id,
-
-                    clinicId:
-                      null,
-
-                    city:
-                      parsed.city,
-
-                    service:
-                      parsed.service,
-
-                    assigned:
-                      false,
-
-                    reason:
-                      "auto_no_coverage_candidate",
-
-                    details: {
-                      note:
-                        "Aktif şehir + hizmet kapsamına sahip klinik bulunamadı.",
-
-                      subscriptionRequired:
-                        false,
-                    },
-                  },
-                }
-              );
-
-              return [];
-            }
-
-            const rankedCandidates =
-              rankCandidates(
-                candidateClinics,
-                now
-              );
-
-            const clinicIds =
-              rankedCandidates.map(
-                (clinic) =>
-                  clinic.id
-              );
-
-            await tx.leadAssignment.createMany(
-              {
-                data:
-                  rankedCandidates.map(
-                    (clinic) => ({
-                      leadId:
-                        lead.id,
-
-                      clinicId:
-                        clinic.id,
-
-                      unlocked:
-                        false,
-
-                      unlockPrice:
-                        1,
-                    })
-                  ),
-
-                skipDuplicates:
-                  true,
-              }
-            );
-
-            await tx.clinic.updateMany({
-              where: {
-                id: {
-                  in:
-                    clinicIds,
-                },
-              },
-
-              data: {
-                lastAssignedAt:
-                  now,
-              },
-            });
-
-            for (
-              let index = 0;
-              index <
-              rankedCandidates.length;
-              index += 1
-            ) {
-              const clinic =
-                rankedCandidates[
-                  index
-                ];
-
-              const premiumActive =
-                isPremiumActive(
-                  clinic,
-                  now
-                );
-
-              await tx.leadDistributionLog.create(
-                {
-                  data: {
-                    leadId:
-                      lead.id,
-
-                    clinicId:
-                      clinic.id,
-
-                    city:
-                      parsed.city,
-
-                    service:
-                      parsed.service,
-
-                    assigned:
-                      true,
-
-                    reason:
-                      premiumActive
-                        ? "auto_distribution_premium_locked"
-                        : "auto_distribution_locked",
-
-                    details: {
-                      model:
-                        "multi_clinic_credit_unlock",
-
-                      locked:
-                        true,
-
-                      unlockPrice:
-                        1,
-
-                      subscriptionRequired:
-                        false,
-
-                      premiumPriority:
-                        premiumActive,
-
-                      priorityOrder:
-                        index +
-                        1,
-
-                      totalAssignedClinics:
-                        rankedCandidates.length,
-                    },
-                  },
-                }
-              );
-            }
-
-            return clinicIds;
-          }
-        );
-    } catch (e) {
+      await prisma.leadDistributionLog.create({
+        data: {
+          leadId: lead.id,
+          clinicId: null,
+          city: parsed.city,
+          service: parsed.service,
+          assigned: false,
+          reason: "fcfs_marketplace_created",
+          details: {
+            model: "fcfs_marketplace",
+            maxPurchases: 3,
+            unlockPrice: 1,
+            assignmentCreatedOnPurchase: true,
+          },
+        },
+      });
+    } catch (logError) {
       console.error(
-        "AUTO_DISTRIBUTION_FAILED_BUT_LEAD_CREATED:",
-        e
-      );
-
-      try {
-        await prisma
-          .leadDistributionLog
-          .create({
-            data: {
-              leadId:
-                lead.id,
-
-              clinicId:
-                null,
-
-              city:
-                parsed.city,
-
-              service:
-                parsed.service,
-
-              assigned:
-                false,
-
-              reason:
-                "auto_distribution_failed",
-
-              details: {
-                error:
-                  e instanceof
-                  Error
-                    ? e.message
-                    : "UNKNOWN_ERROR",
-              },
-            },
-          });
-      } catch (
+        "FCFS_MARKETPLACE_LOG_FAILED:",
         logError
-      ) {
-        console.error(
-          "AUTO_DISTRIBUTION_FAILURE_LOG_FAILED:",
-          logError
-        );
-      }
-
-      assignedClinicIds =
-        [];
+      );
     }
 
-    if (
-      assignedClinicIds.length >
-      0
-    ) {
-      await notifyAssignedClinics(
-        assignedClinicIds,
-        lead.id
+    /*
+     * FCFS modelinde bildirim assignment'a değil kapsama gider.
+     * Aktif şehir + hizmet kapsamına sahip klinikler
+     * yeni lead bildirimini alır ve yarış başlar.
+     */
+    try {
+      const coverages = await prisma.clinicCoverage.findMany({
+        where: {
+          city: parsed.city,
+          service: parsed.service,
+          isActive: true,
+          clinic: {
+            isActive: true,
+          },
+        },
+        select: {
+          clinicId: true,
+        },
+        take: 50,
+      });
+
+      const coverageClinicIds = Array.from(
+        new Set(coverages.map((coverage) => coverage.clinicId))
+      );
+
+      if (coverageClinicIds.length > 0) {
+        await notifyAssignedClinics(
+          coverageClinicIds,
+          lead.id
+        );
+      }
+    } catch (notifyError) {
+      console.error(
+        "FCFS_MARKETPLACE_NOTIFY_FAILED:",
+        notifyError
       );
     }
 
     return NextResponse.json(
       {
         ok: true,
-
         lead,
-
-        assigned:
-          assignedClinicIds.length >
-          0,
-
-        clinicId:
-          assignedClinicIds.length ===
-          1
-            ? assignedClinicIds[0]
-            : undefined,
-
-        assignedClinicCount:
-          assignedClinicIds.length,
+        assigned: false,
+        assignedClinicCount: 0,
       },
       {
         status: 201,

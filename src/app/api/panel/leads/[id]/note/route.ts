@@ -13,7 +13,9 @@ const BodySchema = z.object({
     .optional()
     .or(z.literal(""))
     .transform((v) => (v ? v : null)),
+
   setLastContactNow: z.boolean().optional(),
+
   clearLastContactAt: z.boolean().optional(),
 });
 
@@ -25,51 +27,102 @@ async function getParamId(req: Request, ctx: unknown): Promise<string> {
   if (anyCtx?.params) {
     const p = anyCtx.params as unknown;
 
-    // params Promise olabilir (Next 16)
     if (typeof (p as { then?: unknown })?.then === "function") {
       const resolved = (await p) as { id?: string };
-      if (typeof resolved?.id === "string" && resolved.id.trim()) return resolved.id.trim();
+
+      if (typeof resolved?.id === "string" && resolved.id.trim()) {
+        return resolved.id.trim();
+      }
     }
 
     const obj = p as { id?: string };
-    if (typeof obj?.id === "string" && obj.id.trim()) return obj.id.trim();
+
+    if (typeof obj?.id === "string" && obj.id.trim()) {
+      return obj.id.trim();
+    }
   }
 
-  // fallback: url segment
   const url = new URL(req.url);
   const parts = url.pathname.split("/").filter(Boolean);
-  // .../leads/{id}/note
+
   return parts[parts.length - 2]?.trim() ?? "";
 }
 
-export async function PATCH(req: Request, ctx: unknown): Promise<NextResponse> {
+export async function PATCH(
+  req: Request,
+  ctx: unknown
+): Promise<NextResponse> {
   try {
-    const token = (await cookies()).get("clinic_session")?.value ?? "";
-    const session = token ? await verifyClinicSession(token) : null;
+    const token =
+      (await cookies()).get("clinic_session")?.value ?? "";
+
+    const session = token
+      ? await verifyClinicSession(token)
+      : null;
 
     if (!session) {
-      return NextResponse.json({ ok: false, code: "UNAUTHORIZED_CLINIC" }, { status: 401 });
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "UNAUTHORIZED_CLINIC",
+        },
+        {
+          status: 401,
+        }
+      );
     }
 
     const leadId = await getParamId(req, ctx);
+
     if (!leadId) {
-      return NextResponse.json({ ok: false, code: "MISSING_ID" }, { status: 400 });
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "MISSING_ID",
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
     const json: unknown = await req.json();
     const body: Body = BodySchema.parse(json);
 
-    // Sahiplik: bu lead bu kliniğe atanmış mı?
-    const assigned = await prisma.leadAssignment.findFirst({
-      where: { clinicId: session.clinicId, leadId },
-      select: { id: true },
+    /*
+     * Yalnızca gerçekten satın alınmış assignment
+     * CRM notu değiştirebilir.
+     *
+     * unlocked:false assignment yetki sağlamaz.
+     */
+    const assignment = await prisma.leadAssignment.findFirst({
+      where: {
+        clinicId: session.clinicId,
+        leadId,
+        unlocked: true,
+      },
+
+      select: {
+        id: true,
+      },
     });
 
-    if (!assigned) {
-      return NextResponse.json({ ok: false, code: "FORBIDDEN_NOT_YOURS" }, { status: 403 });
+    if (!assignment) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "FORBIDDEN_NOT_UNLOCKED",
+        },
+        {
+          status: 403,
+        }
+      );
     }
 
-    const data: { clinicNote?: string | null; lastContactAt?: Date | null } = {};
+    const data: {
+      clinicNote?: string | null;
+      lastContactAt?: Date | null;
+    } = {};
 
     if (body.clinicNote !== undefined) {
       data.clinicNote = body.clinicNote;
@@ -81,32 +134,82 @@ export async function PATCH(req: Request, ctx: unknown): Promise<NextResponse> {
       data.lastContactAt = new Date();
     }
 
-    const updated = await prisma.lead.update({
-      where: { id: leadId },
+    /*
+     * Ortak Lead.clinicNote / Lead.lastContactAt artık
+     * güncellenmez.
+     *
+     * Her klinik kendi LeadAssignment kaydını günceller.
+     */
+    const updated = await prisma.leadAssignment.update({
+      where: {
+        id: assignment.id,
+      },
+
       data,
+
       select: {
         id: true,
+        leadId: true,
         clinicNote: true,
         lastContactAt: true,
-        updatedAt: true,
       },
     });
 
-    return NextResponse.json({ ok: true, lead: updated }, { status: 200 });
+    /*
+     * Mevcut NoteEditor'ın response sözleşmesini mümkün
+     * olduğunca koruyoruz.
+     */
+    return NextResponse.json(
+      {
+        ok: true,
+
+        lead: {
+          id: updated.leadId,
+          clinicNote: updated.clinicNote,
+          lastContactAt: updated.lastContactAt,
+        },
+      },
+      {
+        status: 200,
+      }
+    );
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(
         {
           ok: false,
           code: "VALIDATION_ERROR",
-          issues: err.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+
+          issues: err.issues.map((i) => ({
+            path: i.path.join("."),
+            message: i.message,
+          })),
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const msg = err instanceof Error ? err.message : "UNKNOWN";
-    console.error("LEAD_NOTE_UPDATE_ERROR:", err);
-    return NextResponse.json({ ok: false, code: "LEAD_NOTE_UPDATE_ERROR", detail: msg }, { status: 500 });
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "UNKNOWN";
+
+    console.error(
+      "LEAD_NOTE_UPDATE_ERROR:",
+      err
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "LEAD_NOTE_UPDATE_ERROR",
+        detail: msg,
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

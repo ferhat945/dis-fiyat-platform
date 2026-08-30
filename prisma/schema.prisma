@@ -93,22 +93,30 @@ model Subscription {
 }
 
 model LeadAssignment {
-  id        String   @id @default(cuid())
-  leadId    String
-  clinicId  String
-  createdAt DateTime @default(now())
+  id       String @id @default(cuid())
+  leadId   String
+  clinicId String
 
-  unlocked      Boolean   @default(true)
-  unlockedAt    DateTime?
-  unlockPrice   Int       @default(1)
+  unlocked    Boolean   @default(true)
+  unlockedAt  DateTime?
+  unlockPrice Int       @default(1)
+
   priorityUntil DateTime?
   notifiedAt    DateTime?
+
+  status        String    @default("new")
+  clinicNote    String?   @db.Text
+  lastContactAt DateTime?
+
+  createdAt DateTime @default(now())
 
   lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
-  @@unique([leadId])
+  @@unique([leadId, clinicId])
+  @@index([leadId])
   @@index([clinicId])
+  @@index([clinicId, createdAt])
   @@index([unlocked])
   @@map("lead_assignments")
 }
@@ -135,6 +143,9 @@ model Lead {
   ip                 String?
   userAgent          String?
 
+  unlockCount Int @default(0)
+
+  @@index([city, service, createdAt])
   @@map("lead")
 }
 
