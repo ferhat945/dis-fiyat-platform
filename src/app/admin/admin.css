@@ -1101,3 +1101,183 @@ a {
     transition: none;
   }
 }
+
+/* =========================================================
+   ADMIN OKUNABİLİRLİK GÜNCELLEMESİ
+   ========================================================= */
+
+.adminBrandText strong {
+  font-size: 19px;
+}
+
+.adminBrandText span {
+  font-size: 13px;
+}
+
+.adminSidebarStatus strong {
+  font-size: 13px;
+}
+
+.adminSidebarStatus span:not(.adminStatusDot) {
+  font-size: 11px;
+}
+
+.adminNavGroupTitle {
+  font-size: 11px;
+}
+
+.adminNavContent strong {
+  font-size: 14px;
+}
+
+.adminNavContent small {
+  font-size: 11px;
+}
+
+.adminVisitSite strong {
+  font-size: 13px;
+}
+
+.adminVisitSite small {
+  font-size: 11px;
+}
+
+.adminLogoutButton {
+  font-size: 13px;
+}
+
+.adminSidebarVersion {
+  font-size: 10px;
+}
+
+.adminTopbarBreadcrumb {
+  font-size: 11px;
+}
+
+.adminTopbarTitle > strong {
+  font-size: 17px;
+}
+
+.adminTopbarSiteButton {
+  font-size: 12px;
+}
+
+.adminAccountText strong {
+  font-size: 12px;
+}
+
+.adminAccountText span {
+  font-size: 10px;
+}
+
+.adminContentHeader h1 {
+  font-size: clamp(28px, 3vw, 34px);
+}
+
+.adminContentHeader p {
+  font-size: 14px;
+}
+
+.adminContentHeaderBadge {
+  font-size: 11px;
+}
+
+.adminCardHeader h2,
+.adminCardHeader h3 {
+  font-size: 17px;
+}
+
+.adminCardHeader p {
+  font-size: 13px;
+}
+
+.adminStatLabel {
+  font-size: 13px;
+}
+
+.adminStatValue {
+  font-size: 30px;
+}
+
+.adminStatMeta {
+  font-size: 12px;
+}
+
+.adminBadge {
+  min-height: 27px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.adminTable th {
+  padding: 13px 15px;
+  font-size: 12px;
+}
+
+.adminTable td {
+  padding: 15px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.adminInput,
+.adminSelect,
+.adminTextarea {
+  font-size: 14px;
+}
+
+.adminInput,
+.adminSelect {
+  height: 44px;
+}
+
+.adminTextarea {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.adminButton {
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 12px;
+}
+
+.adminEmptyState strong {
+  font-size: 16px;
+}
+
+.adminEmptyState p {
+  font-size: 13px;
+}
+
+/* Sayfalarda inline olarak kullandığımız küçük açıklamaları da büyüt */
+.adminPageContent {
+  font-size: 14px;
+}
+
+/* Mobil */
+@media (max-width: 640px) {
+  .adminContentHeader h1 {
+    font-size: 27px;
+  }
+
+  .adminContentHeader p {
+    font-size: 13px;
+  }
+
+  .adminTable th {
+    font-size: 11px;
+  }
+
+  .adminTable td {
+    font-size: 12px;
+  }
+
+  .adminNavContent strong {
+    font-size: 14px;
+  }
+
+  .adminNavContent small {
+    font-size: 11px;
+  }
+}
