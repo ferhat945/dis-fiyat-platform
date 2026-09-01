@@ -1,10 +1,6 @@
 "use client";
 
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CITIES,
@@ -113,25 +109,35 @@ function isStringArray(
 function normalizeTurkishMobilePhone(
   value: string,
 ): string | null {
-  let digits = value.replace(/\D/g, "");
+  let digits =
+    value.replace(/\D/g, "");
 
-  if (digits.startsWith("0090")) {
-    digits = digits.slice(4);
+  if (
+    digits.startsWith("0090")
+  ) {
+    digits =
+      digits.slice(4);
   } else if (
     digits.startsWith("90") &&
     digits.length === 12
   ) {
-    digits = digits.slice(2);
+    digits =
+      digits.slice(2);
   }
 
   if (
     digits.startsWith("0") &&
     digits.length === 11
   ) {
-    digits = digits.slice(1);
+    digits =
+      digits.slice(1);
   }
 
-  if (!/^5\d{9}$/.test(digits)) {
+  if (
+    !/^5\d{9}$/.test(
+      digits,
+    )
+  ) {
     return null;
   }
 
@@ -141,30 +147,38 @@ function normalizeTurkishMobilePhone(
 function formatTurkishMobileInput(
   value: string,
 ): string {
-  let digits = value.replace(/\D/g, "");
+  let digits =
+    value.replace(/\D/g, "");
 
-  if (digits.startsWith("0090")) {
-    digits = digits.slice(4);
+  if (
+    digits.startsWith("0090")
+  ) {
+    digits =
+      digits.slice(4);
   } else if (
     digits.startsWith("90")
   ) {
-    digits = digits.slice(2);
+    digits =
+      digits.slice(2);
   }
 
   if (
     digits.startsWith("5")
   ) {
-    digits = `0${digits}`;
+    digits =
+      `0${digits}`;
   }
 
   if (
     digits &&
     !digits.startsWith("0")
   ) {
-    digits = `0${digits}`;
+    digits =
+      `0${digits}`;
   }
 
-  digits = digits.slice(0, 11);
+  digits =
+    digits.slice(0, 11);
 
   const first =
     digits.slice(0, 4);
@@ -195,14 +209,18 @@ function parseStoredDentalAnalysis(
     const parsed: unknown =
       JSON.parse(rawValue);
 
-    if (!isRecord(parsed)) {
+    if (
+      !isRecord(parsed)
+    ) {
       return null;
     }
 
     if (
       typeof parsed.createdAt !==
         "string" ||
-      !isRecord(parsed.analysis)
+      !isRecord(
+        parsed.analysis,
+      )
     ) {
       return null;
     }
@@ -289,15 +307,18 @@ function formatAiAnalysisForLead(
 
   if (
     analysis
-      .visibleObservations.length >
-    0
+      .visibleObservations
+      .length > 0
   ) {
     parts.push(
       "",
       "Fotoğrafta görülebilen genel özellikler:",
-      ...analysis.visibleObservations.map(
-        (item) => `- ${item}`,
-      ),
+      ...analysis
+        .visibleObservations
+        .map(
+          (item) =>
+            `- ${item}`,
+        ),
     );
   }
 
@@ -312,7 +333,8 @@ function formatAiAnalysisForLead(
       ...analysis
         .suggestedTreatmentCategories
         .map(
-          (item) => `- ${item}`,
+          (item) =>
+            `- ${item}`,
         ),
     );
   }
@@ -371,7 +393,8 @@ export default function OfferForm({
   const [
     fullName,
     setFullName,
-  ] = useState<string>("");
+  ] =
+    useState<string>("");
 
   const [phone, setPhone] =
     useState<string>("");
@@ -557,7 +580,9 @@ export default function OfferForm({
       services[0] ?? "";
 
     if (firstCity) {
-      setCity(firstCity);
+      setCity(
+        firstCity,
+      );
     }
 
     if (firstService) {
@@ -572,7 +597,8 @@ export default function OfferForm({
   ]);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled =
+      false;
 
     async function loadAiContext(): Promise<void> {
       await Promise.resolve();
@@ -607,6 +633,7 @@ export default function OfferForm({
           setAiContextLoaded(
             true,
           );
+
           return;
         }
 
@@ -621,7 +648,9 @@ export default function OfferForm({
           ) ||
           Date.now() -
             createdAtMs >
-            60 * 60 * 1000;
+            60 *
+              60 *
+              1000;
 
         if (isExpired) {
           window.sessionStorage.removeItem(
@@ -631,6 +660,7 @@ export default function OfferForm({
           setAiContextLoaded(
             true,
           );
+
           return;
         }
 
@@ -651,7 +681,8 @@ export default function OfferForm({
     void loadAiContext();
 
     return () => {
-      cancelled = true;
+      cancelled =
+        true;
     };
   }, []);
 
@@ -660,7 +691,9 @@ export default function OfferForm({
       if (isDirect) {
         return directCities.map(
           (citySlug) => ({
-            slug: citySlug,
+            slug:
+              citySlug,
+
             label:
               cityLabel(
                 citySlug,
@@ -671,13 +704,17 @@ export default function OfferForm({
 
       return (
         CITIES as readonly string[]
-      ).map((citySlug) => ({
-        slug: citySlug,
-        label:
-          cityLabel(
+      ).map(
+        (citySlug) => ({
+          slug:
             citySlug,
-          ),
-      }));
+
+          label:
+            cityLabel(
+              citySlug,
+            ),
+        }),
+      );
     }, [
       isDirect,
       directCities,
@@ -759,7 +796,9 @@ export default function OfferForm({
   }
 
   function removeAiAnalysis(): void {
-    setAiAnalysis(null);
+    setAiAnalysis(
+      null,
+    );
 
     try {
       window.sessionStorage.removeItem(
@@ -778,7 +817,9 @@ export default function OfferForm({
         value,
       );
 
-    setPhone(formatted);
+    setPhone(
+      formatted,
+    );
 
     if (err) {
       setErr("");
@@ -792,7 +833,9 @@ export default function OfferForm({
 
     setErr("");
     setOk(false);
-    setPhoneTouched(true);
+    setPhoneTouched(
+      true,
+    );
 
     const phoneForApi =
       normalizeTurkishMobilePhone(
@@ -819,7 +862,9 @@ export default function OfferForm({
         undefined,
 
       city:
-        normalizeSlug(city),
+        normalizeSlug(
+          city,
+        ),
 
       service:
         normalizeSlug(
@@ -863,7 +908,8 @@ export default function OfferForm({
           ? "v1-ai-dental"
           : "v1",
 
-      when: intent,
+      when:
+        intent,
     };
 
     if (
@@ -873,13 +919,17 @@ export default function OfferForm({
       setErr(
         "Lütfen şehir ve işlem seç.",
       );
+
       return;
     }
 
-    if (!payload.fullName) {
+    if (
+      !payload.fullName
+    ) {
       setErr(
         "Ad Soyad zorunlu.",
       );
+
       return;
     }
 
@@ -887,10 +937,13 @@ export default function OfferForm({
       setErr(
         "KVKK onayı olmadan form gönderilemez.",
       );
+
       return;
     }
 
-    setLoading(true);
+    setLoading(
+      true,
+    );
 
     try {
       const response =
@@ -918,7 +971,9 @@ export default function OfferForm({
             () => ({}),
           );
 
-      if (!response.ok) {
+      if (
+        !response.ok
+      ) {
         const errorMessage =
           readApiError(
             data,
@@ -931,6 +986,7 @@ export default function OfferForm({
       }
 
       setOk(true);
+
       setFullName("");
       setPhone("");
       setPhoneTouched(false);
@@ -941,7 +997,9 @@ export default function OfferForm({
       setWebsite("");
 
       if (aiAnalysis) {
-        setAiAnalysis(null);
+        setAiAnalysis(
+          null,
+        );
 
         try {
           window.sessionStorage.removeItem(
@@ -966,7 +1024,9 @@ export default function OfferForm({
           : "Beklenmeyen hata oluştu.",
       );
     } finally {
-      setLoading(false);
+      setLoading(
+        false,
+      );
     }
   }
 
@@ -998,73 +1058,28 @@ export default function OfferForm({
       {aiContextLoaded &&
       aiAnalysis ? (
         <div
-          style={{
-            margin:
-              "0 0 18px",
-
-            padding: 16,
-
-            border:
-              "1px solid rgba(102, 83, 210, 0.18)",
-
-            borderRadius: 16,
-
-            background:
-              "linear-gradient(135deg, rgba(246,244,255,0.96), rgba(241,249,255,0.96))",
-
-            boxShadow:
-              "0 12px 28px rgba(55, 43, 110, 0.07)",
-          }}
+          className={
+            styles.aiContext
+          }
         >
           <div
-            style={{
-              display:
-                "flex",
-
-              alignItems:
-                "flex-start",
-
-              justifyContent:
-                "space-between",
-
-              gap: 12,
-            }}
+            className={
+              styles.aiContextTop
+            }
           >
             <div>
               <strong
-                style={{
-                  display:
-                    "block",
-
-                  color:
-                    "#403c73",
-
-                  fontSize:
-                    14,
-
-                  fontWeight:
-                    900,
-                }}
+                className={
+                  styles.aiContextTitle
+                }
               >
-                ✨ AI ön
-                değerlendirmeniz
-                forma eklendi
+                ✨ AI ön değerlendirmeniz forma eklendi
               </strong>
 
               <p
-                style={{
-                  margin:
-                    "7px 0 0",
-
-                  color:
-                    "#67687a",
-
-                  fontSize:
-                    13,
-
-                  lineHeight:
-                    1.55,
-                }}
+                className={
+                  styles.aiContextText
+                }
               >
                 {
                   aiAnalysis.summary
@@ -1080,58 +1095,22 @@ export default function OfferForm({
               disabled={
                 loading
               }
-              style={{
-                flex:
-                  "0 0 auto",
-
-                padding:
-                  "7px 10px",
-
-                border:
-                  "1px solid rgba(90, 79, 172, 0.16)",
-
-                borderRadius:
-                  10,
-
-                background:
-                  "#ffffff",
-
-                color:
-                  "#6e658d",
-
-                fontSize:
-                  11,
-
-                fontWeight:
-                  800,
-
-                cursor:
-                  "pointer",
-              }}
+              className={
+                styles.aiContextRemove
+              }
             >
               Kaldır
             </button>
           </div>
 
           <div
-            style={{
-              marginTop:
-                10,
-
-              color:
-                "#8a8996",
-
-              fontSize:
-                11,
-
-              lineHeight:
-                1.5,
-            }}
+            className={
+              styles.aiContextNote
+            }
           >
-            Fotoğraf kliniklere
-            gönderilmez. Yalnızca
-            yukarıdaki metinsel özet
-            teklif talebine eklenir.
+            Fotoğraf kliniklere gönderilmez. Yalnızca
+            yukarıdaki metinsel özet teklif talebine
+            eklenir.
           </div>
         </div>
       ) : null}
@@ -1158,7 +1137,9 @@ export default function OfferForm({
             className={
               styles.input
             }
-            value={website}
+            value={
+              website
+            }
             onChange={(
               event,
             ) =>
@@ -1255,11 +1236,8 @@ export default function OfferForm({
                   styles.help
                 }
               >
-                Bu form,
-                seçtiğiniz
-                kliniğin
-                şehirlerine göre
-                gönderilir.
+                Bu form, seçtiğiniz kliniğin şehirlerine
+                göre gönderilir.
               </div>
             ) : null}
           </div>
@@ -1278,7 +1256,9 @@ export default function OfferForm({
               className={
                 styles.select
               }
-              value={service}
+              value={
+                service
+              }
               onChange={(
                 event,
               ) =>
@@ -1325,9 +1305,7 @@ export default function OfferForm({
                   styles.help
                 }
               >
-                Bu form sadece
-                seçtiğiniz
-                kliniğe
+                Bu form sadece seçtiğiniz kliniğe
                 iletilir.
               </div>
             ) : null}
@@ -1384,7 +1362,9 @@ export default function OfferForm({
               className={
                 styles.input
               }
-              value={phone}
+              value={
+                phone
+              }
               onChange={(
                 event,
               ) =>
@@ -1458,8 +1438,7 @@ export default function OfferForm({
             }
           >
             <label htmlFor="email">
-              E-posta
-              (opsiyonel)
+              E-posta (opsiyonel)
             </label>
 
             <input
@@ -1467,7 +1446,9 @@ export default function OfferForm({
               className={
                 styles.input
               }
-              value={email}
+              value={
+                email
+              }
               onChange={(
                 event,
               ) =>
@@ -1488,8 +1469,7 @@ export default function OfferForm({
             }
           >
             <label htmlFor="intent">
-              Ne zaman
-              düşünüyorsunuz?
+              Ne zaman düşünüyorsunuz?
             </label>
 
             <select
@@ -1545,7 +1525,9 @@ export default function OfferForm({
             className={
               styles.input
             }
-            value={message}
+            value={
+              message
+            }
             onChange={(
               event,
             ) =>
@@ -1563,10 +1545,8 @@ export default function OfferForm({
                 styles.help
               }
             >
-              Kendi notunuz,
-              AI özetiyle
-              birlikte kliniğe
-              iletilir.
+              Kendi notunuz, AI özetiyle birlikte
+              kliniğe iletilir.
             </div>
           ) : null}
         </div>
@@ -1592,11 +1572,9 @@ export default function OfferForm({
           />
 
           <span>
-            KVKK aydınlatma
-            metnini okudum ve
-            iletişime
-            geçilmesine onay
-            veriyorum.{" "}
+            KVKK aydınlatma metnini okudum ve iletişime
+            geçilmesine onay veriyorum.{" "}
+
             <Link
               className={
                 styles.inlineLink
@@ -1623,8 +1601,8 @@ export default function OfferForm({
             }
           >
             {loading
-              ? "Gönderiliyor..."
-              : "Gönder"}
+              ? "Teklifiniz gönderiliyor..."
+              : "Ücretsiz Teklifimi Gönder →"}
           </button>
 
           <Link
@@ -1633,6 +1611,29 @@ export default function OfferForm({
           >
             Şehirleri Gör
           </Link>
+        </div>
+
+        <div
+          className={
+            styles.trustRow
+          }
+          aria-label="Teklif formu özellikleri"
+        >
+          <span>
+            ✓ Ücretsiz
+          </span>
+
+          <span>
+            🛡️ KVKK onaylı
+          </span>
+
+          <span>
+            🦷 Fotoğraf gerekmez
+          </span>
+
+          <span>
+            📞 Hızlı geri dönüş
+          </span>
         </div>
       </form>
     </>
