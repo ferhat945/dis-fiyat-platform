@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import styles from "./page.module.css";
 
 type Coverage = {
@@ -10,277 +16,1254 @@ type Coverage = {
   isActive: boolean;
 };
 
-type GetResp = { ok: true; coverages: Coverage[] } | { ok: false; code: string };
+type GetResp =
+  | {
+      ok: true;
+      coverages: Coverage[];
+    }
+  | {
+      ok: false;
+      code: string;
+    };
 
 type PostResp =
-  | { ok: true } // API şu an sadece { ok: true } dönüyor
-  | { ok: false; code: string; issues?: { path: string; message: string }[] };
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      code: string;
+      issues?: Array<{
+        path: string;
+        message: string;
+      }>;
+    };
 
-type PatchResp = { ok: true } | { ok: false; code: string };
+type PatchResp =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      code: string;
+    };
 
-function norm(v: string): string {
-  return v.toLowerCase().trim();
+function norm(
+  value: string,
+): string {
+  return value
+    .toLowerCase()
+    .trim();
 }
 
-function labelize(v: string): string {
-  const s = v.trim();
-  if (!s) return s;
-  return s
+function labelize(
+  value: string,
+): string {
+  const clean =
+    value.trim();
+
+  if (!clean) {
+    return clean;
+  }
+
+  return clean
     .split("-")
     .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .map(
+      (part) =>
+        part.charAt(0).toUpperCase() +
+        part.slice(1),
+    )
     .join(" ");
 }
 
 export default function PanelServicesPage(): JSX.Element {
-  const [coverages, setCoverages] = useState<Coverage[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [
+    coverages,
+    setCoverages,
+  ] = useState<Coverage[]>([]);
 
-  const [city, setCity] = useState<string>("istanbul");
-  const [service, setService] = useState<string>("implant");
+  const [
+    loading,
+    setLoading,
+  ] = useState<boolean>(true);
 
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState<boolean>(false);
+  const [
+    city,
+    setCity,
+  ] = useState<string>(
+    "istanbul",
+  );
 
-  const sorted = useMemo(() => {
-    return [...coverages].sort((a, b) => {
-      const x = `${a.city}|${a.service}`;
-      const y = `${b.city}|${b.service}`;
-      return x.localeCompare(y, "tr");
-    });
-  }, [coverages]);
+  const [
+    service,
+    setService,
+  ] = useState<string>(
+    "implant",
+  );
 
-  const activeCount = useMemo(() => coverages.filter((c) => c.isActive).length, [coverages]);
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null,
+  );
 
-  const load = async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await fetch("/api/panel/coverages", { cache: "no-store" });
-      const j = (await r.json()) as GetResp;
+  const [
+    saving,
+    setSaving,
+  ] = useState<boolean>(false);
 
-      if (!r.ok || !j.ok) {
-        setError(j.ok ? "UNKNOWN" : j.code);
-        setCoverages([]);
-        return;
+  const sorted =
+    useMemo(() => {
+      return [
+        ...coverages,
+      ].sort(
+        (
+          a,
+          b,
+        ) => {
+          const x =
+            `${a.city}|${a.service}`;
+
+          const y =
+            `${b.city}|${b.service}`;
+
+          return x.localeCompare(
+            y,
+            "tr",
+          );
+        },
+      );
+    }, [
+      coverages,
+    ]);
+
+  const activeCount =
+    useMemo(
+      () =>
+        coverages.filter(
+          (coverage) =>
+            coverage.isActive,
+        ).length,
+      [
+        coverages,
+      ],
+    );
+
+  const passiveCount =
+    Math.max(
+      0,
+      coverages.length -
+        activeCount,
+    );
+
+  const canAdd =
+    norm(city).length >= 2 &&
+    norm(service).length >=
+      2 &&
+    !saving;
+
+  const load =
+    async (): Promise<void> => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response =
+          await fetch(
+            "/api/panel/coverages",
+            {
+              cache:
+                "no-store",
+            },
+          );
+
+        const data =
+          (await response.json()) as GetResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          setError(
+            data.ok
+              ? "UNKNOWN"
+              : data.code,
+          );
+
+          setCoverages(
+            [],
+          );
+
+          return;
+        }
+
+        setCoverages(
+          data.coverages,
+        );
+      } catch {
+        setError(
+          "NETWORK_ERROR",
+        );
+
+        setCoverages(
+          [],
+        );
+      } finally {
+        setLoading(false);
       }
-
-      setCoverages(j.coverages);
-    } catch {
-      setError("NETWORK_ERROR");
-      setCoverages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   useEffect(() => {
     void load();
   }, []);
 
-  const addCoverage = async (): Promise<void> => {
-    setSaving(true);
-    setError(null);
-
-    try {
-      const payload = { city: norm(city), service: norm(service) };
-
-      const r = await fetch("/api/panel/coverages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const j = (await r.json()) as PostResp;
-
-      if (!r.ok || !j.ok) {
-        const issues =
-          "issues" in j && j.issues?.length
-            ? ` | ${j.issues.map((x) => `${x.path}: ${x.message}`).join(", ")}`
-            : "";
-        setError(`${j.ok ? "UNKNOWN" : j.code}${issues}`);
+  const addCoverage =
+    async (): Promise<void> => {
+      if (!canAdd) {
         return;
       }
 
-      // API coverage döndürmüyor -> doğru yöntem: yeniden yükle
-      await load();
-    } catch {
-      setError("NETWORK_ERROR");
-    } finally {
-      setSaving(false);
-    }
-  };
+      setSaving(true);
+      setError(null);
 
-  const toggle = async (c: Coverage): Promise<void> => {
-    setError(null);
+      try {
+        const payload = {
+          city:
+            norm(city),
 
-    const nextValue = !c.isActive;
+          service:
+            norm(
+              service,
+            ),
+        };
 
-    // Optimistic UI
-    setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: nextValue } : x)));
+        const response =
+          await fetch(
+            "/api/panel/coverages",
+            {
+              method:
+                "POST",
 
-    try {
-      const r = await fetch("/api/panel/coverages", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: c.id, isActive: nextValue }),
-      });
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
 
-      const j = (await r.json()) as PatchResp;
+              body:
+                JSON.stringify(
+                  payload,
+                ),
+            },
+          );
 
-      if (!r.ok || !j.ok) {
-        // geri al
-        setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: c.isActive } : x)));
-        setError(j.ok ? "UNKNOWN" : j.code);
-        return;
+        const data =
+          (await response.json()) as PostResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          const issues =
+            "issues" in
+              data &&
+            data.issues
+              ?.length
+              ? ` | ${data.issues
+                  .map(
+                    (
+                      issue,
+                    ) =>
+                      `${issue.path}: ${issue.message}`,
+                  )
+                  .join(", ")}`
+              : "";
+
+          setError(
+            `${
+              data.ok
+                ? "UNKNOWN"
+                : data.code
+            }${issues}`,
+          );
+
+          return;
+        }
+
+        /*
+         * API coverage nesnesi döndürmediği için
+         * başarılı ekleme sonrası listeyi tekrar
+         * sunucudan yüklüyoruz.
+         */
+        await load();
+      } catch {
+        setError(
+          "NETWORK_ERROR",
+        );
+      } finally {
+        setSaving(false);
       }
-    } catch {
-      // geri al
-      setCoverages((prev) => prev.map((x) => (x.id === c.id ? { ...x, isActive: c.isActive } : x)));
-      setError("NETWORK_ERROR");
-    }
-  };
+    };
+
+  const toggle =
+    async (
+      coverage: Coverage,
+    ): Promise<void> => {
+      setError(null);
+
+      const nextValue =
+        !coverage.isActive;
+
+      /*
+       * Optimistic UI:
+       * API cevabını beklemeden ekranda değiştir.
+       */
+      setCoverages(
+        (
+          previous,
+        ) =>
+          previous.map(
+            (
+              item,
+            ) =>
+              item.id ===
+              coverage.id
+                ? {
+                    ...item,
+                    isActive:
+                      nextValue,
+                  }
+                : item,
+          ),
+      );
+
+      try {
+        const response =
+          await fetch(
+            "/api/panel/coverages",
+            {
+              method:
+                "PATCH",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify(
+                  {
+                    id:
+                      coverage.id,
+
+                    isActive:
+                      nextValue,
+                  },
+                ),
+            },
+          );
+
+        const data =
+          (await response.json()) as PatchResp;
+
+        if (
+          !response.ok ||
+          !data.ok
+        ) {
+          /*
+           * API başarısızsa optimistic değişikliği geri al.
+           */
+          setCoverages(
+            (
+              previous,
+            ) =>
+              previous.map(
+                (
+                  item,
+                ) =>
+                  item.id ===
+                  coverage.id
+                    ? {
+                        ...item,
+                        isActive:
+                          coverage.isActive,
+                      }
+                    : item,
+              ),
+          );
+
+          setError(
+            data.ok
+              ? "UNKNOWN"
+              : data.code,
+          );
+
+          return;
+        }
+      } catch {
+        /*
+         * Ağ hatasında da eski duruma dön.
+         */
+        setCoverages(
+          (
+            previous,
+          ) =>
+            previous.map(
+              (
+                item,
+              ) =>
+                item.id ===
+                coverage.id
+                  ? {
+                      ...item,
+                      isActive:
+                        coverage.isActive,
+                    }
+                  : item,
+            ),
+        );
+
+        setError(
+          "NETWORK_ERROR",
+        );
+      }
+    };
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.top}>
-        <div>
-          <div className={styles.pill}>🧩 Kapsam Yönetimi</div>
-          <h1 className={styles.h1}>Hizmetlerim</h1>
-          <div className={styles.sub}>
-            Şehir + hizmet eşleşmelerini ekle. Aktif olanlar lead eşleşmesinde kullanılabilir.
+    <div
+      className={
+        styles.wrap
+      }
+    >
+      {/* =====================================================
+          HERO
+      ===================================================== */}
+
+      <section
+        className={
+          styles.hero
+        }
+      >
+        <div
+          className={
+            styles.heroGlow
+          }
+          aria-hidden
+        />
+
+        <div
+          className={
+            styles.heroContent
+          }
+        >
+          <div
+            className={
+              styles.pill
+            }
+          >
+            <span>
+              ▦
+            </span>
+
+            Kapsam Yönetimi
+          </div>
+
+          <h1
+            className={
+              styles.h1
+            }
+          >
+            Hizmetlerim
+          </h1>
+
+          <p
+            className={
+              styles.sub
+            }
+          >
+            Şehir ve hizmet
+            eşleşmelerini
+            yönetin. Aktif
+            kapsamlarınız,
+            uygun hasta
+            taleplerinin
+            eşleştirilmesinde
+            kullanılır.
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.heroVisual
+          }
+          aria-hidden
+        >
+          <div
+            className={
+              styles.toothOrb
+            }
+          >
+            <span
+              className={
+                styles.tooth
+              }
+            >
+              🦷
+            </span>
+
+            <span
+              className={
+                styles.shield
+              }
+            >
+              ✓
+            </span>
           </div>
         </div>
 
-        <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Toplam Kapsam</div>
-            <div className={styles.statValue}>{coverages.length}</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>Aktif</div>
-            <div className={styles.statValue}>{activeCount}</div>
-          </div>
-        </div>
-      </div>
+        <div
+          className={
+            styles.statsRow
+          }
+        >
+          <div
+            className={
+              styles.statCard
+            }
+          >
+            <div
+              className={
+                styles.statIcon
+              }
+            >
+              ▱
+            </div>
 
-      <div className={styles.grid}>
-        {/* ADD CARD */}
-        <section className={`${styles.card} ${styles.cardGlow}`}>
-          <div className={styles.cardInner}>
-            <div className={styles.cardHead}>
-              <div>
-                <div className={styles.cardTitle}>Yeni Kapsam Ekle</div>
-                <div className={styles.cardSub}>Örn: istanbul + implant</div>
+            <div>
+              <div
+                className={
+                  styles.statLabel
+                }
+              >
+                Toplam Kapsam
               </div>
 
-              <button className={styles.btnGhost} type="button" onClick={() => void load()} disabled={saving}>
+              <div
+                className={
+                  styles.statValue
+                }
+              >
+                {
+                  coverages.length
+                }
+              </div>
+
+              <div
+                className={
+                  styles.statHelp
+                }
+              >
+                Kayıtlı eşleşme
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={
+              styles.statCard
+            }
+          >
+            <div
+              className={`${styles.statIcon} ${styles.statIconActive}`}
+            >
+              ✓
+            </div>
+
+            <div>
+              <div
+                className={
+                  styles.statLabel
+                }
+              >
+                Aktif Kapsam
+              </div>
+
+              <div
+                className={
+                  styles.statValue
+                }
+              >
+                {
+                  activeCount
+                }
+              </div>
+
+              <div
+                className={
+                  styles.statHelp
+                }
+              >
+                Lead eşleşmesinde
+                aktif
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error ? (
+        <div
+          className={
+            styles.msgErr
+          }
+        >
+          <div
+            className={
+              styles.msgErrIcon
+            }
+          >
+            !
+          </div>
+
+          <div>
+            <strong>
+              İşlem tamamlanamadı
+            </strong>
+
+            <span>
+              Hata: {error}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* =====================================================
+          MAIN GRID
+      ===================================================== */}
+
+      <div
+        className={
+          styles.grid
+        }
+      >
+        {/* ===================================================
+            ADD COVERAGE
+        =================================================== */}
+
+        <section
+          className={`${styles.card} ${styles.addCard}`}
+        >
+          <div
+            className={
+              styles.cardInner
+            }
+          >
+            <div
+              className={
+                styles.cardHead
+              }
+            >
+              <div
+                className={
+                  styles.cardHeading
+                }
+              >
+                <div
+                  className={
+                    styles.cardIcon
+                  }
+                >
+                  +
+                </div>
+
+                <div>
+                  <h2
+                    className={
+                      styles.cardTitle
+                    }
+                  >
+                    Yeni Kapsam
+                    Ekle
+                  </h2>
+
+                  <p
+                    className={
+                      styles.cardSub
+                    }
+                  >
+                    Yeni şehir +
+                    hizmet
+                    eşleşmesi
+                    oluşturun.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                className={
+                  styles.btnGhost
+                }
+                type="button"
+                onClick={() =>
+                  void load()
+                }
+                disabled={
+                  saving ||
+                  loading
+                }
+              >
+                <span>
+                  ↻
+                </span>
+
                 Yenile
               </button>
             </div>
 
-            {error ? <div className={styles.msgErr}>⚠️ Hata: {error}</div> : null}
+            <div
+              className={
+                styles.formArea
+              }
+            >
+              <div
+                className={
+                  styles.field
+                }
+              >
+                <label
+                  className={
+                    styles.label
+                  }
+                  htmlFor="coverage-city"
+                >
+                  Şehir
+                </label>
 
-            <div className={styles.formRow}>
-              <div className={styles.field}>
-                <div className={styles.labelRow}>
-                  <div className={styles.label}>Şehir</div>
-                  <div className={styles.hint}>küçük harf önerilir</div>
-                </div>
-                <div className={styles.inputFrame}>
-                  <div className={styles.icon}>📍</div>
+                <div
+                  className={
+                    styles.inputFrame
+                  }
+                >
+                  <div
+                    className={
+                      styles.icon
+                    }
+                    aria-hidden
+                  >
+                    📍
+                  </div>
+
                   <input
-                    className={styles.input}
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="istanbul"
+                    id="coverage-city"
+                    className={
+                      styles.input
+                    }
+                    value={
+                      city
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setCity(
+                        event
+                          .target
+                          .value,
+                      )
+                    }
+                    placeholder="Örn: istanbul"
                     autoComplete="off"
                   />
                 </div>
+
+                <div
+                  className={
+                    styles.fieldHelp
+                  }
+                >
+                  Hizmet verdiğiniz
+                  şehrin adını
+                  yazın.
+                </div>
               </div>
 
-              <div className={styles.field}>
-                <div className={styles.labelRow}>
-                  <div className={styles.label}>Hizmet</div>
-                  <div className={styles.hint}>slug olabilir</div>
-                </div>
-                <div className={styles.inputFrame}>
-                  <div className={styles.icon}>🦷</div>
+              <div
+                className={
+                  styles.field
+                }
+              >
+                <label
+                  className={
+                    styles.label
+                  }
+                  htmlFor="coverage-service"
+                >
+                  Hizmet
+                </label>
+
+                <div
+                  className={
+                    styles.inputFrame
+                  }
+                >
+                  <div
+                    className={
+                      styles.icon
+                    }
+                    aria-hidden
+                  >
+                    🦷
+                  </div>
+
                   <input
-                    className={styles.input}
-                    value={service}
-                    onChange={(e) => setService(e.target.value)}
-                    placeholder="implant"
+                    id="coverage-service"
+                    className={
+                      styles.input
+                    }
+                    value={
+                      service
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setService(
+                        event
+                          .target
+                          .value,
+                      )
+                    }
+                    placeholder="Örn: implant"
                     autoComplete="off"
                   />
                 </div>
+
+                <div
+                  className={
+                    styles.fieldHelp
+                  }
+                >
+                  Eklemek
+                  istediğiniz
+                  tedavi/hizmet
+                  adını yazın.
+                </div>
               </div>
 
-              <button className={styles.btnPrimary} type="button" onClick={() => void addCoverage()} disabled={saving}>
-                {saving ? "Ekleniyor..." : "Ekle"}
+              <button
+                className={
+                  styles.btnPrimary
+                }
+                type="button"
+                onClick={() =>
+                  void addCoverage()
+                }
+                disabled={
+                  !canAdd
+                }
+              >
+                <span
+                  className={
+                    styles.btnPlus
+                  }
+                >
+                  +
+                </span>
+
+                {saving
+                  ? "Ekleniyor..."
+                  : "Kapsam Ekle"}
               </button>
             </div>
 
-            <div className={styles.help}>
-              İpucu: Şehir/hizmet aynıysa API “upsert” gibi davranır. Ekledikten sonra liste güncellenir.
+            <div
+              className={
+                styles.tipBox
+              }
+            >
+              <div
+                className={
+                  styles.tipIcon
+                }
+              >
+                💡
+              </div>
+
+              <div>
+                <strong>
+                  İpucu
+                </strong>
+
+                <p>
+                  Aynı şehir ve
+                  hizmet daha önce
+                  eklenmişse sistem
+                  mevcut kaydı
+                  günceller.
+                  Ekledikten sonra
+                  liste otomatik
+                  yenilenir.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* LIST CARD */}
-        <section className={styles.card}>
-          <div className={styles.cardInner}>
-            <div className={styles.cardHead}>
-              <div>
-                <div className={styles.cardTitle}>Mevcut Kapsamlar</div>
-                <div className={styles.cardSub}>Aktif/pasif yönet</div>
+        {/* ===================================================
+            EXISTING COVERAGES
+        =================================================== */}
+
+        <section
+          className={`${styles.card} ${styles.listCard}`}
+        >
+          <div
+            className={
+              styles.cardInner
+            }
+          >
+            <div
+              className={
+                styles.cardHead
+              }
+            >
+              <div
+                className={
+                  styles.cardHeading
+                }
+              >
+                <div
+                  className={
+                    styles.cardIcon
+                  }
+                >
+                  ☷
+                </div>
+
+                <div>
+                  <h2
+                    className={
+                      styles.cardTitle
+                    }
+                  >
+                    Mevcut Kapsamlar
+                  </h2>
+
+                  <p
+                    className={
+                      styles.cardSub
+                    }
+                  >
+                    Aktif ve pasif
+                    hizmet
+                    bölgelerinizi
+                    yönetin.
+                  </p>
+                </div>
               </div>
 
-              <div className={styles.badgeRow}>
-                <span className={styles.badge}>Toplam: {sorted.length}</span>
-                <span className={`${styles.badge} ${styles.badgeOk}`}>Aktif: {activeCount}</span>
+              <div
+                className={
+                  styles.badgeRow
+                }
+              >
+                <span
+                  className={
+                    styles.badge
+                  }
+                >
+                  Tümü{" "}
+                  <strong>
+                    {
+                      sorted.length
+                    }
+                  </strong>
+                </span>
+
+                <span
+                  className={`${styles.badge} ${styles.badgeOk}`}
+                >
+                  Aktif{" "}
+                  <strong>
+                    {
+                      activeCount
+                    }
+                  </strong>
+                </span>
+
+                <span
+                  className={`${styles.badge} ${styles.badgePassive}`}
+                >
+                  Pasif{" "}
+                  <strong>
+                    {
+                      passiveCount
+                    }
+                  </strong>
+                </span>
               </div>
             </div>
 
-            {loading ? <div className={styles.loading}>Yükleniyor...</div> : null}
+            {loading ? (
+              <div
+                className={
+                  styles.loading
+                }
+              >
+                <div
+                  className={
+                    styles.loader
+                  }
+                />
 
-            {!loading && sorted.length === 0 ? (
-              <div className={styles.empty}>Henüz kapsam eklenmedi.</div>
+                <strong>
+                  Kapsamlar
+                  yükleniyor...
+                </strong>
+              </div>
             ) : null}
 
-            {!loading && sorted.length > 0 ? (
-              <div className={styles.list}>
-                {sorted.map((c) => (
-                  <div key={c.id} className={styles.item}>
-                    <div className={styles.itemTop}>
-                      <div className={styles.itemTitle}>
-                        <span className={styles.chip}>📍 {labelize(c.city)}</span>
-                        <span className={styles.chip}>🦷 {labelize(c.service)}</span>
+            {!loading &&
+            sorted.length ===
+              0 ? (
+              <div
+                className={
+                  styles.empty
+                }
+              >
+                <div
+                  className={
+                    styles.emptyIcon
+                  }
+                >
+                  🦷
+                </div>
+
+                <h3>
+                  Henüz kapsam
+                  eklenmedi.
+                </h3>
+
+                <p>
+                  Sol taraftaki
+                  formdan ilk şehir
+                  ve hizmet
+                  eşleşmenizi
+                  ekleyebilirsiniz.
+                </p>
+              </div>
+            ) : null}
+
+            {!loading &&
+            sorted.length >
+              0 ? (
+              <div
+                className={
+                  styles.list
+                }
+              >
+                <div
+                  className={
+                    styles.listHeader
+                  }
+                >
+                  <span>
+                    Şehir
+                  </span>
+
+                  <span>
+                    Hizmet
+                  </span>
+
+                  <span>
+                    Durum
+                  </span>
+
+                  <span>
+                    İşlem
+                  </span>
+                </div>
+
+                {sorted.map(
+                  (
+                    coverage,
+                  ) => (
+                    <div
+                      key={
+                        coverage.id
+                      }
+                      className={
+                        styles.item
+                      }
+                    >
+                      <div
+                        className={
+                          styles.itemCity
+                        }
+                      >
+                        <span
+                          className={
+                            styles.rowIcon
+                          }
+                        >
+                          📍
+                        </span>
+
+                        <strong>
+                          {labelize(
+                            coverage.city,
+                          )}
+                        </strong>
                       </div>
 
-                      <span className={`${styles.statusPill} ${c.isActive ? styles.statusOn : styles.statusOff}`}>
-                        {c.isActive ? "Aktif" : "Pasif"}
-                      </span>
-                    </div>
-
-                    <div className={styles.itemBottom}>
-                      <button
-                        type="button"
-                        onClick={() => void toggle(c)}
-                        className={c.isActive ? styles.btnDangerSoft : styles.btnPrimarySoft}
+                      <div
+                        className={
+                          styles.itemService
+                        }
                       >
-                        {c.isActive ? "Pasif Yap" : "Aktif Yap"}
-                      </button>
+                        <span
+                          className={
+                            styles.rowIcon
+                          }
+                        >
+                          🦷
+                        </span>
 
-                      <div className={styles.meta}>ID: {c.id}</div>
+                        <strong>
+                          {labelize(
+                            coverage.service,
+                          )}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span
+                          className={`${styles.statusPill} ${
+                            coverage.isActive
+                              ? styles.statusOn
+                              : styles.statusOff
+                          }`}
+                        >
+                          <span
+                            className={
+                              styles.statusDot
+                            }
+                          />
+
+                          {coverage.isActive
+                            ? "Aktif"
+                            : "Pasif"}
+                        </span>
+                      </div>
+
+                      <div
+                        className={
+                          styles.itemAction
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void toggle(
+                              coverage,
+                            )
+                          }
+                          className={
+                            coverage.isActive
+                              ? styles.btnDangerSoft
+                              : styles.btnPrimarySoft
+                          }
+                        >
+                          <span
+                            className={
+                              styles.toggleVisual
+                            }
+                          >
+                            <span
+                              className={
+                                styles.toggleDot
+                              }
+                            />
+                          </span>
+
+                          {coverage.isActive
+                            ? "Pasif Yap"
+                            : "Aktif Yap"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             ) : null}
           </div>
         </section>
       </div>
+
+      {/* =====================================================
+          BOTTOM CTA
+      ===================================================== */}
+
+      <section
+        className={
+          styles.bottomCta
+        }
+      >
+        <div
+          className={
+            styles.bottomIcon
+          }
+        >
+          💎
+        </div>
+
+        <div
+          className={
+            styles.bottomText
+          }
+        >
+          <h2>
+            Daha fazla kapsam,
+            daha fazla fırsat.
+          </h2>
+
+          <p>
+            Hizmet verdiğiniz
+            şehir ve tedavileri
+            doğru tanımlayarak
+            uygun lead
+            fırsatlarını
+            kaçırmayın.
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.bottomActions
+          }
+        >
+          <Link
+            href="/panel/leadler"
+            className={
+              styles.bottomSecondary
+            }
+          >
+            Leadleri Gör
+          </Link>
+
+          <Link
+            href="/panel/abonelik"
+            className={
+              styles.bottomPrimary
+            }
+          >
+            Kredi Paketlerini
+            Gör →
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

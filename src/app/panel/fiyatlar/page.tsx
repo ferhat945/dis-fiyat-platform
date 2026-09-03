@@ -1,8 +1,21 @@
 // src/app/panel/fiyatlar/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CITIES, SERVICES, cityLabel, serviceLabel } from "@/lib/seo-data";
+import Link from "next/link";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  CITIES,
+  SERVICES,
+  cityLabel,
+  serviceLabel,
+} from "@/lib/seo-data";
+
+import styles from "./page.module.css";
 
 type PriceRange = {
   id: string;
@@ -17,483 +30,1713 @@ type PriceRange = {
 };
 
 type ListResp =
-  | { ok: true; items: PriceRange[] }
-  | { ok: false; code: string };
+  | {
+      ok: true;
+      items: PriceRange[];
+    }
+  | {
+      ok: false;
+      code: string;
+    };
 
 type CreateResp =
-  | { ok: true; item: PriceRange }
-  | { ok: false; code: string };
-
-function onlyDigits(v: string): string {
-  return (v ?? "").replace(/[^\d]/g, "");
-}
-
-function toIntSafe(v: string): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function fmtTRY(n: number): string {
-  try {
-    return new Intl.NumberFormat("tr-TR").format(n);
-  } catch {
-    return String(n);
-  }
-}
+  | {
+      ok: true;
+      item: PriceRange;
+    }
+  | {
+      ok: false;
+      code: string;
+    };
 
 type RowState = {
-  minPrice: string; // ✅ string -> 0100 biter
+  minPrice: string;
   maxPrice: string;
   currency: string;
   isActive: boolean;
-  existingId?: string; // varsa “güncelleme” gibi davranır (API upsert ise)
+  existingId?: string;
 };
 
+function onlyDigits(
+  value: string,
+): string {
+  return (value ?? "").replace(
+    /[^\d]/g,
+    "",
+  );
+}
+
+function toIntSafe(
+  value: string,
+): number {
+  const n =
+    Number(value);
+
+  return Number.isFinite(n)
+    ? n
+    : 0;
+}
+
+function fmtTRY(
+  value: number,
+): string {
+  try {
+    return new Intl.NumberFormat(
+      "tr-TR",
+    ).format(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function currencySymbol(
+  currency: string,
+): string {
+  if (currency === "USD") {
+    return "$";
+  }
+
+  if (currency === "EUR") {
+    return "€";
+  }
+
+  return "₺";
+}
+
 export default function PanelFiyatlarPage(): JSX.Element {
-  const [city, setCity] = useState<string>(CITIES[0] ?? "istanbul");
+  const [
+    city,
+    setCity,
+  ] = useState<string>(
+    CITIES[0] ??
+      "istanbul",
+  );
 
-  const [loading, setLoading] = useState<boolean>(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState<boolean>(
+      false,
+    );
 
-  // service -> row state
-  const [rows, setRows] = useState<Record<string, RowState>>({});
+  const [
+    err,
+    setErr,
+  ] =
+    useState<
+      string | null
+    >(null);
 
-  // satır bazlı “saving” (hangi hizmet kaydediliyor)
-  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [
+    rows,
+    setRows,
+  ] =
+    useState<
+      Record<
+        string,
+        RowState
+      >
+    >({});
 
-  // server’dan gelen tüm kayıtlar
-  const [items, setItems] = useState<PriceRange[]>([]);
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState<
+      Record<
+        string,
+        boolean
+      >
+    >({});
 
-  const itemsByService = useMemo(() => {
-    const m = new Map<string, PriceRange>();
-    for (const it of items) {
-      if (it.city === city) m.set(it.service, it);
-    }
-    return m;
-  }, [items, city]);
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      PriceRange[]
+    >([]);
 
-  function ensureRowsInitialized(fromItems: PriceRange[], selectedCity: string): void {
-    // var olan rows'u bozmayalım ama boşsa dolduralım
-    setRows((prev) => {
-      const next: Record<string, RowState> = { ...prev };
+  const itemsByService =
+    useMemo(() => {
+      const map =
+        new Map<
+          string,
+          PriceRange
+        >();
 
-      for (const s of SERVICES) {
-        const existing = fromItems.find((x) => x.city === selectedCity && x.service === s);
-        // eğer kullanıcı bir şey yazdıysa ezmeyelim
-        if (next[s]) continue;
-
-        next[s] = {
-          minPrice: existing ? String(existing.minPrice) : "",
-          maxPrice: existing ? String(existing.maxPrice) : "",
-          currency: existing?.currency ?? "TRY",
-          isActive: existing?.isActive ?? true,
-          existingId: existing?.id,
-        };
+      for (
+        const item of
+        items
+      ) {
+        if (
+          item.city ===
+          city
+        ) {
+          map.set(
+            item.service,
+            item,
+          );
+        }
       }
-      return next;
-    });
+
+      return map;
+    }, [
+      items,
+      city,
+    ]);
+
+  const registeredCount =
+    itemsByService.size;
+
+  const activeCount =
+    useMemo(() => {
+      let count = 0;
+
+      for (
+        const service of
+        SERVICES
+      ) {
+        const row =
+          rows[
+            service
+          ];
+
+        if (
+          row?.isActive
+        ) {
+          count += 1;
+        }
+      }
+
+      return count;
+    }, [
+      rows,
+    ]);
+
+  function ensureRowsInitialized(
+    fromItems: PriceRange[],
+    selectedCity: string,
+  ): void {
+    setRows(
+      (
+        previous,
+      ) => {
+        const next:
+          Record<
+            string,
+            RowState
+          > = {
+          ...previous,
+        };
+
+        for (
+          const service of
+          SERVICES
+        ) {
+          const existing =
+            fromItems.find(
+              (
+                item,
+              ) =>
+                item.city ===
+                  selectedCity &&
+                item.service ===
+                  service,
+            );
+
+          if (
+            next[
+              service
+            ]
+          ) {
+            continue;
+          }
+
+          next[
+            service
+          ] = {
+            minPrice:
+              existing
+                ? String(
+                    existing.minPrice,
+                  )
+                : "",
+
+            maxPrice:
+              existing
+                ? String(
+                    existing.maxPrice,
+                  )
+                : "",
+
+            currency:
+              existing?.currency ??
+              "TRY",
+
+            isActive:
+              existing?.isActive ??
+              true,
+
+            existingId:
+              existing?.id,
+          };
+        }
+
+        return next;
+      },
+    );
   }
 
   async function load(): Promise<void> {
-    setLoading(true);
-    setErr(null);
-    try {
-      const r = await fetch("/api/panel/price-ranges", { method: "GET" });
-      const j = (await r.json()) as ListResp;
-      if (!r.ok || !j.ok) throw new Error(j.ok ? "UNKNOWN" : j.code);
+    setLoading(
+      true,
+    );
 
-      setItems(j.items);
-      ensureRowsInitialized(j.items, city);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "NETWORK_ERROR";
-      setErr(msg);
-      setItems([]);
-      // rows'u bozmayalım
+    setErr(
+      null,
+    );
+
+    try {
+      const response =
+        await fetch(
+          "/api/panel/price-ranges",
+          {
+            method:
+              "GET",
+          },
+        );
+
+      const data =
+        (await response.json()) as ListResp;
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+        throw new Error(
+          data.ok
+            ? "UNKNOWN"
+            : data.code,
+        );
+      }
+
+      setItems(
+        data.items,
+      );
+
+      ensureRowsInitialized(
+        data.items,
+        city,
+      );
+    } catch (
+      error
+    ) {
+      const message =
+        error instanceof
+        Error
+          ? error.message
+          : "NETWORK_ERROR";
+
+      setErr(
+        message,
+      );
+
+      setItems(
+        [],
+      );
     } finally {
-      setLoading(false);
+      setLoading(
+        false,
+      );
     }
   }
 
-  async function saveService(service: string): Promise<void> {
-    setErr(null);
+  async function saveService(
+    service: string,
+  ): Promise<void> {
+    setErr(
+      null,
+    );
 
-    const row = rows[service];
-    if (!row) return;
+    const row =
+      rows[
+        service
+      ];
 
-    const min = toIntSafe(row.minPrice || "0");
-    const max = toIntSafe(row.maxPrice || "0");
-
-    if (min <= 0 || max <= 0) {
-      setErr(`${serviceLabel(service)}: Min/Max 0’dan büyük olmalı.`);
+    if (!row) {
       return;
     }
-    if (max < min) {
-      setErr(`${serviceLabel(service)}: Max, Min’den küçük olamaz.`);
-      return;
-    }
 
-    setSaving((p) => ({ ...p, [service]: true }));
-    try {
-      const r = await fetch("/api/panel/price-ranges", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          city,
+    const min =
+      toIntSafe(
+        row.minPrice ||
+          "0",
+      );
+
+    const max =
+      toIntSafe(
+        row.maxPrice ||
+          "0",
+      );
+
+    if (
+      min <= 0 ||
+      max <= 0
+    ) {
+      setErr(
+        `${serviceLabel(
           service,
-          minPrice: min,
-          maxPrice: max,
-          currency: row.currency || "TRY",
-          isActive: row.isActive ?? true,
-        }),
-      });
+        )}: Min/Max 0’dan büyük olmalı.`,
+      );
 
-      const j = (await r.json()) as CreateResp;
-      if (!r.ok || !j.ok) throw new Error(j.ok ? "UNKNOWN" : j.code);
+      return;
+    }
 
-      // local update: items listesine ekle/güncelle
-      setItems((prev) => {
-        const next = [...prev];
-        const idx = next.findIndex((x) => x.city === city && x.service === service);
-        if (idx >= 0) next[idx] = j.item;
-        else next.push(j.item);
-        return next;
-      });
+    if (
+      max < min
+    ) {
+      setErr(
+        `${serviceLabel(
+          service,
+        )}: Max, Min’den küçük olamaz.`,
+      );
 
-      // row existing id + normalize
-      setRows((prev) => ({
-        ...prev,
-        [service]: {
-          ...prev[service],
-          minPrice: String(j.item.minPrice),
-          maxPrice: String(j.item.maxPrice),
-          currency: j.item.currency ?? prev[service].currency ?? "TRY",
-          isActive: j.item.isActive ?? prev[service].isActive ?? true,
-          existingId: j.item.id,
+      return;
+    }
+
+    setSaving(
+      (
+        previous,
+      ) => ({
+        ...previous,
+
+        [service]:
+          true,
+      }),
+    );
+
+    try {
+      const response =
+        await fetch(
+          "/api/panel/price-ranges",
+          {
+            method:
+              "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify(
+                {
+                  city,
+
+                  service,
+
+                  minPrice:
+                    min,
+
+                  maxPrice:
+                    max,
+
+                  currency:
+                    row.currency ||
+                    "TRY",
+
+                  isActive:
+                    row.isActive ??
+                    true,
+                },
+              ),
+          },
+        );
+
+      const data =
+        (await response.json()) as CreateResp;
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+        throw new Error(
+          data.ok
+            ? "UNKNOWN"
+            : data.code,
+        );
+      }
+
+      setItems(
+        (
+          previous,
+        ) => {
+          const next = [
+            ...previous,
+          ];
+
+          const index =
+            next.findIndex(
+              (
+                item,
+              ) =>
+                item.city ===
+                  city &&
+                item.service ===
+                  service,
+            );
+
+          if (
+            index >= 0
+          ) {
+            next[
+              index
+            ] =
+              data.item;
+          } else {
+            next.push(
+              data.item,
+            );
+          }
+
+          return next;
         },
-      }));
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "NETWORK_ERROR";
-      setErr(msg);
+      );
+
+      setRows(
+        (
+          previous,
+        ) => ({
+          ...previous,
+
+          [service]: {
+            ...previous[
+              service
+            ],
+
+            minPrice:
+              String(
+                data
+                  .item
+                  .minPrice,
+              ),
+
+            maxPrice:
+              String(
+                data
+                  .item
+                  .maxPrice,
+              ),
+
+            currency:
+              data
+                .item
+                .currency ??
+              previous[
+                service
+              ]
+                .currency ??
+              "TRY",
+
+            isActive:
+              data
+                .item
+                .isActive ??
+              previous[
+                service
+              ]
+                .isActive ??
+              true,
+
+            existingId:
+              data
+                .item
+                .id,
+          },
+        }),
+      );
+    } catch (
+      error
+    ) {
+      const message =
+        error instanceof
+        Error
+          ? error.message
+          : "NETWORK_ERROR";
+
+      setErr(
+        message,
+      );
     } finally {
-      setSaving((p) => ({ ...p, [service]: false }));
+      setSaving(
+        (
+          previous,
+        ) => ({
+          ...previous,
+
+          [service]:
+            false,
+        }),
+      );
     }
   }
 
-  function setRow(service: string, patch: Partial<RowState>): void {
-    setRows((prev) => ({
-      ...prev,
-      [service]: {
-        ...(prev[service] ?? { minPrice: "", maxPrice: "", currency: "TRY", isActive: true }),
-        ...patch,
-      },
-    }));
+  function setRow(
+    service: string,
+    patch: Partial<RowState>,
+  ): void {
+    setRows(
+      (
+        previous,
+      ) => ({
+        ...previous,
+
+        [service]: {
+          ...(previous[
+            service
+          ] ?? {
+            minPrice:
+              "",
+
+            maxPrice:
+              "",
+
+            currency:
+              "TRY",
+
+            isActive:
+              true,
+          }),
+
+          ...patch,
+        },
+      }),
+    );
   }
 
   useEffect(() => {
     void load();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // şehir değişince: o şehre ait kayıtları satırlara bas (kullanıcı yazmışsa ezmek istemiyoruz)
   useEffect(() => {
-    // yeni şehirde rows yoksa doldur
-    ensureRowsInitialized(items, city);
+    ensureRowsInitialized(
+      items,
+      city,
+    );
 
-    // ama şehir değişince “mevcut kayıt” varsa ve inputlar boşsa dolduralım
-    setRows((prev) => {
-      const next = { ...prev };
-      for (const s of SERVICES) {
-        const existing = items.find((x) => x.city === city && x.service === s);
-        if (!existing) continue;
-
-        const cur = next[s];
-        if (!cur) continue;
-
-        // kullanıcı bir şey yazmamışsa doldur
-        const minEmpty = !cur.minPrice;
-        const maxEmpty = !cur.maxPrice;
-
-        next[s] = {
-          ...cur,
-          minPrice: minEmpty ? String(existing.minPrice) : cur.minPrice,
-          maxPrice: maxEmpty ? String(existing.maxPrice) : cur.maxPrice,
-          currency: cur.currency || existing.currency || "TRY",
-          isActive: typeof cur.isActive === "boolean" ? cur.isActive : (existing.isActive ?? true),
-          existingId: existing.id,
+    setRows(
+      (
+        previous,
+      ) => {
+        const next = {
+          ...previous,
         };
-      }
-      return next;
-    });
-  }, [city, items]);
+
+        for (
+          const service of
+          SERVICES
+        ) {
+          const existing =
+            items.find(
+              (
+                item,
+              ) =>
+                item.city ===
+                  city &&
+                item.service ===
+                  service,
+            );
+
+          if (
+            !existing
+          ) {
+            continue;
+          }
+
+          const current =
+            next[
+              service
+            ];
+
+          if (
+            !current
+          ) {
+            continue;
+          }
+
+          const minEmpty =
+            !current.minPrice;
+
+          const maxEmpty =
+            !current.maxPrice;
+
+          next[
+            service
+          ] = {
+            ...current,
+
+            minPrice:
+              minEmpty
+                ? String(
+                    existing.minPrice,
+                  )
+                : current.minPrice,
+
+            maxPrice:
+              maxEmpty
+                ? String(
+                    existing.maxPrice,
+                  )
+                : current.maxPrice,
+
+            currency:
+              current.currency ||
+              existing.currency ||
+              "TRY",
+
+            isActive:
+              typeof current.isActive ===
+              "boolean"
+                ? current.isActive
+                : existing.isActive ??
+                  true,
+
+            existingId:
+              existing.id,
+          };
+        }
+
+        return next;
+      },
+    );
+  }, [
+    city,
+    items,
+  ]);
 
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 950 }}>Fiyat Aralıkları</div>
-          <div style={{ opacity: 0.75, fontWeight: 750, marginTop: 4 }}>
-            Şehir seç → işlemler alt alta → hızlıca fiyat girip kaydet.
+    <div
+      className={
+        styles.page
+      }
+    >
+      {/* =====================================================
+          HERO
+      ===================================================== */}
+
+      <section
+        className={
+          styles.hero
+        }
+      >
+        <div
+          className={
+            styles.heroLeft
+          }
+        >
+          <div
+            className={
+              styles.heroIcon
+            }
+          >
+            ₺
+          </div>
+
+          <div>
+            <div
+              className={
+                styles.kicker
+              }
+            >
+              Fiyat Yönetimi
+            </div>
+
+            <h1
+              className={
+                styles.title
+              }
+            >
+              Fiyat
+              Aralıkları
+            </h1>
+
+            <p
+              className={
+                styles.subtitle
+              }
+            >
+              Şehir seçin,
+              hizmetlerinize
+              ait minimum ve
+              maksimum fiyat
+              aralıklarını
+              belirleyip
+              kaydedin.
+            </p>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          style={btnSoft(loading)}
+          onClick={() =>
+            void load()
+          }
+          disabled={
+            loading
+          }
+          className={
+            styles.refreshBtn
+          }
         >
-          Yenile
+          <span>
+            ↻
+          </span>
+
+          {loading
+            ? "Yükleniyor..."
+            : "Yenile"}
         </button>
-      </div>
+      </section>
 
       {err ? (
-        <div style={errBox()}>
-          <strong>Hata:</strong> {err}
+        <div
+          className={
+            styles.errorBox
+          }
+        >
+          <div
+            className={
+              styles.errorIcon
+            }
+          >
+            !
+          </div>
+
+          <div>
+            <strong>
+              İşlem
+              tamamlanamadı
+            </strong>
+
+            <span>
+              {err}
+            </span>
+          </div>
         </div>
       ) : null}
 
-      <section style={{ ...card(), marginTop: 12 }}>
-        <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ fontWeight: 950 }}>Şehir</div>
-          <select value={city} onChange={(e) => setCity(e.target.value)} style={inp()}>
-            {CITIES.map((c) => (
-              <option key={c} value={c}>
-                {cityLabel(c)}
-              </option>
-            ))}
-          </select>
+      {/* =====================================================
+          MAIN LAYOUT
+      ===================================================== */}
 
-          <div style={{ opacity: 0.7, fontWeight: 800, fontSize: 12 }}>
-            Seçili şehir: <strong>{cityLabel(city)}</strong> • Kayıtlı:{" "}
-            <strong>{Array.from(itemsByService.values()).length}</strong>
-          </div>
-        </div>
-      </section>
+      <div
+        className={
+          styles.layout
+        }
+      >
+        {/* ===================================================
+            SIDEBAR
+        =================================================== */}
 
-      {/* LIST: tüm hizmetler alt alta */}
-      <section style={{ marginTop: 12 }}>
-        <div style={{ display: "grid", gap: 10 }}>
-          {SERVICES.map((s) => {
-            const row = rows[s] ?? { minPrice: "", maxPrice: "", currency: "TRY", isActive: true };
-            const existing = itemsByService.get(s);
-            const isSaving = !!saving[s];
-
-            return (
-              <div key={s} style={rowCard()}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                  <div style={{ fontWeight: 950, fontSize: 15 }}>
-                    {serviceLabel(s)}
-                    {existing ? (
-                      <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 900, opacity: 0.7 }}>
-                        (kayıtlı)
-                      </span>
-                    ) : (
-                      <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 900, opacity: 0.55 }}>
-                        (boş)
-                      </span>
-                    )}
-                  </div>
-
-                  <label style={{ display: "inline-flex", gap: 8, alignItems: "center", fontWeight: 850, opacity: 0.9 }}>
-                    <input
-                      type="checkbox"
-                      checked={row.isActive ?? true}
-                      onChange={(e) => setRow(s, { isActive: e.target.checked })}
-                    />
-                    Aktif
-                  </label>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: "grid",
-                    gap: 10,
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    alignItems: "end",
-                  }}
-                >
-                  <label style={lbl()}>
-                    <span style={lblTitle()}>Min (₺)</span>
-                    <input
-                      value={row.minPrice}
-                      onChange={(e) => setRow(s, { minPrice: onlyDigits(e.target.value) })}
-                      inputMode="numeric"
-                      placeholder="Örn: 10000"
-                      style={inp()}
-                    />
-                    <span style={hint()}>
-                      {row.minPrice ? `${fmtTRY(toIntSafe(row.minPrice))} ₺` : "—"}
-                    </span>
-                  </label>
-
-                  <label style={lbl()}>
-                    <span style={lblTitle()}>Max (₺)</span>
-                    <input
-                      value={row.maxPrice}
-                      onChange={(e) => setRow(s, { maxPrice: onlyDigits(e.target.value) })}
-                      inputMode="numeric"
-                      placeholder="Örn: 25000"
-                      style={inp()}
-                    />
-                    <span style={hint()}>
-                      {row.maxPrice ? `${fmtTRY(toIntSafe(row.maxPrice))} ₺` : "—"}
-                    </span>
-                  </label>
-
-                  <label style={lbl()}>
-                    <span style={lblTitle()}>Para birimi</span>
-                    <select
-                      value={row.currency || "TRY"}
-                      onChange={(e) => setRow(s, { currency: e.target.value })}
-                      style={inp()}
-                    >
-                      <option value="TRY">TRY (₺)</option>
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                    </select>
-                    <span style={hint()}>Varsayılan: TRY</span>
-                  </label>
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => void saveService(s)}
-                      disabled={
-                        isSaving ||
-                        !row.minPrice ||
-                        !row.maxPrice ||
-                        toIntSafe(row.minPrice) <= 0 ||
-                        toIntSafe(row.maxPrice) <= 0 ||
-                        toIntSafe(row.maxPrice) < toIntSafe(row.minPrice)
-                      }
-                      style={btnPrimary(isSaving)}
-                    >
-                      {isSaving ? "Kaydediliyor..." : "Kaydet"}
-                    </button>
-
-                    <div style={{ fontSize: 12, fontWeight: 850, opacity: 0.7 }}>
-                      {existing ? (
-                        <>
-                          Son kayıt:{" "}
-                          <strong>
-                            {fmtTRY(existing.minPrice)}–{fmtTRY(existing.maxPrice)} {existing.currency}
-                          </strong>
-                        </>
-                      ) : (
-                        <>Henüz kayıt yok</>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {row.minPrice && row.maxPrice && toIntSafe(row.maxPrice) < toIntSafe(row.minPrice) ? (
-                  <div style={warn()}>
-                    Max fiyat min fiyattan küçük olamaz.
-                  </div>
-                ) : null}
+        <aside
+          className={
+            styles.sidebar
+          }
+        >
+          <section
+            className={
+              styles.sideCard
+            }
+          >
+            <div
+              className={
+                styles.sideTitleRow
+              }
+            >
+              <div
+                className={
+                  styles.stepBadge
+                }
+              >
+                1
               </div>
-            );
-          })}
+
+              <div>
+                <h2>
+                  Şehir
+                  Seçin
+                </h2>
+
+                <p>
+                  Fiyat
+                  aralıklarını
+                  belirlemek
+                  istediğiniz
+                  şehri seçin.
+                </p>
+              </div>
+            </div>
+
+            <label
+              className={
+                styles.cityLabel
+              }
+              htmlFor="price-city"
+            >
+              Şehir
+            </label>
+
+            <div
+              className={
+                styles.citySelectWrap
+              }
+            >
+              <span>
+                📍
+              </span>
+
+              <select
+                id="price-city"
+                value={
+                  city
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setCity(
+                    event
+                      .target
+                      .value,
+                  )
+                }
+                className={
+                  styles.citySelect
+                }
+              >
+                {CITIES.map(
+                  (
+                    citySlug,
+                  ) => (
+                    <option
+                      key={
+                        citySlug
+                      }
+                      value={
+                        citySlug
+                      }
+                    >
+                      {cityLabel(
+                        citySlug,
+                      )}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+
+            <div
+              className={
+                styles.cityMeta
+              }
+            >
+              <span>
+                Seçili
+                şehir:
+              </span>
+
+              <strong>
+                {cityLabel(
+                  city,
+                )}
+              </strong>
+
+              <span
+                className={
+                  styles.metaDot
+                }
+              >
+                •
+              </span>
+
+              <span>
+                Kayıtlı:
+              </span>
+
+              <strong>
+                {
+                  registeredCount
+                }
+              </strong>
+            </div>
+          </section>
+
+          <section
+            className={
+              styles.sideCard
+            }
+          >
+            <div
+              className={
+                styles.infoTitle
+              }
+            >
+              <span>
+                💡
+              </span>
+
+              Bilmeniz
+              Gerekenler
+            </div>
+
+            <div
+              className={
+                styles.infoList
+              }
+            >
+              <div
+                className={
+                  styles.infoItem
+                }
+              >
+                <span>
+                  ✓
+                </span>
+
+                <p>
+                  Minimum
+                  fiyat,
+                  maksimum
+                  fiyattan
+                  büyük
+                  olamaz.
+                </p>
+              </div>
+
+              <div
+                className={
+                  styles.infoItem
+                }
+              >
+                <span>
+                  ✓
+                </span>
+
+                <p>
+                  Boş
+                  bıraktığınız
+                  hizmetler
+                  kaydedilmez.
+                </p>
+              </div>
+
+              <div
+                className={
+                  styles.infoItem
+                }
+              >
+                <span>
+                  ✓
+                </span>
+
+                <p>
+                  TRY, USD
+                  veya EUR
+                  para
+                  birimini
+                  ayrı ayrı
+                  seçebilirsiniz.
+                </p>
+              </div>
+
+              <div
+                className={
+                  styles.infoItem
+                }
+              >
+                <span>
+                  ✓
+                </span>
+
+                <p>
+                  Her hizmeti
+                  kendi
+                  Kaydet
+                  butonuyla
+                  ayrı ayrı
+                  kaydedebilirsiniz.
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={
+                styles.visibilityBox
+              }
+            >
+              <div
+                className={
+                  styles.visibilityIcon
+                }
+              >
+                ↗
+              </div>
+
+              <div>
+                <strong>
+                  Düzenli
+                  fiyat
+                  bilgisi
+                </strong>
+
+                <p>
+                  Klinik
+                  profilinizdeki
+                  bilgiler
+                  güncel
+                  kaldıkça
+                  hastalara
+                  daha net
+                  bilgi
+                  sunabilirsiniz.
+                </p>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        {/* ===================================================
+            SERVICES
+        =================================================== */}
+
+        <main
+          className={
+            styles.contentCard
+          }
+        >
+          <div
+            className={
+              styles.contentHead
+            }
+          >
+            <div
+              className={
+                styles.contentHeading
+              }
+            >
+              <div
+                className={
+                  styles.stepBadge
+                }
+              >
+                2
+              </div>
+
+              <div>
+                <h2>
+                  Hizmet
+                  Fiyatları
+                </h2>
+
+                <p>
+                  Hizmetlerinize
+                  ait min –
+                  max fiyat
+                  aralıklarını
+                  belirleyin.
+                </p>
+              </div>
+            </div>
+
+            <div
+              className={
+                styles.summary
+              }
+            >
+              <div
+                className={
+                  styles.summaryItem
+                }
+              >
+                <span>
+                  Toplam
+                  Hizmet
+                </span>
+
+                <strong>
+                  {
+                    SERVICES.length
+                  }
+                </strong>
+              </div>
+
+              <div
+                className={`${styles.summaryItem} ${styles.summaryActive}`}
+              >
+                <span>
+                  Aktif
+                  Hizmet
+                </span>
+
+                <strong>
+                  {
+                    activeCount
+                  }
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={
+              styles.serviceList
+            }
+          >
+            {SERVICES.map(
+              (
+                service,
+              ) => {
+                const row =
+                  rows[
+                    service
+                  ] ?? {
+                    minPrice:
+                      "",
+
+                    maxPrice:
+                      "",
+
+                    currency:
+                      "TRY",
+
+                    isActive:
+                      true,
+                  };
+
+                const existing =
+                  itemsByService.get(
+                    service,
+                  );
+
+                const isSaving =
+                  Boolean(
+                    saving[
+                      service
+                    ],
+                  );
+
+                const min =
+                  toIntSafe(
+                    row.minPrice,
+                  );
+
+                const max =
+                  toIntSafe(
+                    row.maxPrice,
+                  );
+
+                const invalidRange =
+                  Boolean(
+                    row.minPrice &&
+                      row.maxPrice &&
+                      max < min,
+                  );
+
+                const canSave =
+                  !isSaving &&
+                  Boolean(
+                    row.minPrice,
+                  ) &&
+                  Boolean(
+                    row.maxPrice,
+                  ) &&
+                  min > 0 &&
+                  max > 0 &&
+                  max >= min;
+
+                return (
+                  <article
+                    key={
+                      service
+                    }
+                    className={
+                      styles.serviceRow
+                    }
+                  >
+                    <div
+                      className={
+                        styles.serviceIdentity
+                      }
+                    >
+                      <div
+                        className={
+                          styles.toothIcon
+                        }
+                      >
+                        🦷
+                      </div>
+
+                      <div
+                        className={
+                          styles.serviceNameArea
+                        }
+                      >
+                        <strong
+                          className={
+                            styles.serviceName
+                          }
+                        >
+                          {serviceLabel(
+                            service,
+                          )}
+                        </strong>
+
+                        {existing ? (
+                          <span
+                            className={
+                              styles.savedBadge
+                            }
+                          >
+                            Kayıtlı
+                          </span>
+                        ) : (
+                          <span
+                            className={
+                              styles.emptyBadge
+                            }
+                          >
+                            Henüz
+                            kayıt yok
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <label
+                      className={
+                        styles.field
+                      }
+                    >
+                      <span
+                        className={
+                          styles.fieldLabel
+                        }
+                      >
+                        Min (
+                        {currencySymbol(
+                          row.currency,
+                        )}
+                        )
+                      </span>
+
+                      <div
+                        className={
+                          styles.inputWrap
+                        }
+                      >
+                        <input
+                          value={
+                            row.minPrice
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setRow(
+                              service,
+                              {
+                                minPrice:
+                                  onlyDigits(
+                                    event
+                                      .target
+                                      .value,
+                                  ),
+                              },
+                            )
+                          }
+                          inputMode="numeric"
+                          placeholder="Örn: 10000"
+                          className={
+                            styles.input
+                          }
+                        />
+
+                        <span
+                          className={
+                            styles.currencySuffix
+                          }
+                        >
+                          {currencySymbol(
+                            row.currency,
+                          )}
+                        </span>
+                      </div>
+
+                      <small>
+                        {row.minPrice
+                          ? `${fmtTRY(
+                              min,
+                            )} ${currencySymbol(
+                              row.currency,
+                            )}`
+                          : "—"}
+                      </small>
+                    </label>
+
+                    <label
+                      className={
+                        styles.field
+                      }
+                    >
+                      <span
+                        className={
+                          styles.fieldLabel
+                        }
+                      >
+                        Max (
+                        {currencySymbol(
+                          row.currency,
+                        )}
+                        )
+                      </span>
+
+                      <div
+                        className={
+                          styles.inputWrap
+                        }
+                      >
+                        <input
+                          value={
+                            row.maxPrice
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setRow(
+                              service,
+                              {
+                                maxPrice:
+                                  onlyDigits(
+                                    event
+                                      .target
+                                      .value,
+                                  ),
+                              },
+                            )
+                          }
+                          inputMode="numeric"
+                          placeholder="Örn: 25000"
+                          className={
+                            styles.input
+                          }
+                        />
+
+                        <span
+                          className={
+                            styles.currencySuffix
+                          }
+                        >
+                          {currencySymbol(
+                            row.currency,
+                          )}
+                        </span>
+                      </div>
+
+                      <small>
+                        {row.maxPrice
+                          ? `${fmtTRY(
+                              max,
+                            )} ${currencySymbol(
+                              row.currency,
+                            )}`
+                          : "—"}
+                      </small>
+                    </label>
+
+                    <label
+                      className={
+                        styles.field
+                      }
+                    >
+                      <span
+                        className={
+                          styles.fieldLabel
+                        }
+                      >
+                        Para
+                        Birimi
+                      </span>
+
+                      <select
+                        value={
+                          row.currency ||
+                          "TRY"
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          setRow(
+                            service,
+                            {
+                              currency:
+                                event
+                                  .target
+                                  .value,
+                            },
+                          )
+                        }
+                        className={
+                          styles.currencySelect
+                        }
+                      >
+                        <option value="TRY">
+                          TRY
+                          (₺)
+                        </option>
+
+                        <option value="USD">
+                          USD
+                          ($)
+                        </option>
+
+                        <option value="EUR">
+                          EUR
+                          (€)
+                        </option>
+                      </select>
+
+                      <small>
+                        Varsayılan:
+                        TRY
+                      </small>
+                    </label>
+
+                    <div
+                      className={
+                        styles.actionArea
+                      }
+                    >
+                      <label
+                        className={
+                          styles.activeToggle
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            row.isActive ??
+                            true
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            setRow(
+                              service,
+                              {
+                                isActive:
+                                  event
+                                    .target
+                                    .checked,
+                              },
+                            )
+                          }
+                        />
+
+                        <span
+                          className={
+                            styles.toggleTrack
+                          }
+                        >
+                          <span
+                            className={
+                              styles.toggleThumb
+                            }
+                          />
+                        </span>
+
+                        <strong>
+                          {row.isActive
+                            ? "Aktif"
+                            : "Pasif"}
+                        </strong>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void saveService(
+                            service,
+                          )
+                        }
+                        disabled={
+                          !canSave
+                        }
+                        className={
+                          styles.saveButton
+                        }
+                      >
+                        <span>
+                          ▣
+                        </span>
+
+                        {isSaving
+                          ? "Kaydediliyor..."
+                          : existing
+                            ? "Güncelle"
+                            : "Kaydet"}
+                      </button>
+                    </div>
+
+                    {invalidRange ? (
+                      <div
+                        className={
+                          styles.rowWarning
+                        }
+                      >
+                        ⚠️ Maksimum
+                        fiyat minimum
+                        fiyattan küçük
+                        olamaz.
+                      </div>
+                    ) : null}
+
+                    {existing ? (
+                      <div
+                        className={
+                          styles.lastSaved
+                        }
+                      >
+                        Son kayıt:{" "}
+                        <strong>
+                          {fmtTRY(
+                            existing.minPrice,
+                          )}
+                          –
+                          {fmtTRY(
+                            existing.maxPrice,
+                          )}{" "}
+                          {
+                            existing.currency
+                          }
+                        </strong>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              },
+            )}
+          </div>
+
+          <div
+            className={
+              styles.contentNote
+            }
+          >
+            <span>
+              🛡️
+            </span>
+
+            Her hizmeti ayrı
+            ayrı kaydedebilirsiniz.
+            Kaydet butonu yalnız
+            geçerli bir min–max
+            aralığı girildiğinde
+            aktif olur.
+          </div>
+        </main>
+      </div>
+
+      {/* =====================================================
+          FOOTNOTE + CTA
+      ===================================================== */}
+
+      <div
+        className={
+          styles.medicalNote
+        }
+      >
+        <span>
+          ℹ️
+        </span>
+
+        <p>
+          <strong>
+            Bilgilendirme:
+          </strong>{" "}
+          Kesin fiyat muayene
+          sonrası netleşir.
+          Buradaki fiyat
+          aralıkları
+          bilgilendirme
+          amaçlıdır.
+        </p>
+      </div>
+
+      <section
+        className={
+          styles.bottomCta
+        }
+      >
+        <div
+          className={
+            styles.ctaIcon
+          }
+        >
+          💎
+        </div>
+
+        <div
+          className={
+            styles.ctaText
+          }
+        >
+          <h2>
+            Klinik panelinizi
+            aktif kullanın,
+            fırsatları
+            kaçırmayın.
+          </h2>
+
+          <p>
+            Fiyat
+            aralıklarınızı
+            güncel tutun ve
+            yeni lead
+            fırsatlarını
+            değerlendirmek
+            için kredi
+            bakiyenizi hazır
+            bulundurun.
+          </p>
+        </div>
+
+        <div
+          className={
+            styles.ctaActions
+          }
+        >
+          <Link
+            href="/panel/leadler"
+            className={
+              styles.ctaSecondary
+            }
+          >
+            Leadleri Gör
+          </Link>
+
+          <Link
+            href="/panel/abonelik"
+            className={
+              styles.ctaPrimary
+            }
+          >
+            Kredi Paketlerini
+            Gör →
+          </Link>
         </div>
       </section>
-
-      <div style={{ marginTop: 14, opacity: 0.8, fontWeight: 800, fontSize: 12 }}>
-        Not: Kesin fiyat muayene sonrası netleşir. Bu aralıklar bilgilendirme amaçlıdır.
-      </div>
     </div>
   );
-}
-
-/* ---- styles ---- */
-
-function card(): React.CSSProperties {
-  return {
-    border: "1px solid rgba(0,0,0,0.12)",
-    background: "rgba(255,255,255,0.55)",
-    borderRadius: 18,
-    padding: 14,
-  };
-}
-
-function rowCard(): React.CSSProperties {
-  return {
-    border: "1px solid rgba(0,0,0,0.12)",
-    background: "rgba(255,255,255,0.55)",
-    borderRadius: 18,
-    padding: 14,
-  };
-}
-
-function inp(): React.CSSProperties {
-  return {
-    width: "100%",
-    padding: "12px 12px",
-    borderRadius: 14,
-    border: "1px solid #ddd",
-    background: "#fff",
-    outline: "none",
-    fontWeight: 800,
-  };
-}
-
-function lbl(): React.CSSProperties {
-  return { display: "flex", flexDirection: "column", gap: 6 };
-}
-
-function lblTitle(): React.CSSProperties {
-  return { fontWeight: 950 };
-}
-
-function hint(): React.CSSProperties {
-  return { fontSize: 12, fontWeight: 850, opacity: 0.7 };
-}
-
-function errBox(): React.CSSProperties {
-  return {
-    marginTop: 12,
-    border: "1px solid #f2c9c9",
-    background: "#fff5f5",
-    borderRadius: 14,
-    padding: 12,
-    fontWeight: 850,
-    color: "#7f1d1d",
-  };
-}
-
-function warn(): React.CSSProperties {
-  return {
-    marginTop: 10,
-    border: "1px solid rgba(245,158,11,0.35)",
-    background: "rgba(245,158,11,0.10)",
-    borderRadius: 14,
-    padding: "10px 12px",
-    fontWeight: 850,
-    color: "rgba(120,53,15,0.95)",
-  };
-}
-
-function btnPrimary(disabled: boolean): React.CSSProperties {
-  return {
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid #111",
-    background: disabled ? "rgba(17,17,17,0.6)" : "#111",
-    color: "#fff",
-    fontWeight: 950,
-    cursor: disabled ? "not-allowed" : "pointer",
-    width: "100%",
-  };
-}
-
-function btnSoft(disabled: boolean): React.CSSProperties {
-  return {
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(0,0,0,0.12)",
-    background: "rgba(255,255,255,0.6)",
-    color: "#111",
-    fontWeight: 950,
-    cursor: disabled ? "not-allowed" : "pointer",
-  };
 }

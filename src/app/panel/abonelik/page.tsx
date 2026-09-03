@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
@@ -23,30 +22,32 @@ type PackageCard = {
 };
 
 function fmtDate(
-  date: Date | null | undefined
+  date: Date | null | undefined,
 ): string {
   if (!date) {
     return "—";
   }
 
   return new Date(date).toLocaleDateString(
-    "tr-TR"
+    "tr-TR",
   );
 }
 
 function fmtDateTime(
-  date: Date | null | undefined
+  date: Date | null | undefined,
 ): string {
   if (!date) {
     return "—";
   }
 
   return new Date(date).toLocaleString(
-    "tr-TR"
+    "tr-TR",
   );
 }
 
-function typeLabel(type: string): string {
+function typeLabel(
+  type: string,
+): string {
   if (type === "purchase") {
     return "Kredi satın alma";
   }
@@ -55,7 +56,10 @@ function typeLabel(type: string): string {
     return "Lead açma";
   }
 
-  if (type === "premium_monthly_credit") {
+  if (
+    type ===
+    "premium_monthly_credit"
+  ) {
     return "Premium üyelik kredisi";
   }
 
@@ -64,38 +68,40 @@ function typeLabel(type: string): string {
 
 export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
   const token =
-    (await cookies()).get("clinic_session")
-      ?.value ?? "";
+    (await cookies()).get(
+      "clinic_session",
+    )?.value ?? "";
 
   const session = token
-    ? await verifyClinicSession(token)
+    ? await verifyClinicSession(
+        token,
+      )
     : null;
 
   if (!session) {
     return (
-      <div style={{ padding: 16 }}>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 900,
-            marginBottom: 8,
-          }}
-        >
+      <div
+        style={{
+          padding: 24,
+        }}
+      >
+        <h1>
           Yetkisiz
         </h1>
 
-        <div>
+        <p>
           Lütfen{" "}
           <a href="/panel/login">
             /panel/login
           </a>{" "}
           üzerinden giriş yap.
-        </div>
+        </p>
       </div>
     );
   }
 
-  const now = new Date();
+  const now =
+    new Date();
 
   const [
     clinic,
@@ -106,24 +112,33 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
       where: {
         id: session.clinicId,
       },
+
       select: {
         creditBalance: true,
         isPremium: true,
-        premiumExpiresAt: true,
+        premiumExpiresAt:
+          true,
       },
     }),
 
     prisma.subscription.findFirst({
       where: {
-        clinicId: session.clinicId,
-        status: "active",
+        clinicId:
+          session.clinicId,
+
+        status:
+          "active",
+
         expiresAt: {
           gt: now,
         },
       },
+
       orderBy: {
-        startedAt: "desc",
+        startedAt:
+          "desc",
       },
+
       select: {
         quotaTotal: true,
         quotaUsed: true,
@@ -133,12 +148,17 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
 
     prisma.creditTransaction.findMany({
       where: {
-        clinicId: session.clinicId,
+        clinicId:
+          session.clinicId,
       },
+
       orderBy: {
-        createdAt: "desc",
+        createdAt:
+          "desc",
       },
+
       take: 30,
+
       select: {
         id: true,
         amount: true,
@@ -150,654 +170,1120 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
   ]);
 
   const creditBalance =
-    clinic?.creditBalance ?? 0;
+    clinic?.creditBalance ??
+    0;
 
-  const isPremiumActive = Boolean(
-    clinic?.isPremium &&
-      clinic?.premiumExpiresAt &&
-      clinic.premiumExpiresAt.getTime() >
-        now.getTime()
-  );
+  const isPremiumActive =
+    Boolean(
+      clinic?.isPremium &&
+        clinic?.premiumExpiresAt &&
+        clinic.premiumExpiresAt.getTime() >
+          now.getTime(),
+    );
 
   const quotaTotal =
-    activeSub?.quotaTotal ?? 0;
+    activeSub?.quotaTotal ??
+    0;
 
   const quotaUsed =
-    activeSub?.quotaUsed ?? 0;
+    activeSub?.quotaUsed ??
+    0;
 
-  const remaining = Math.max(
-    0,
-    quotaTotal - quotaUsed
-  );
+  const remaining =
+    Math.max(
+      0,
+      quotaTotal -
+        quotaUsed,
+    );
 
-  const packages: PackageCard[] = [
-    {
-      title: "5 Kredi Paketi",
-      priceText: "1.500 TL",
-      credits: 5,
-      note:
-        "Başlangıç için ideal. 5 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
-      buyHref:
-        "/panel/abonelik/satin-al?package=credit_5",
-      badge: "Başlangıç",
-      icon: "💎",
-      durationText:
-        "Tek seferlik kredi paketi",
-      activationText:
-        "Başarılı ödeme onayından sonra tanımlanır",
-      disclaimer:
-        "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
-    },
-    {
-      title: "10 Kredi Paketi",
-      priceText: "2.000 TL",
-      credits: 10,
-      note:
-        "En dengeli paket. 10 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
-      buyHref:
-        "/panel/abonelik/satin-al?package=credit_10",
-      featured: true,
-      badge: "En Popüler",
-      icon: "⚡",
-      durationText:
-        "Tek seferlik kredi paketi",
-      activationText:
-        "Başarılı ödeme onayından sonra tanımlanır",
-      disclaimer:
-        "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
-    },
-    {
-      title: "25 Kredi Paketi",
-      priceText: "4.000 TL",
-      credits: 25,
-      note:
-        "Yoğun çalışan klinikler için hazırlanmıştır. 25 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
-      buyHref:
-        "/panel/abonelik/satin-al?package=credit_25",
-      badge: "En Avantajlı",
-      icon: "🚀",
-      durationText:
-        "Tek seferlik kredi paketi",
-      activationText:
-        "Başarılı ödeme onayından sonra tanımlanır",
-      disclaimer:
-        "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
-    },
-    {
-      title: "Premium Üyelik",
-      priceText: "2.500 TL / 30 gün",
-      credits: 10,
-      note:
-        "30 günlük Premium üyelik, 10 kredi ve uygun lead dağıtımlarında standart kliniklere göre öncelik sağlar.",
-      buyHref:
-        "/panel/abonelik/satin-al?package=premium",
-      featured: true,
-      premium: true,
-      badge: "Premium",
-      icon: "👑",
-      durationText:
-        "30 günlük üyelik",
-      activationText:
-        "Başarılı ödeme onayından sonra başlar",
-      renewalText:
-        "Otomatik yenilenmez",
-      disclaimer:
-        "Premium öncelik; belirli sayıda lead, hasta, randevu, tedavi veya gelir garantisi değildir.",
-    },
-  ];
+  const packages: PackageCard[] =
+    [
+      {
+        title:
+          "5 Kredi Paketi",
+
+        priceText:
+          "1.500 TL",
+
+        credits: 5,
+
+        note:
+          "Başlangıç için ideal. 5 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
+
+        buyHref:
+          "/panel/abonelik/satin-al?package=credit_5",
+
+        badge:
+          "Başlangıç",
+
+        icon:
+          "💎",
+
+        durationText:
+          "Tek seferlik kredi paketi",
+
+        activationText:
+          "Başarılı ödeme onayından sonra tanımlanır",
+
+        disclaimer:
+          "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
+      },
+
+      {
+        title:
+          "10 Kredi Paketi",
+
+        priceText:
+          "2.000 TL",
+
+        credits: 10,
+
+        note:
+          "En dengeli paket. 10 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
+
+        buyHref:
+          "/panel/abonelik/satin-al?package=credit_10",
+
+        featured:
+          true,
+
+        badge:
+          "En Popüler",
+
+        icon:
+          "⚡",
+
+        durationText:
+          "Tek seferlik kredi paketi",
+
+        activationText:
+          "Başarılı ödeme onayından sonra tanımlanır",
+
+        disclaimer:
+          "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
+      },
+
+      {
+        title:
+          "25 Kredi Paketi",
+
+        priceText:
+          "4.000 TL",
+
+        credits: 25,
+
+        note:
+          "Yoğun çalışan klinikler için hazırlanmıştır. 25 farklı lead kaydının iletişim bilgilerini görüntüleme hakkı verir.",
+
+        buyHref:
+          "/panel/abonelik/satin-al?package=credit_25",
+
+        badge:
+          "En Avantajlı",
+
+        icon:
+          "🚀",
+
+        durationText:
+          "Tek seferlik kredi paketi",
+
+        activationText:
+          "Başarılı ödeme onayından sonra tanımlanır",
+
+        disclaimer:
+          "Lead; kesin hasta, randevu, tedavi, satış veya gelir garantisi değildir.",
+      },
+
+      {
+        title:
+          "Premium Üyelik",
+
+        priceText:
+          "2.500 TL / 30 gün",
+
+        credits: 10,
+
+        note:
+          "30 günlük Premium üyelik, 10 kredi ve uygun lead dağıtımlarında standart kliniklere göre öncelik sağlar.",
+
+        buyHref:
+          "/panel/abonelik/satin-al?package=premium",
+
+        featured:
+          true,
+
+        premium:
+          true,
+
+        badge:
+          "Premium",
+
+        icon:
+          "👑",
+
+        durationText:
+          "30 günlük üyelik",
+
+        activationText:
+          "Başarılı ödeme onayından sonra başlar",
+
+        renewalText:
+          "Otomatik yenilenmez",
+
+        disclaimer:
+          "Premium öncelik; belirli sayıda lead, hasta, randevu, tedavi veya gelir garantisi değildir.",
+      },
+    ];
 
   return (
     <div className="creditPage">
       <style>{`
         .creditPage {
+          width: 100%;
           position: relative;
-          max-width: 1180px;
-          margin: 0 auto;
-          padding: 22px 16px 56px;
-          overflow: hidden;
+          padding: 10px 0 54px;
+          color: #151d39;
         }
 
-        .creditPage::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          z-index: -2;
-          background:
-            radial-gradient(
-              circle at 8% 0%,
-              rgba(124,58,237,.22),
-              transparent 34%
-            ),
-            radial-gradient(
-              circle at 100% 22%,
-              rgba(14,165,233,.18),
-              transparent 35%
-            ),
-            radial-gradient(
-              circle at 50% 100%,
-              rgba(236,72,153,.12),
-              transparent 38%
-            );
+        .creditPage * {
+          box-sizing: border-box;
         }
 
-        .glowOrb {
-          position: absolute;
-          width: 260px;
-          height: 260px;
-          border-radius: 999px;
-          filter: blur(35px);
-          opacity: .42;
-          z-index: -1;
-          animation: floatGlow 7s ease-in-out infinite;
-        }
-
-        .glowOne {
-          top: 20px;
-          right: 90px;
-          background: rgba(124,58,237,.35);
-        }
-
-        .glowTwo {
-          bottom: 240px;
-          left: 10px;
-          background: rgba(14,165,233,.26);
-          animation-delay: -2s;
-        }
-
-        @keyframes floatGlow {
-          0%, 100% {
-            transform:
-              translate3d(0,0,0)
-              scale(1);
-          }
-
-          50% {
-            transform:
-              translate3d(0,18px,0)
-              scale(1.08);
-          }
-        }
-
-        .heroCard {
+        .hero {
           position: relative;
           overflow: hidden;
-          border-radius: 32px;
-          padding: 24px;
-          border:
-            1px solid
-            rgba(255,255,255,.62);
+          padding: 35px 38px 32px;
+          border: 1px solid rgba(91,75,159,.09);
+          border-radius: 30px;
           background:
+            radial-gradient(
+              650px 330px at 5% 0%,
+              rgba(122,82,237,.15),
+              transparent 68%
+            ),
+            radial-gradient(
+              600px 340px at 98% 35%,
+              rgba(47,166,233,.12),
+              transparent 68%
+            ),
             linear-gradient(
               135deg,
-              rgba(255,255,255,.82),
-              rgba(255,255,255,.54)
-            ),
-            radial-gradient(
-              circle at 10% 0%,
-              rgba(124,58,237,.22),
-              transparent 36%
-            ),
-            radial-gradient(
-              circle at 90% 15%,
-              rgba(14,165,233,.18),
-              transparent 40%
+              #ffffff,
+              #faf8ff 50%,
+              #f4faff
             );
           box-shadow:
-            0 28px 80px
-            rgba(15,23,42,.12);
-          backdrop-filter: blur(18px);
+            0 22px 60px
+            rgba(53,42,103,.065);
         }
 
-        .heroCard::after {
-          content: "";
-          position: absolute;
-          inset: -120px;
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(255,255,255,.48),
-              transparent
-            );
-          transform:
-            rotate(12deg)
-            translateX(-55%);
-          animation:
-            shineMove
-            6s
-            ease-in-out
-            infinite;
-          pointer-events: none;
-        }
-
-        @keyframes shineMove {
-          0%, 55% {
-            transform:
-              rotate(12deg)
-              translateX(-60%);
-            opacity: 0;
-          }
-
-          70% {
-            opacity: .8;
-          }
-
-          100% {
-            transform:
-              rotate(12deg)
-              translateX(60%);
-            opacity: 0;
-          }
-        }
-
-        .heroContent {
-          position: relative;
-          z-index: 1;
+        .heroTop {
           display: flex;
-          justify-content:
-            space-between;
-          gap: 18px;
-          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+        }
+
+        .heroCopy {
+          max-width: 820px;
+        }
+
+        .kicker {
+          display: inline-flex;
           align-items: center;
+          gap: 8px;
+          min-height: 39px;
+          padding: 0 13px;
+          border: 1px solid rgba(97,76,190,.09);
+          border-radius: 999px;
+          background: rgba(255,255,255,.9);
+          color: #654bcf;
+          font-size: 13px;
+          font-weight: 900;
+          box-shadow:
+            0 7px 18px
+            rgba(54,43,106,.04);
         }
 
         .heroTitle {
-          margin: 12px 0 0;
+          max-width: 850px;
+          margin: 17px 0 0;
+          color: #111936;
           font-size:
-            clamp(32px, 4vw, 52px);
-          line-height: 1;
-          letter-spacing: -.055em;
-          font-weight: 1000;
-          color: rgba(2,6,23,.96);
+            clamp(
+              40px,
+              4vw,
+              58px
+            );
+          line-height: 1.02;
+          letter-spacing: -.05em;
+          font-weight: 950;
         }
 
         .heroText {
-          margin-top: 12px;
-          max-width: 720px;
-          color: rgba(15,23,42,.72);
-          font-weight: 850;
-          line-height: 1.75;
+          max-width: 760px;
+          margin-top: 14px;
+          color: #616a81;
+          font-size: 16px;
+          font-weight: 650;
+          line-height: 1.7;
         }
 
-        .heroMetrics {
+        .heroVisual {
+          position: relative;
+          flex: 0 0 220px;
+          min-height: 145px;
+          display: grid;
+          place-items: center;
+        }
+
+        .heroDiamond {
+          position: relative;
+          z-index: 2;
+          font-size: 96px;
+          filter:
+            drop-shadow(
+              0 20px 22px
+              rgba(91,68,207,.18)
+            );
+        }
+
+        .heroVisual::before {
+          content: "";
+          position: absolute;
+          width: 170px;
+          height: 80px;
+          bottom: 8px;
+          border-radius: 50%;
+          background:
+            rgba(109,81,226,.11);
+          filter: blur(4px);
+        }
+
+        .heroVisual::after {
+          content: "✦";
+          position: absolute;
+          right: 16px;
+          top: 10px;
+          color: #9b73f0;
+          font-size: 28px;
+        }
+
+        .metrics {
           display: grid;
           grid-template-columns:
             repeat(
-              3,
-              minmax(170px, 1fr)
+              4,
+              minmax(0,1fr)
             );
-          gap: 12px;
-          margin-top: 16px;
+          gap: 14px;
+          margin-top: 26px;
         }
 
-        .metricCard {
-          position: relative;
-          border-radius: 24px;
-          padding: 16px;
-          border:
-            1px solid
-            rgba(255,255,255,.72);
-          background:
-            rgba(255,255,255,.70);
+        .metric {
+          min-height: 124px;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 18px;
+          border: 1px solid rgba(91,75,159,.08);
+          border-radius: 20px;
+          background: rgba(255,255,255,.9);
           box-shadow:
-            0 18px 45px
-            rgba(15,23,42,.08);
-          overflow: hidden;
+            0 12px 30px
+            rgba(53,42,103,.045);
         }
 
-        .metricCard::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(
-              circle at top right,
-              rgba(124,58,237,.14),
-              transparent 45%
-            );
-          pointer-events: none;
-        }
-
-        .metricLabel {
-          position: relative;
-          opacity: .72;
-          font-weight: 950;
-          font-size: 12px;
-        }
-
-        .metricValue {
-          position: relative;
-          margin-top: 8px;
-          font-weight: 1000;
-          font-size: 30px;
-          letter-spacing: -.035em;
-          color: rgba(2,6,23,.96);
-        }
-
-        .metricHint {
-          position: relative;
-          margin-top: 4px;
-          opacity: .68;
-          font-weight: 850;
-          font-size: 12px;
-          line-height: 1.5;
-        }
-
-        .paymentNotice {
-          margin-top: 14px;
-          border-radius: 24px;
-          padding: 16px;
-          border:
-            1px solid
-            rgba(245,158,11,.26);
+        .metricIcon {
+          width: 52px;
+          height: 52px;
+          flex: 0 0 52px;
+          display: grid;
+          place-items: center;
+          border-radius: 15px;
           background:
             linear-gradient(
               135deg,
-              rgba(245,158,11,.13),
-              rgba(255,255,255,.70)
+              rgba(121,80,237,.13),
+              rgba(47,166,233,.09)
             );
-          box-shadow:
-            0 18px 50px
-            rgba(15,23,42,.08);
-          backdrop-filter: blur(16px);
-          color: rgba(120,53,15,.94);
-          font-weight: 850;
-          line-height: 1.65;
+          font-size: 22px;
         }
 
-        .packageGrid {
-          margin-top: 16px;
+        .metricLabel {
+          color: #6e7589;
+          font-size: 12px;
+          font-weight: 850;
+        }
+
+        .metricValue {
+          margin-top: 4px;
+          color: #6347d2;
+          font-size: 28px;
+          font-weight: 950;
+          letter-spacing: -.04em;
+        }
+
+        .metricHint {
+          margin-top: 4px;
+          color: #9296a4;
+          font-size: 11px;
+          font-weight: 650;
+          line-height: 1.45;
+        }
+
+        .benefitStrip {
+          margin-top: 17px;
           display: grid;
           grid-template-columns:
             repeat(
-              auto-fit,
-              minmax(255px, 1fr)
+              4,
+              minmax(0,1fr)
             );
-          gap: 14px;
+          border: 1px solid rgba(91,75,159,.08);
+          border-radius: 21px;
+          background: rgba(255,255,255,.9);
+          box-shadow:
+            0 12px 30px
+            rgba(53,42,103,.04);
+          overflow: hidden;
+        }
+
+        .benefitItem {
+          min-height: 86px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 15px 18px;
+          border-right:
+            1px solid
+            rgba(91,75,159,.07);
+        }
+
+        .benefitItem:last-child {
+          border-right: 0;
+        }
+
+        .benefitIcon {
+          width: 44px;
+          height: 44px;
+          flex: 0 0 44px;
+          display: grid;
+          place-items: center;
+          border-radius: 13px;
+          background:
+            linear-gradient(
+              135deg,
+              rgba(121,80,237,.12),
+              rgba(47,166,233,.08)
+            );
+          font-size: 19px;
+        }
+
+        .benefitItem strong {
+          color: #252d48;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .benefitItem p {
+          margin: 3px 0 0;
+          color: #858a9a;
+          font-size: 10px;
+          font-weight: 650;
+          line-height: 1.45;
+        }
+
+        .sectionHead {
+          margin-top: 30px;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .sectionHead h2 {
+          margin: 0;
+          color: #151d39;
+          font-size: 29px;
+          font-weight: 950;
+          letter-spacing: -.035em;
+        }
+
+        .sectionHead p {
+          max-width: 620px;
+          margin: 6px 0 0;
+          color: #777e92;
+          font-size: 13px;
+          font-weight: 650;
+          line-height: 1.55;
+        }
+
+        .packageGrid {
+          display: grid;
+          grid-template-columns:
+            repeat(
+              4,
+              minmax(0,1fr)
+            );
+          gap: 15px;
+          margin-top: 17px;
         }
 
         .packageCard {
           position: relative;
-          min-height: 430px;
-          border-radius: 30px;
-          padding: 18px;
+          overflow: hidden;
+          min-height: 500px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
-          overflow: hidden;
-          border:
-            1px solid
-            rgba(255,255,255,.72);
+          padding: 22px;
+          border: 1px solid rgba(91,75,159,.09);
+          border-radius: 25px;
           background:
             linear-gradient(
               135deg,
-              rgba(255,255,255,.88),
-              rgba(255,255,255,.62)
+              #ffffff,
+              #fcfbff
             );
           box-shadow:
-            0 22px 58px
-            rgba(15,23,42,.10);
+            0 16px 42px
+            rgba(54,42,103,.055);
           transition:
-            transform .22s ease,
-            box-shadow .22s ease,
-            border-color .22s ease;
+            transform .18s ease,
+            box-shadow .18s ease,
+            border-color .18s ease;
         }
 
         .packageCard:hover {
-          transform:
-            translateY(-7px);
+          transform: translateY(-4px);
+          border-color: rgba(107,78,218,.22);
           box-shadow:
-            0 32px 78px
-            rgba(79,70,229,.18);
-          border-color:
-            rgba(124,58,237,.30);
+            0 24px 55px
+            rgba(70,52,150,.11);
         }
 
-        .packageCard.featured {
+        .packageCard.featured:not(.premium) {
+          border:
+            2px solid
+            rgba(117,73,238,.70);
+          box-shadow:
+            0 20px 52px
+            rgba(105,74,224,.13);
+        }
+
+        .popularTop {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          min-width: 130px;
+          min-height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 14px;
+          border-radius:
+            0 0 13px 13px;
           background:
-            radial-gradient(
-              circle at 12% 0%,
-              rgba(124,58,237,.24),
-              transparent 42%
-            ),
             linear-gradient(
-              135deg,
-              rgba(255,255,255,.92),
-              rgba(245,243,255,.74)
+              110deg,
+              #7549eb,
+              #9954ee
             );
-          border-color:
-            rgba(124,58,237,.28);
+          color: white;
+          font-size: 10px;
+          font-weight: 900;
         }
 
         .packageCard.premium {
           color: white;
+          border-color:
+            rgba(255,255,255,.16);
           background:
             radial-gradient(
-              circle at 0% 0%,
-              rgba(250,204,21,.25),
-              transparent 32%
+              300px 180px at 0% 0%,
+              rgba(250,204,21,.18),
+              transparent 65%
             ),
             radial-gradient(
-              circle at 100% 15%,
-              rgba(168,85,247,.38),
-              transparent 42%
+              280px 200px at 100% 15%,
+              rgba(168,85,247,.30),
+              transparent 68%
             ),
             linear-gradient(
               135deg,
-              rgba(15,23,42,.98),
-              rgba(67,56,202,.94)
+              #2f277c,
+              #4535b8 56%,
+              #35277f
             );
-          border-color:
-            rgba(255,255,255,.22);
           box-shadow:
-            0 30px 90px
-            rgba(67,56,202,.28);
+            0 24px 62px
+            rgba(61,48,165,.20);
         }
 
-        .packageCard::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background:
-            radial-gradient(
-              circle at top right,
-              rgba(255,255,255,.44),
-              transparent 38%
-            );
-          opacity: .6;
-          pointer-events: none;
-        }
-
-        .packageTop,
-        .packagePrice,
-        .packageChips,
-        .packageNote,
-        .packageAction {
-          position: relative;
-          z-index: 1;
-        }
-
-        .packageTop {
+        .cardTop {
           display: flex;
-          justify-content:
-            space-between;
-          gap: 10px;
+          justify-content: space-between;
+          gap: 12px;
           align-items: flex-start;
+          margin-top: 7px;
         }
 
         .packageIcon {
-          width: 44px;
-          height: 44px;
+          width: 54px;
+          height: 54px;
           display: grid;
           place-items: center;
-          border-radius: 18px;
+          border: 1px solid rgba(100,77,192,.10);
+          border-radius: 50%;
           background:
-            rgba(255,255,255,.78);
+            rgba(255,255,255,.94);
+          font-size: 25px;
           box-shadow:
-            inset 0 0 0 1px
-            rgba(15,23,42,.08);
-          font-size: 22px;
+            0 10px 24px
+            rgba(51,42,102,.06);
         }
 
         .premium .packageIcon {
+          border-color:
+            rgba(255,255,255,.15);
           background:
             rgba(255,255,255,.14);
-          box-shadow:
-            inset 0 0 0 1px
-            rgba(255,255,255,.18);
+        }
+
+        .packageBadge {
+          display: inline-flex;
+          min-height: 29px;
+          align-items: center;
+          padding: 0 10px;
+          border-radius: 999px;
+          background:
+            rgba(255,245,231,.9);
+          color: #ee791c;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .premium .packageBadge {
+          color: white;
+          background:
+            rgba(255,255,255,.13);
         }
 
         .packageTitle {
-          margin-top: 12px;
-          font-size: 20px;
-          font-weight: 1000;
-          letter-spacing: -.025em;
+          margin-top: 20px;
+          color: #202842;
+          font-size: 19px;
+          font-weight: 950;
+          line-height: 1.3;
+        }
+
+        .premium .packageTitle {
+          color: white;
+        }
+
+        .packageSubtitle {
+          min-height: 44px;
+          margin-top: 4px;
+          color: #82889a;
+          font-size: 11px;
+          font-weight: 650;
+          line-height: 1.45;
+        }
+
+        .premium .packageSubtitle {
+          color:
+            rgba(255,255,255,.75);
         }
 
         .packagePrice {
-          font-size: 34px;
-          font-weight: 1000;
+          margin-top: 20px;
+          color: #6649dc;
+          font-size:
+            clamp(
+              27px,
+              2.3vw,
+              35px
+            );
+          font-weight: 950;
           letter-spacing: -.045em;
-          line-height: 1.05;
+          line-height: 1.1;
         }
 
-        .packageChips {
+        .packageCard:nth-child(3)
+        .packagePrice {
+          color: #f27724;
+        }
+
+        .premium .packagePrice {
+          color: white;
+        }
+
+        .creditPill {
+          align-self: flex-start;
+          margin-top: 12px;
+          display: inline-flex;
+          min-height: 30px;
+          align-items: center;
+          padding: 0 11px;
+          border-radius: 999px;
+          background:
+            rgba(115,78,227,.08);
+          color: #6547ce;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .premium .creditPill {
+          color: white;
+          background:
+            rgba(255,255,255,.12);
+        }
+
+        .packageFeatures {
+          display: grid;
+          gap: 11px;
+          margin-top: 21px;
+        }
+
+        .feature {
           display: flex;
+          align-items: flex-start;
           gap: 8px;
-          flex-wrap: wrap;
+          color: #4f566c;
+          font-size: 11px;
+          font-weight: 700;
+          line-height: 1.45;
         }
 
-        .packageNote {
-          opacity: .78;
-          font-weight: 850;
-          line-height: 1.65;
+        .premium .feature {
+          color:
+            rgba(255,255,255,.88);
         }
 
-        .premium .packageNote {
-          opacity: .9;
+        .featureCheck {
+          flex: 0 0 auto;
+          color: #7551e5;
+          font-weight: 950;
+        }
+
+        .premium .featureCheck {
+          color: #fff;
+        }
+
+        .unitPrice {
+          margin-top: 17px;
+          padding: 11px 12px;
+          border: 1px solid rgba(91,75,159,.08);
+          border-radius: 12px;
+          background: rgba(248,247,253,.82);
+          color: #787e90;
+          font-size: 10px;
+          font-weight: 750;
+        }
+
+        .unitPrice strong {
+          color: #555c70;
+        }
+
+        .premium .unitPrice {
+          border-color:
+            rgba(255,255,255,.14);
+          background:
+            rgba(255,255,255,.08);
+          color:
+            rgba(255,255,255,.74);
+        }
+
+        .premium .unitPrice strong {
+          color: #fff;
         }
 
         .packageAction {
           margin-top: auto;
+          padding-top: 20px;
         }
 
-        .buyButton {
-          display: inline-flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
+        .packageButton {
           width: 100%;
-          text-align: center;
-          padding: 14px 16px;
-          border-radius: 18px;
+          min-height: 51px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          border: 1px solid rgba(102,77,204,.13);
+          border-radius: 14px;
+          background: #fff;
+          color: #6549ce;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 950;
+          box-shadow:
+            0 9px 21px
+            rgba(55,43,106,.045);
+          transition:
+            transform .15s ease,
+            box-shadow .15s ease;
+        }
+
+        .featured:not(.premium)
+        .packageButton {
+          border: 0;
           background:
             linear-gradient(
-              135deg,
-              rgba(79,70,229,.98),
-              rgba(168,85,247,.98)
+              110deg,
+              #7950ed,
+              #713fe7
             );
           color: white;
-          font-weight: 1000;
-          text-decoration: none;
-          border:
-            1px solid
-            rgba(255,255,255,.20);
           box-shadow:
-            0 18px 42px
-            rgba(124,58,237,.22);
-          transition:
-            transform .18s ease,
-            box-shadow .18s ease;
+            0 13px 27px
+            rgba(96,69,217,.23);
         }
 
-        .buyButton:hover {
-          transform: scale(1.025);
-          box-shadow:
-            0 24px 55px
-            rgba(124,58,237,.30);
+        .packageCard:nth-child(3)
+        .packageButton {
+          border-color:
+            rgba(242,119,36,.30);
+          color: #ef7623;
         }
 
-        .premium .buyButton {
-          background:
-            linear-gradient(
-              135deg,
-              #facc15,
-              #fb923c
-            );
-          color: rgba(15,23,42,.96);
-          box-shadow:
-            0 18px 45px
-            rgba(250,204,21,.20);
+        .premium .packageButton {
+          border: 0;
+          background: #fff;
+          color: #2e277c;
         }
 
-        .informationCard {
-          margin-top: 16px;
-          border-radius: 24px;
-          padding: 18px;
-          border:
-            1px solid
-            rgba(59,130,246,.20);
-          background:
-            linear-gradient(
-              135deg,
-              rgba(59,130,246,.10),
-              rgba(255,255,255,.74)
-            );
+        .packageButton:hover {
+          transform:
+            translateY(-2px);
           box-shadow:
-            0 18px 50px
-            rgba(15,23,42,.07);
-          backdrop-filter: blur(16px);
+            0 14px 28px
+            rgba(65,49,133,.11);
         }
 
-        .informationList {
-          margin-top: 10px;
+        .legalNote {
+          margin-top: 14px;
+          color: #9a9dac;
+          font-size: 9px;
+          font-weight: 650;
+          line-height: 1.45;
+        }
+
+        .premium .legalNote {
+          color:
+            rgba(255,255,255,.58);
+        }
+
+        .infoCard {
+          margin-top: 20px;
+          padding: 22px;
+          border: 1px solid rgba(91,75,159,.08);
+          border-radius: 22px;
+          background: rgba(255,255,255,.9);
+          box-shadow:
+            0 13px 34px
+            rgba(54,42,103,.045);
+        }
+
+        .infoTitle {
+          color: #202842;
+          font-size: 18px;
+          font-weight: 950;
+        }
+
+        .infoGrid {
           display: grid;
-          gap: 8px;
-          line-height: 1.65;
-          font-weight: 800;
-          color: rgba(15,23,42,.76);
+          grid-template-columns:
+            repeat(
+              3,
+              minmax(0,1fr)
+            );
+          gap: 12px;
+          margin-top: 15px;
         }
 
-        .transactionCard {
-          margin-top: 16px;
-          border-radius: 30px;
-          border:
-            1px solid
-            rgba(255,255,255,.72);
-          background:
-            rgba(255,255,255,.74);
+        .infoItem {
+          padding: 14px;
+          border: 1px solid rgba(91,75,159,.07);
+          border-radius: 14px;
+          background: rgba(249,249,252,.78);
+          color: #687086;
+          font-size: 11px;
+          font-weight: 650;
+          line-height: 1.55;
+        }
+
+        .infoItem strong {
+          display: block;
+          margin-bottom: 4px;
+          color: #343c55;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .transactions {
+          margin-top: 20px;
+          padding: 23px;
+          border: 1px solid rgba(91,75,159,.08);
+          border-radius: 23px;
+          background: rgba(255,255,255,.93);
           box-shadow:
-            0 24px 70px
-            rgba(15,23,42,.10);
-          backdrop-filter: blur(16px);
-          padding: 18px;
-          overflow: hidden;
+            0 14px 37px
+            rgba(54,42,103,.045);
+        }
+
+        .transactionHead {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .transactionHead h2 {
+          margin: 0;
+          color: #202842;
+          font-size: 21px;
+          font-weight: 950;
+        }
+
+        .transactionHead p {
+          margin: 5px 0 0;
+          color: #888d9d;
+          font-size: 11px;
+          font-weight: 650;
+        }
+
+        .balanceBadge {
+          display: inline-flex;
+          min-height: 34px;
+          align-items: center;
+          padding: 0 12px;
+          border-radius: 999px;
+          background:
+            rgba(112,79,224,.08);
+          color: #6447cf;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        .transactionList {
+          display: grid;
+          gap: 9px;
+          margin-top: 16px;
         }
 
         .transactionRow {
           display: grid;
           grid-template-columns:
-            minmax(140px, 190px)
-            1fr
+            180px
+            minmax(0,1fr)
             auto;
-          gap: 12px;
           align-items: center;
-          border:
-            1px solid
-            rgba(15,23,42,.08);
-          background:
-            rgba(255,255,255,.72);
-          border-radius: 18px;
-          padding: 12px 14px;
+          gap: 13px;
+          min-height: 68px;
+          padding: 11px 14px;
+          border: 1px solid rgba(91,75,159,.07);
+          border-radius: 14px;
+          background: rgba(250,250,253,.78);
         }
 
-        @media (max-width: 760px) {
-          .heroMetrics {
-            grid-template-columns: 1fr;
+        .transactionDate {
+          color: #8d91a0;
+          font-size: 11px;
+          font-weight: 650;
+        }
+
+        .transactionType {
+          color: #343c55;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .transactionNote {
+          margin-top: 3px;
+          color: #9195a3;
+          font-size: 10px;
+          font-weight: 650;
+        }
+
+        .amountPositive,
+        .amountNegative {
+          white-space: nowrap;
+          font-size: 14px;
+          font-weight: 950;
+        }
+
+        .amountPositive {
+          color: #148056;
+        }
+
+        .amountNegative {
+          color: #c14444;
+        }
+
+        .emptyTransactions {
+          margin-top: 16px;
+          padding: 25px;
+          border: 1px dashed rgba(91,75,159,.12);
+          border-radius: 16px;
+          color: #858a9a;
+          text-align: center;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .legacy {
+          margin-top: 15px;
+          padding: 13px 15px;
+          border: 1px solid rgba(91,75,159,.07);
+          border-radius: 14px;
+          background: rgba(248,248,251,.68);
+          color: #878c9b;
+          font-size: 10px;
+          font-weight: 650;
+          line-height: 1.55;
+        }
+
+        .legacy strong {
+          color: #656b7d;
+        }
+
+        @media (min-width: 1500px) {
+          .hero {
+            padding: 40px 44px 36px;
+          }
+
+          .heroText {
+            font-size: 17px;
+          }
+
+          .metricLabel {
+            font-size: 13px;
+          }
+
+          .metricValue {
+            font-size: 31px;
           }
 
           .packageCard {
-            min-height: unset;
+            min-height: 525px;
+            padding: 24px;
+          }
+
+          .packageTitle {
+            font-size: 21px;
+          }
+
+          .packageSubtitle {
+            font-size: 12px;
+          }
+
+          .feature {
+            font-size: 12px;
+          }
+
+          .packageButton {
+            font-size: 14px;
+          }
+        }
+
+        @media (max-width: 1250px) {
+          .metrics {
+            grid-template-columns:
+              repeat(
+                2,
+                minmax(0,1fr)
+              );
+          }
+
+          .benefitStrip {
+            grid-template-columns:
+              repeat(
+                2,
+                minmax(0,1fr)
+              );
+          }
+
+          .benefitItem:nth-child(2) {
+            border-right: 0;
+          }
+
+          .benefitItem:nth-child(-n+2) {
+            border-bottom:
+              1px solid
+              rgba(91,75,159,.07);
+          }
+
+          .packageGrid {
+            grid-template-columns:
+              repeat(
+                2,
+                minmax(0,1fr)
+              );
+          }
+        }
+
+        @media (max-width: 760px) {
+          .creditPage {
+            padding-top: 0;
+          }
+
+          .hero {
+            padding: 23px 18px;
+            border-radius: 22px;
+          }
+
+          .heroTop {
+            flex-direction: column;
+          }
+
+          .heroVisual {
+            display: none;
+          }
+
+          .heroTitle {
+            font-size: 39px;
+          }
+
+          .heroText {
+            font-size: 14px;
+          }
+
+          .metrics,
+          .benefitStrip,
+          .packageGrid,
+          .infoGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .metric {
+            min-height: 105px;
+          }
+
+          .benefitItem {
+            border-right: 0;
+            border-bottom:
+              1px solid
+              rgba(91,75,159,.07);
+          }
+
+          .benefitItem:last-child {
+            border-bottom: 0;
+          }
+
+          .sectionHead {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .packageCard {
+            min-height: auto;
+          }
+
+          .transactionHead {
+            align-items: flex-start;
+            flex-direction: column;
           }
 
           .transactionRow {
@@ -806,622 +1292,527 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
         }
       `}</style>
 
-      <div className="glowOrb glowOne" />
-      <div className="glowOrb glowTwo" />
-
-      <section className="heroCard">
-        <div className="heroContent">
-          <div>
-            <span style={badgeStyle()}>
+      <section className="hero">
+        <div className="heroTop">
+          <div className="heroCopy">
+            <div className="kicker">
               💎 Kredi & Premium Merkezi
-            </span>
+            </div>
 
             <h1 className="heroTitle">
               Lead aç, hastaya daha hızlı ulaş.
             </h1>
 
-            <div className="heroText">
-              Kredi satın alarak sana
-              yönlendirilmiş lead kayıtlarının
-              iletişim bilgilerini
-              görüntüleyebilir, Premium üyelik ile
-              uygun lead dağıtımlarında öncelik
-              kazanabilirsin. Tüm kredi alış ve
-              harcama hareketlerin burada şeffaf
-              şekilde tutulur.
-            </div>
+            <p className="heroText">
+              Kredi paketleriyle sana yönlendirilen lead
+              kayıtlarının iletişim bilgilerini görüntüle.
+              Premium üyelik ile 10 krediye ek olarak uygun
+              lead dağıtımlarında öncelik avantajı kazan.
+            </p>
           </div>
 
           <div
-            style={{
-              opacity: 0.78,
-              fontWeight: 950,
-            }}
+            className="heroVisual"
+            aria-hidden
           >
-            Klinik:{" "}
-            <strong>{session.name}</strong>
+            <div className="heroDiamond">
+              💎
+            </div>
           </div>
         </div>
 
-        <div className="heroMetrics">
-          <div className="metricCard">
-            <div className="metricLabel">
-              Kredi Bakiyesi
+        <div className="metrics">
+          <div className="metric">
+            <div className="metricIcon">
+              💳
             </div>
 
-            <div className="metricValue">
-              {creditBalance}
-            </div>
+            <div>
+              <div className="metricLabel">
+                Kredi Bakiyesi
+              </div>
 
-            <div className="metricHint">
-              1 kredi = 1 lead iletişim
-              kaydını görüntüleme
-            </div>
-          </div>
+              <div className="metricValue">
+                {creditBalance}
+              </div>
 
-          <div className="metricCard">
-            <div className="metricLabel">
-              Premium Durumu
-            </div>
-
-            <div className="metricValue">
-              {isPremiumActive
-                ? "Aktif"
-                : "Pasif"}
-            </div>
-
-            <div className="metricHint">
-              {isPremiumActive
-                ? `Bitiş: ${fmtDate(
-                    clinic?.premiumExpiresAt
-                  )}`
-                : "Dağıtım önceliği kapalı"}
+              <div className="metricHint">
+                Kullanılabilir lead kredin
+              </div>
             </div>
           </div>
 
-          <div className="metricCard">
-            <div className="metricLabel">
-              Yenileme Modeli
+          <div className="metric">
+            <div className="metricIcon">
+              👑
             </div>
 
-            <div className="metricValue">
-              Manuel
+            <div>
+              <div className="metricLabel">
+                Premium Durumu
+              </div>
+
+              <div className="metricValue">
+                {isPremiumActive
+                  ? "Aktif"
+                  : "Pasif"}
+              </div>
+
+              <div className="metricHint">
+                {isPremiumActive
+                  ? `${fmtDate(
+                      clinic?.premiumExpiresAt,
+                    )} tarihine kadar`
+                  : "Öncelikli dağıtım kapalı"}
+              </div>
+            </div>
+          </div>
+
+          <div className="metric">
+            <div className="metricIcon">
+              📅
             </div>
 
-            <div className="metricHint">
-              Premium üyelik süresi sonunda
-              kullanıcı tarafından yeniden satın
-              alınır
+            <div>
+              <div className="metricLabel">
+                Yenileme Modeli
+              </div>
+
+              <div className="metricValue">
+                Manuel
+              </div>
+
+              <div className="metricHint">
+                Süre bitiminde sen yenilersin
+              </div>
+            </div>
+          </div>
+
+          <div className="metric">
+            <div className="metricIcon">
+              📊
+            </div>
+
+            <div>
+              <div className="metricLabel">
+                Son İşlemler
+              </div>
+
+              <div className="metricValue">
+                {transactions.length}
+              </div>
+
+              <div className="metricHint">
+                Görüntülenen son kredi hareketi
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div style={{ marginTop: 14 }}>
-        {isPremiumActive
-          ? premiumBox(
-              clinic?.premiumExpiresAt
-            )
-          : normalBox()}
-      </div>
+      <section className="benefitStrip">
+        <div className="benefitItem">
+          <div className="benefitIcon">
+            🛡️
+          </div>
 
-      <div className="paymentNotice">
-        <strong>
-          💳 Online ödeme altyapısı hazırlanmaktadır.
-        </strong>{" "}
-        Paketleri, fiyatları ve sözleşme bilgilerini inceleyebilirsin.
-        Sanal POS entegrasyonu etkinleştirilene kadar karttan tahsilat
-        yapılmaz ve hesabına otomatik kredi ya da Premium üyelik
-        tanımlanmaz.
+          <div>
+            <strong>
+              Güvenli & Şeffaf
+            </strong>
+
+            <p>
+              Kredi hareketlerin panelinde kayıtlıdır.
+            </p>
+          </div>
+        </div>
+
+        <div className="benefitItem">
+          <div className="benefitIcon">
+            ⚡
+          </div>
+
+          <div>
+            <strong>
+              Hızlı Kullanım
+            </strong>
+
+            <p>
+              Kredinle uygun lead iletişimlerini aç.
+            </p>
+          </div>
+        </div>
+
+        <div className="benefitItem">
+          <div className="benefitIcon">
+            🎯
+          </div>
+
+          <div>
+            <strong>
+              Uygun Leadlere Ulaş
+            </strong>
+
+            <p>
+              Hizmet kapsamındaki fırsatları değerlendir.
+            </p>
+          </div>
+        </div>
+
+        <div className="benefitItem">
+          <div className="benefitIcon">
+            📈
+          </div>
+
+          <div>
+            <strong>
+              Daha Fazla Fırsat
+            </strong>
+
+            <p>
+              Kredi bakiyeni hazır tut, leadleri kaçırma.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="sectionHead">
+        <div>
+          <h2>
+            Sana uygun paketi seç
+          </h2>
+
+          <p>
+            İhtiyacına göre kredi paketi satın alabilir
+            veya Premium üyelik ile kredi ve dağıtım
+            önceliğini birlikte kullanabilirsin.
+          </p>
+        </div>
       </div>
 
       <section className="packageGrid">
-        {packages.map((packageItem) => (
-          <div
-            key={packageItem.title}
-            className={`packageCard ${
-              packageItem.featured
-                ? "featured"
-                : ""
-            } ${
+        {packages.map(
+          (
+            packageItem,
+            index,
+          ) => {
+            const unitPrice =
               packageItem.premium
-                ? "premium"
-                : ""
-            }`}
-          >
-            <div className="packageTop">
-              <div>
-                <div className="packageIcon">
-                  {packageItem.icon}
+                ? null
+                : index === 0
+                  ? "300 TL"
+                  : index === 1
+                    ? "200 TL"
+                    : "160 TL";
+
+            return (
+              <article
+                key={
+                  packageItem.title
+                }
+                className={`packageCard ${
+                  packageItem.featured
+                    ? "featured"
+                    : ""
+                } ${
+                  packageItem.premium
+                    ? "premium"
+                    : ""
+                }`}
+              >
+                {packageItem.featured &&
+                !packageItem.premium ? (
+                  <div className="popularTop">
+                    ✦ En Popüler
+                  </div>
+                ) : null}
+
+                <div className="cardTop">
+                  <div className="packageIcon">
+                    {packageItem.icon}
+                  </div>
+
+                  {packageItem.badge ? (
+                    <div className="packageBadge">
+                      {
+                        packageItem.badge
+                      }
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="packageTitle">
                   {packageItem.title}
                 </div>
-              </div>
 
-              {packageItem.badge ? (
-                <span
-                  style={
-                    packageItem.premium
-                      ? premiumBadgeStyle()
-                      : badgeStyle()
-                  }
-                >
-                  {packageItem.badge}
-                </span>
-              ) : null}
-            </div>
-
-            <div className="packagePrice">
-              {packageItem.priceText}
-            </div>
-
-            <div className="packageChips">
-              <span
-                style={
-                  packageItem.premium
-                    ? premiumChipStyle()
-                    : chipStyle()
-                }
-              >
-                🎯 {packageItem.credits} kredi
-              </span>
-
-              <span
-                style={
-                  packageItem.premium
-                    ? premiumChipStyle()
-                    : chipStyle()
-                }
-              >
-                🛡️ Bilgilendirmeli veri süreci
-              </span>
-
-              <span
-                style={
-                  packageItem.premium
-                    ? premiumChipStyle()
-                    : chipStyle()
-                }
-              >
-                💳 Güvenli kredi kartı ödemesi
-              </span>
-            </div>
-
-            <div className="packageNote">
-              <div>{packageItem.note}</div>
-
-              <div
-                style={{
-                  marginTop: 10,
-                  display: "grid",
-                  gap: 5,
-                  fontSize: 12,
-                  lineHeight: 1.55,
-                  opacity:
-                    packageItem.premium
-                      ? 0.92
-                      : 0.78,
-                }}
-              >
-                <div>
-                  <strong>Süre:</strong>{" "}
-                  {packageItem.durationText}
+                <div className="packageSubtitle">
+                  {packageItem.note}
                 </div>
 
-                <div>
-                  <strong>
-                    Aktivasyon:
-                  </strong>{" "}
-                  {packageItem.activationText}
+                <div className="packagePrice">
+                  {packageItem.priceText}
                 </div>
 
-                {packageItem.renewalText ? (
-                  <div>
-                    <strong>
-                      Yenileme:
-                    </strong>{" "}
-                    {
-                      packageItem.renewalText
-                    }
+                <div className="creditPill">
+                  {packageItem.premium
+                    ? "10 Kredi + Premium"
+                    : `${packageItem.credits} Kredi`}
+                </div>
+
+                <div className="packageFeatures">
+                  <div className="feature">
+                    <span className="featureCheck">
+                      ✓
+                    </span>
+
+                    <span>
+                      {packageItem.credits} lead iletişim
+                      kaydını görüntüleme hakkı
+                    </span>
                   </div>
-                ) : null}
-              </div>
 
-              <div
-                style={{
-                  marginTop: 10,
-                  paddingTop: 10,
-                  borderTop:
-                    packageItem.premium
-                      ? "1px solid rgba(255,255,255,0.16)"
-                      : "1px solid rgba(15,23,42,0.08)",
-                  fontSize: 11,
-                  lineHeight: 1.55,
-                  fontWeight: 800,
-                  opacity:
-                    packageItem.premium
-                      ? 0.86
-                      : 0.7,
-                }}
-              >
-                {packageItem.disclaimer}
-              </div>
-            </div>
+                  {!packageItem.premium ? (
+                    <>
+                      <div className="feature">
+                        <span className="featureCheck">
+                          ✓
+                        </span>
 
-            <div className="packageAction">
-              <Link
-                href={packageItem.buyHref}
-                className="buyButton"
-              >
-                🔎 Paketi İncele
-              </Link>
-            </div>
-          </div>
-        ))}
+                        <span>
+                          Abonelik zorunluluğu olmadan
+                          kullanım
+                        </span>
+                      </div>
+
+                      <div className="feature">
+                        <span className="featureCheck">
+                          ✓
+                        </span>
+
+                        <span>
+                          Kredi bakiyesi tükenene kadar
+                          kullanım
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="feature">
+                        <span className="featureCheck">
+                          ✓
+                        </span>
+
+                        <span>
+                          Uygun lead dağıtımlarında
+                          standart kliniklere göre öncelik
+                        </span>
+                      </div>
+
+                      <div className="feature">
+                        <span className="featureCheck">
+                          ✓
+                        </span>
+
+                        <span>
+                          30 günlük Premium üyelik
+                        </span>
+                      </div>
+
+                      <div className="feature">
+                        <span className="featureCheck">
+                          ✓
+                        </span>
+
+                        <span>
+                          Otomatik yenileme yok
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {unitPrice ? (
+                  <div className="unitPrice">
+                    Kredi başına yaklaşık{" "}
+                    <strong>
+                      {unitPrice}
+                    </strong>
+                  </div>
+                ) : (
+                  <div className="unitPrice">
+                    <strong>
+                      Premium avantajı:
+                    </strong>{" "}
+                    10 kredi + 30 gün dağıtım önceliği
+                  </div>
+                )}
+
+                <div className="packageAction">
+                  <Link
+                    href={
+                      packageItem.buyHref
+                    }
+                    className="packageButton"
+                  >
+                    {packageItem.premium
+                      ? "Premium'u Seç"
+                      : "Paketi Seç"}
+
+                    <span>
+                      →
+                    </span>
+                  </Link>
+                </div>
+
+                <div className="legalNote">
+                  {
+                    packageItem.disclaimer
+                  }
+                </div>
+              </article>
+            );
+          },
+        )}
       </section>
 
-      <section className="informationCard">
-        <div
-          style={{
-            fontWeight: 1000,
-            fontSize: 18,
-          }}
-        >
-          ℹ️ Paketler hakkında önemli
-          bilgilendirme
+      <section className="infoCard">
+        <div className="infoTitle">
+          Paketler nasıl çalışır?
         </div>
 
-        <div className="informationList">
-          <div>
-            • Bir kredi, kliniğe
-            yönlendirilmiş bir lead kaydının
-            iletişim bilgilerini görüntüleme
+        <div className="infoGrid">
+          <div className="infoItem">
+            <strong>
+              💎 1 kredi = 1 lead açma
+            </strong>
+
+            Bir kredi, kliniğe yönlendirilmiş bir lead
+            kaydının iletişim bilgilerini görüntüleme
             hakkı verir.
           </div>
 
-          <div>
-            • Lead kaydı; kesin hasta,
-            randevu, tedavi, satış veya gelir
-            garantisi anlamına gelmez.
+          <div className="infoItem">
+            <strong>
+              👑 Premium öncelik
+            </strong>
+
+            Premium üyelik uygun lead dağıtımlarında
+            standart kliniklere göre öncelik sağlar.
           </div>
 
-          <div>
-            • Premium üyelik, uygun lead
-            dağıtımlarında standart kliniklere
-            göre öncelik sağlar; münhasır lead
-            veya belirli sayıda talep garantisi
-            vermez.
-          </div>
+          <div className="infoItem">
+            <strong>
+              ℹ️ Garanti değildir
+            </strong>
 
-          <div>
-            • Paket kapsamı, vergiler,
-            sözleşmeler ve toplam ödeme tutarı
-            satın alma ekranında ödeme öncesinde
-            gösterilir.
-          </div>
-
-          <div>
-            • Premium üyelik otomatik
-            yenilenmez. Süre sonunda kullanıcı
-            tarafından yeniden satın alınması
-            gerekir.
-          </div>
-
-          <div>
-            • Kredi veya Premium üyelik yalnızca
-            ödeme kuruluşundan başarılı ödeme
-            doğrulaması alındıktan sonra
-            etkinleştirilir.
+            Lead kaydı kesin hasta, randevu, tedavi,
+            satış veya gelir garantisi anlamına gelmez.
           </div>
         </div>
       </section>
 
-      <section className="transactionCard">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 10,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
+      <section className="transactions">
+        <div className="transactionHead">
           <div>
-            <div
-              style={{
-                fontWeight: 1000,
-                fontSize: 22,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              📜 Kredi Hareketleri
-            </div>
+            <h2>
+              Kredi Hareketleri
+            </h2>
 
-            <div
-              style={{
-                opacity: 0.72,
-                fontWeight: 850,
-                marginTop: 4,
-              }}
-            >
-              Son 30 kredi işlemi.
-            </div>
+            <p>
+              Son 30 kredi işlemin burada görünür.
+            </p>
           </div>
 
-          <span style={badgeStyle()}>
-            Bakiye: {creditBalance}
-          </span>
+          <div className="balanceBadge">
+            💎 Bakiye: {creditBalance}
+          </div>
         </div>
 
-        {transactions.length === 0 ? (
-          <div
-            style={{
-              marginTop: 14,
-              opacity: 0.75,
-              fontWeight: 850,
-            }}
-          >
+        {transactions.length ===
+        0 ? (
+          <div className="emptyTransactions">
             Henüz kredi hareketi yok.
           </div>
         ) : (
-          <div
-            style={{
-              marginTop: 14,
-              display: "grid",
-              gap: 10,
-            }}
-          >
+          <div className="transactionList">
             {transactions.map(
-              (transaction) => (
+              (
+                transaction,
+              ) => (
                 <div
-                  key={transaction.id}
+                  key={
+                    transaction.id
+                  }
                   className="transactionRow"
                 >
-                  <div
-                    style={{
-                      opacity: 0.72,
-                      fontWeight: 850,
-                      fontSize: 13,
-                    }}
-                  >
+                  <div className="transactionDate">
                     {fmtDateTime(
-                      transaction.createdAt
+                      transaction.createdAt,
                     )}
                   </div>
 
                   <div>
-                    <div
-                      style={{
-                        fontWeight: 1000,
-                      }}
-                    >
+                    <div className="transactionType">
                       {typeLabel(
-                        transaction.type
+                        transaction.type,
                       )}
                     </div>
 
-                    <div
-                      style={{
-                        opacity: 0.7,
-                        fontWeight: 800,
-                        fontSize: 12,
-                      }}
-                    >
+                    <div className="transactionNote">
                       {transaction.note ??
                         "—"}
                     </div>
                   </div>
 
                   <div
-                    style={{
-                      fontWeight: 1000,
-                      color:
-                        transaction.amount >= 0
-                          ? "#15803d"
-                          : "#b91c1c",
-                      whiteSpace: "nowrap",
-                      fontSize: 16,
-                    }}
+                    className={
+                      transaction.amount >=
+                      0
+                        ? "amountPositive"
+                        : "amountNegative"
+                    }
                   >
-                    {transaction.amount > 0
+                    {transaction.amount >
+                    0
                       ? `+${transaction.amount}`
                       : transaction.amount}{" "}
                     kredi
                   </div>
                 </div>
-              )
+              ),
             )}
           </div>
         )}
       </section>
 
-      <div
-        style={{
-          marginTop: 16,
-          opacity: 0.75,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 900,
-            marginBottom: 6,
-          }}
-        >
-          Eski kota bilgisi
-        </div>
+      <div className="legacy">
+        <strong>
+          Eski kota sistemi:
+        </strong>{" "}
 
         {activeSub ? (
-          <div
-            style={{
-              fontWeight: 800,
-              lineHeight: 1.7,
-            }}
-          >
-            Eski abonelik/kota sisteminde
-            kalan:{" "}
-            <strong>{remaining}</strong> /{" "}
-            {quotaTotal}. Bitiş:{" "}
+          <>
+            Kalan{" "}
             <strong>
-              {fmtDate(activeSub.expiresAt)}
+              {remaining}
+            </strong>{" "}
+            / {quotaTotal}. Bitiş:{" "}
+            <strong>
+              {fmtDate(
+                activeSub.expiresAt,
+              )}
             </strong>
-            . Yeni sistemde lead açma işlemleri
-            kredi bakiyesi üzerinden ilerler.
-          </div>
+            . Yeni lead açma sistemi kredi bakiyesi
+            üzerinden ilerler.
+          </>
         ) : (
-          <div
-            style={{
-              fontWeight: 800,
-              lineHeight: 1.7,
-            }}
-          >
-            Aktif eski abonelik bulunamadı.
-            Yeni sistemde kredi bakiyesi
-            kullanılacak.
-          </div>
+          <>
+            Aktif eski abonelik bulunmuyor. Yeni
+            sistemde lead açma işlemleri kredi bakiyesi
+            üzerinden ilerler.
+          </>
         )}
       </div>
     </div>
   );
-}
-
-function normalBox(): JSX.Element {
-  return (
-    <div style={noticeBox("info")}>
-      <div style={{ fontWeight: 950 }}>
-        ℹ️ Premium kapalı
-      </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          opacity: 0.85,
-          fontWeight: 850,
-        }}
-      >
-        Normal klinikler kredi satın alarak
-        lead iletişim bilgilerini
-        görüntüleyebilir. Premium klinikler
-        uygun lead dağıtımlarında öncelik
-        kazanır.
-      </div>
-    </div>
-  );
-}
-
-function premiumBox(
-  expiresAt: Date | null | undefined
-): JSX.Element {
-  return (
-    <div style={noticeBox("ok")}>
-      <div style={{ fontWeight: 950 }}>
-        ✅ Premium aktif
-      </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          opacity: 0.85,
-          fontWeight: 850,
-        }}
-      >
-        Premium dağıtım önceliğin aktif.
-        Bitiş:{" "}
-        <strong>
-          {fmtDate(expiresAt)}
-        </strong>
-      </div>
-    </div>
-  );
-}
-
-function noticeBox(
-  kind: "ok" | "info"
-): CSSProperties {
-  const base: CSSProperties = {
-    borderRadius: 24,
-    border:
-      "1px solid rgba(255,255,255,0.70)",
-    background:
-      "rgba(255,255,255,0.68)",
-    boxShadow:
-      "0 18px 50px rgba(15,23,42,0.08)",
-    padding: 16,
-    backdropFilter: "blur(16px)",
-  };
-
-  if (kind === "ok") {
-    return {
-      ...base,
-      border:
-        "1px solid rgba(34,197,94,0.24)",
-      background:
-        "linear-gradient(135deg, rgba(34,197,94,0.13), rgba(255,255,255,0.70))",
-    };
-  }
-
-  return {
-    ...base,
-    border:
-      "1px solid rgba(59,130,246,0.24)",
-    background:
-      "linear-gradient(135deg, rgba(59,130,246,0.13), rgba(255,255,255,0.70))",
-  };
-}
-
-function badgeStyle(): CSSProperties {
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 12px",
-    borderRadius: 999,
-    border:
-      "1px solid rgba(15,23,42,0.10)",
-    background:
-      "rgba(255,255,255,0.78)",
-    fontWeight: 950,
-    fontSize: 12,
-    boxShadow:
-      "0 10px 22px rgba(15,23,42,0.06)",
-  };
-}
-
-function premiumBadgeStyle(): CSSProperties {
-  return {
-    ...badgeStyle(),
-    color: "white",
-    border:
-      "1px solid rgba(255,255,255,0.18)",
-    background:
-      "rgba(255,255,255,0.14)",
-  };
-}
-
-function chipStyle(): CSSProperties {
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "8px 10px",
-    borderRadius: 999,
-    border:
-      "1px solid rgba(15,23,42,0.10)",
-    background:
-      "rgba(255,255,255,0.72)",
-    fontWeight: 950,
-    fontSize: 12,
-  };
-}
-
-function premiumChipStyle(): CSSProperties {
-  return {
-    ...chipStyle(),
-    color: "white",
-    border:
-      "1px solid rgba(255,255,255,0.18)",
-    background:
-      "rgba(255,255,255,0.12)",
-  };
 }

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireClinic } from "@/lib/clinic-auth";
 
+import styles from "./leadler.module.css";
+
 export const dynamic = "force-dynamic";
 
 const MARKETPLACE_MAX_PURCHASES = 3;
@@ -31,15 +33,8 @@ type OpportunityRow = {
   fullName: string;
   phone: string;
   createdAt: Date;
-
   kind: OpportunityKind;
-
   unlockPrice: number;
-
-  /*
-   * Sadece marketplace lead'lerinde anlamlıdır.
-   * Direct lead için 0 bırakılır.
-   */
   unlockCount: number;
 };
 
@@ -70,7 +65,7 @@ const STATUS_LABEL: Record<
 };
 
 function normalizeQuery(
-  value: string | undefined
+  value: string | undefined,
 ): string {
   return (value ?? "")
     .trim()
@@ -78,7 +73,7 @@ function normalizeQuery(
 }
 
 function normalizeStatus(
-  value: string | undefined
+  value: string | undefined,
 ): LeadStatus | "all" {
   if (
     value === "new" ||
@@ -93,7 +88,7 @@ function normalizeStatus(
 }
 
 function safeStatus(
-  value: string
+  value: string,
 ): LeadStatus {
   if (
     value === "new" ||
@@ -107,96 +102,26 @@ function safeStatus(
   return "new";
 }
 
-function formatTR(
-  date: Date
-): string {
-  return date.toLocaleString(
-    "tr-TR"
-  );
-}
-
-function statusBadgeClass(
-  status: LeadStatus
+function statusClass(
+  status: LeadStatus,
 ): string {
   if (status === "new") {
-    return "panelLeadStatus panelLeadStatusNew";
+    return styles.statusNew;
   }
 
   if (status === "contacted") {
-    return "panelLeadStatus panelLeadStatusContacted";
+    return styles.statusContacted;
   }
 
   if (status === "won") {
-    return "panelLeadStatus panelLeadStatusWon";
+    return styles.statusWon;
   }
 
-  return "panelLeadStatus panelLeadStatusLost";
-}
-
-function maskName(
-  name: string
-): string {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "Kilitli lead";
-  }
-
-  return parts
-    .map((part) => {
-      const first =
-        part[0] ?? "";
-
-      return `${first}${"*".repeat(
-        Math.max(
-          3,
-          part.length - 1
-        )
-      )}`;
-    })
-    .join(" ");
-}
-
-function maskPhone(
-  phone: string
-): string {
-  const digits =
-    phone.replace(/\D/g, "");
-
-  if (digits.length < 6) {
-    return "05** *** ** **";
-  }
-
-  return `${digits.slice(
-    0,
-    2
-  )}** *** ** ${digits.slice(
-    -2
-  )}`;
-}
-
-function isRecent(
-  createdAt: Date,
-  now: Date
-): boolean {
-  const diff =
-    now.getTime() -
-    createdAt.getTime();
-
-  const sixHours =
-    6 * 60 * 60 * 1000;
-
-  return (
-    diff >= 0 &&
-    diff <= sixHours
-  );
+  return styles.statusLost;
 }
 
 function marketplaceCutoff(
-  now: Date
+  now: Date,
 ): Date {
   return new Date(
     now.getTime() -
@@ -204,12 +129,12 @@ function marketplaceCutoff(
         24 *
         60 *
         60 *
-        1000
+        1000,
   );
 }
 
 function uniqueCoverages(
-  values: CoveragePair[]
+  values: CoveragePair[],
 ): CoveragePair[] {
   const seen =
     new Set<string>();
@@ -236,6 +161,35 @@ function uniqueCoverages(
   return result;
 }
 
+function getInitials(
+  name: string,
+): string {
+  const parts =
+    name
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "DF";
+  }
+
+  if (parts.length === 1) {
+    return (
+      parts[0]
+        ?.slice(0, 2)
+        .toLocaleUpperCase("tr-TR") ??
+      "DF"
+    );
+  }
+
+  return `${parts[0]?.[0] ?? ""}${
+    parts[parts.length - 1]?.[0] ?? ""
+  }`.toLocaleUpperCase(
+    "tr-TR",
+  );
+}
+
 export default async function PanelLeadsPage({
   searchParams,
 }: {
@@ -257,7 +211,9 @@ export default async function PanelLeadsPage({
     normalizeQuery(sp.q);
 
   const statusFilter =
-    normalizeStatus(sp.status);
+    normalizeStatus(
+      sp.status,
+    );
 
   let creditBalance = 0;
 
@@ -270,17 +226,14 @@ export default async function PanelLeadsPage({
   let loadError:
     string | null = null;
 
-  /*
-   * Önce kliniğin:
-   *
-   * - kredi bakiyesini
-   * - aktif şehir + hizmet kapsamlarını
-   *
-   * alıyoruz.
-   */
   let coverages:
     CoveragePair[] = [];
 
+  /*
+   * ========================================================
+   * KLİNİK / KREDİ / KAPSAMLAR
+   * ========================================================
+   */
   try {
     const clinic =
       await prisma.clinic.findUnique({
@@ -311,12 +264,12 @@ export default async function PanelLeadsPage({
     coverages =
       uniqueCoverages(
         clinic?.coverages ??
-          []
+          [],
       );
   } catch (error) {
     console.error(
       "PANEL_LEADLER_CLINIC_ERROR",
-      error
+      error,
     );
 
     loadError =
@@ -328,14 +281,7 @@ export default async function PanelLeadsPage({
    * SATIN ALINMIŞ LEADLER
    * ========================================================
    *
-   * Satın alma tanımı:
-   *
-   * LeadAssignment.unlocked === true
-   *
-   * Böylece eski sistemden kalan unlocked:false
-   * hayalet assignment kayıtları satın alma sayılmaz.
-   *
-   * Ad / telefon araması SADECE burada yapılır.
+   * Arama SADECE unlocked:true satın almalarda çalışır.
    */
   if (!loadError) {
     try {
@@ -361,12 +307,14 @@ export default async function PanelLeadsPage({
                     OR: [
                       {
                         fullName: {
-                          contains: q,
+                          contains:
+                            q,
                         },
                       },
                       {
                         phone: {
-                          contains: q,
+                          contains:
+                            q,
                         },
                       },
                     ],
@@ -376,14 +324,16 @@ export default async function PanelLeadsPage({
           },
 
           orderBy: {
-            createdAt: "desc",
+            createdAt:
+              "desc",
           },
 
           take: 200,
 
           select: {
             status: true,
-            unlockPrice: true,
+            unlockPrice:
+              true,
 
             lead: {
               select: {
@@ -400,12 +350,16 @@ export default async function PanelLeadsPage({
 
       purchasedRows =
         purchasedAssignments.map(
-          (assignment) => ({
+          (
+            assignment,
+          ) => ({
             id:
-              assignment.lead.id,
+              assignment.lead
+                .id,
 
             city:
-              assignment.lead.city,
+              assignment.lead
+                .city,
 
             service:
               assignment.lead
@@ -416,11 +370,12 @@ export default async function PanelLeadsPage({
                 .fullName,
 
             phone:
-              assignment.lead.phone,
+              assignment.lead
+                .phone,
 
             status:
               safeStatus(
-                assignment.status
+                assignment.status,
               ),
 
             createdAt:
@@ -431,14 +386,14 @@ export default async function PanelLeadsPage({
               Math.max(
                 1,
                 assignment.unlockPrice ??
-                  DEFAULT_UNLOCK_PRICE
+                  DEFAULT_UNLOCK_PRICE,
               ),
-          })
+          }),
         );
     } catch (error) {
       console.error(
         "PANEL_LEADLER_PURCHASED_ERROR",
-        error
+        error,
       );
 
       loadError =
@@ -451,17 +406,14 @@ export default async function PanelLeadsPage({
    * MARKETPLACE FIRSATLARI
    * ========================================================
    *
-   * Marketplace lead'i olabilmek için:
+   * Güvenlik şartları korunuyor:
    *
-   * 1. Kliniğin aktif city + service kapsamına uymalı.
-   * 2. clinic_direct OLMAMALI.
-   * 3. Son 14 gün içinde oluşturulmuş olmalı.
-   * 4. fcfs_marketplace_created logu bulunmalı.
-   * 5. unlockCount < 3 olmalı.
-   * 6. Bu klinik daha önce unlocked:true olarak satın almamış
-   *    olmalı.
-   *
-   * Bu şartlar eski lead selini engeller.
+   * - aktif kapsam
+   * - clinic_direct değil
+   * - son 14 gün
+   * - fcfs_marketplace_created
+   * - unlockCount < 3
+   * - klinik daha önce satın almamış
    */
   if (
     !loadError &&
@@ -485,21 +437,19 @@ export default async function PanelLeadsPage({
                 MARKETPLACE_MAX_PURCHASES,
             },
 
-            OR: coverages.map(
-              (coverage) => ({
-                city:
-                  coverage.city,
+            OR:
+              coverages.map(
+                (
+                  coverage,
+                ) => ({
+                  city:
+                    coverage.city,
 
-                service:
-                  coverage.service,
-              })
-            ),
+                  service:
+                    coverage.service,
+                }),
+              ),
 
-            /*
-             * Aşama 2'den önce oluşturulmuş eski
-             * lead'lerin marketplace'e girmesini
-             * engelleyen asıl güvenlik şartı.
-             */
             distributionLogs: {
               some: {
                 reason:
@@ -507,25 +457,20 @@ export default async function PanelLeadsPage({
               },
             },
 
-            /*
-             * Klinik daha önce gerçekten satın aldıysa
-             * fırsatlar listesinde tekrar gösterilmez.
-             *
-             * unlocked:false eski assignment kayıtları
-             * burada satın alma sayılmaz.
-             */
             assignments: {
               none: {
                 clinicId:
                   session.clinicId,
 
-                unlocked: true,
+                unlocked:
+                  true,
               },
             },
           },
 
           orderBy: {
-            createdAt: "desc",
+            createdAt:
+              "desc",
           },
 
           take: 200,
@@ -545,7 +490,8 @@ export default async function PanelLeadsPage({
         OpportunityRow[] =
         marketplaceLeads.map(
           (lead) => ({
-            id: lead.id,
+            id:
+              lead.id,
 
             city:
               lead.city,
@@ -571,18 +517,18 @@ export default async function PanelLeadsPage({
             unlockCount:
               Math.max(
                 0,
-                lead.unlockCount
+                lead.unlockCount,
               ),
-          })
+          }),
         );
 
       opportunityRows.push(
-        ...marketplaceRows
+        ...marketplaceRows,
       );
     } catch (error) {
       console.error(
         "PANEL_LEADLER_MARKETPLACE_ERROR",
-        error
+        error,
       );
 
       loadError =
@@ -592,16 +538,11 @@ export default async function PanelLeadsPage({
 
   /*
    * ========================================================
-   * DOĞRUDAN KLİNİĞE GELEN KİLİTLİ LEADLER
+   * DIRECT LEADLER
    * ========================================================
    *
-   * clinic_direct lead genel marketplace'e çıkmaz.
-   *
-   * Ancak hasta doğrudan bu kliniğin profilinden
-   * talep gönderdiyse mevcut eski/direct akışta
-   * kliniğe unlocked:false assignment oluşturulur.
-   *
-   * Bu özel assignment'ı yalnızca sahibi görür.
+   * unlocked:false + clinic_direct yalnız assignment sahibi
+   * klinikte fırsat olarak görünür.
    */
   if (!loadError) {
     try {
@@ -611,7 +552,8 @@ export default async function PanelLeadsPage({
             clinicId:
               session.clinicId,
 
-            unlocked: false,
+            unlocked:
+              false,
 
             lead: {
               source:
@@ -620,13 +562,15 @@ export default async function PanelLeadsPage({
           },
 
           orderBy: {
-            createdAt: "desc",
+            createdAt:
+              "desc",
           },
 
           take: 100,
 
           select: {
-            unlockPrice: true,
+            unlockPrice:
+              true,
 
             lead: {
               select: {
@@ -644,12 +588,16 @@ export default async function PanelLeadsPage({
       const directRows:
         OpportunityRow[] =
         directAssignments.map(
-          (assignment) => ({
+          (
+            assignment,
+          ) => ({
             id:
-              assignment.lead.id,
+              assignment.lead
+                .id,
 
             city:
-              assignment.lead.city,
+              assignment.lead
+                .city,
 
             service:
               assignment.lead
@@ -660,7 +608,8 @@ export default async function PanelLeadsPage({
                 .fullName,
 
             phone:
-              assignment.lead.phone,
+              assignment.lead
+                .phone,
 
             createdAt:
               assignment.lead
@@ -673,20 +622,21 @@ export default async function PanelLeadsPage({
               Math.max(
                 1,
                 assignment.unlockPrice ??
-                  DEFAULT_UNLOCK_PRICE
+                  DEFAULT_UNLOCK_PRICE,
               ),
 
-            unlockCount: 0,
-          })
+            unlockCount:
+              0,
+          }),
         );
 
       opportunityRows.push(
-        ...directRows
+        ...directRows,
       );
     } catch (error) {
       console.error(
         "PANEL_LEADLER_DIRECT_ERROR",
-        error
+        error,
       );
 
       loadError =
@@ -694,20 +644,12 @@ export default async function PanelLeadsPage({
     }
   }
 
-  /*
-   * Marketplace ve direct fırsatlar tek fırsat bölümünde
-   * tarih sırasına göre gösterilir.
-   */
   opportunityRows.sort(
     (a, b) =>
       b.createdAt.getTime() -
-      a.createdAt.getTime()
+      a.createdAt.getTime(),
   );
 
-  /*
-   * Aynı lead yanlışlıkla iki kaynaktan gelirse
-   * UI'da çift göstermemek için son güvenlik.
-   */
   opportunityRows =
     Array.from(
       new Map(
@@ -715,9 +657,9 @@ export default async function PanelLeadsPage({
           (row) => [
             row.id,
             row,
-          ]
-        )
-      ).values()
+          ],
+        ),
+      ).values(),
     );
 
   const opportunityCount =
@@ -726,10 +668,12 @@ export default async function PanelLeadsPage({
   const purchasedCount =
     purchasedRows.length;
 
-  const buildHref = (next: {
-    status?: string;
-    q?: string;
-  }): string => {
+  const buildHref = (
+    next: {
+      status?: string;
+      q?: string;
+    },
+  ): string => {
     const params =
       new URLSearchParams();
 
@@ -745,14 +689,14 @@ export default async function PanelLeadsPage({
     if (nextStatus) {
       params.set(
         "status",
-        nextStatus
+        nextStatus,
       );
     }
 
     if (nextQuery) {
       params.set(
         "q",
-        nextQuery
+        nextQuery,
       );
     }
 
@@ -765,317 +709,311 @@ export default async function PanelLeadsPage({
   };
 
   return (
-    <div className="panelWrap">
-      <div className="panelHeader">
-        <div className="panelHeaderLeft">
-          <div className="panelKicker">
-            📥 Leadler
+    <div className={styles.page}>
+      {/* ========================= HERO ========================= */}
+      <section className={styles.hero}>
+        <div className={styles.heroGlow} />
+
+        <div className={styles.heroContent}>
+          <div className={styles.kicker}>
+            <span>📥</span>
+            Lead Yönetimi
           </div>
 
-          <h1 className="panelTitle">
-            Lead Yönetimi
+          <h1 className={styles.title}>
+            Leadler
           </h1>
 
-          <div className="panelSub">
-            Klinik:{" "}
-            <strong>
-              {session.name}
-            </strong>{" "}
-            • Fırsat:{" "}
-            <strong>
-              {opportunityCount}
-            </strong>{" "}
-            • Satın Alınmış:{" "}
-            <strong>
-              {purchasedCount}
-            </strong>
+          <div className={styles.heroMeta}>
+            <span>
+              Klinik:{" "}
+              <strong>
+                {session.name}
+              </strong>
+            </span>
+
+            <span className={styles.metaDot}>
+              •
+            </span>
+
+            <span>
+              Fırsat:{" "}
+              <strong>
+                {opportunityCount}
+              </strong>
+            </span>
+
+            <span className={styles.metaDot}>
+              •
+            </span>
+
+            <span>
+              Satın Alınmış:{" "}
+              <strong>
+                {purchasedCount}
+              </strong>
+            </span>
           </div>
         </div>
 
-        <div className="panelHeaderRight">
+        <div
+          className={styles.heroTooth}
+          aria-hidden
+        >
+          🦷
+        </div>
+
+        <div className={styles.heroActions}>
           <Link
-            className="panelQuickBtn panelQuickBtnSoft"
             href="/panel"
+            className={styles.dashboardBtn}
           >
             Dashboard →
           </Link>
 
           <Link
-            className="panelQuickBtn"
             href="/panel/abonelik"
+            className={styles.creditHero}
           >
-            💎 Kredi:{" "}
-            {creditBalance}
+            <span>💎</span>
+
+            <span>
+              <strong>
+                Kredi: {creditBalance}
+              </strong>
+              <small>
+                Kredi bakiyeniz
+              </small>
+            </span>
           </Link>
         </div>
-      </div>
+      </section>
 
       {loadError ? (
-        <div className="panelCard">
-          <div className="panelCardTitle">
-            ⚠️ Leadler yüklenemedi
+        <section className={styles.errorCard}>
+          <div className={styles.errorIcon}>
+            ⚠️
           </div>
 
-          <div
-            className="panelCardSub"
-            style={{
-              marginTop: 8,
-            }}
-          >
-            {loadError}
+          <div>
+            <strong>
+              Leadler yüklenemedi
+            </strong>
+
+            <p>
+              {loadError}
+            </p>
           </div>
-        </div>
+        </section>
       ) : null}
 
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">
-              💎 Kredi Durumu
-            </div>
-
-            <div className="panelCardSub">
-              Lead iletişim
-              bilgilerini açmak
-              için kredi kullanılır.
-              1 kredi = 1 lead açma
-              hakkı.
-            </div>
+      {/* ======================= CREDIT ======================== */}
+      <section className={styles.creditCard}>
+        <div className={styles.creditLeft}>
+          <div className={styles.creditIcon}>
+            💎
           </div>
 
-          <div className="panelCardHeadRight">
-            <span className="panelPill">
-              Kredi:{" "}
+          <div>
+            <h2>
+              Kredi Durumu
+            </h2>
+
+            <p>
+              Lead iletişim bilgilerini açmak için kredi
+              kullanılır.
+            </p>
+
+            <strong className={styles.creditRule}>
+              1 kredi = 1 lead açma hakkı.
+            </strong>
+
+            {creditBalance <= 0 ? (
+              <p className={styles.noCredit}>
+                Kredin yok. Yeni fırsatları kaçırmamak için
+                hesabına kredi ekleyebilirsin.
+              </p>
+            ) : (
+              <p className={styles.creditReady}>
+                Kredin hazır. Uygun bir fırsatı gördüğünde
+                iletişim bilgilerini açabilirsin.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.creditActions}>
+          <div className={styles.balanceBox}>
+            <span>
+              Mevcut kredi
+            </span>
+
+            <strong>
               {creditBalance}
-            </span>
-
-            <Link
-              href="/panel/abonelik"
-              className="panelMiniCta"
-            >
-              Kredi Al →
-            </Link>
+            </strong>
           </div>
-        </div>
 
-        {creditBalance <= 0 ? (
-          <div
-            style={{
-              marginTop: 10,
-            }}
-            className="panelStatHint"
+          <Link
+            href="/panel/abonelik"
+            className={styles.buyCreditBtn}
           >
-            Kredin yok. Kilitli
-            leadleri açmak için
-            kredi satın almalısın.
-          </div>
-        ) : null}
-      </div>
+            💎 Kredi Al →
+          </Link>
+        </div>
+      </section>
 
-      {/* ==================================================
-          FIRSATLAR
-      ================================================== */}
-
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">
-              🔥 Fırsatlar
+      {/* ===================== OPPORTUNITIES =================== */}
+      <section className={styles.sectionCard}>
+        <div className={styles.sectionHead}>
+          <div className={styles.sectionTitleArea}>
+            <div className={`${styles.sectionIcon} ${styles.fireIcon}`}>
+              🔥
             </div>
 
-            <div className="panelCardSub">
-              Hizmet verdiğin şehir
-              ve işlemlerdeki yeni
-              talepler. Marketplace
-              leadlerini ilk 3 klinik
-              satın alabilir.
+            <div>
+              <h2>
+                Fırsatlar
+              </h2>
+
+              <p>
+                Hizmet verdiğin şehir ve işlemlerdeki yeni
+                hasta talepleri.
+              </p>
             </div>
           </div>
 
-          <div className="panelCardHeadRight">
-            <span className="panelPill">
-              Açık fırsat:{" "}
+          <div className={styles.countBadge}>
+            Açık fırsat:{" "}
+            <strong>
               {opportunityCount}
-            </span>
+            </strong>
           </div>
         </div>
 
-        {opportunityRows.length ===
-        0 ? (
-          <div
-            className="panelEmpty"
-            style={{
-              marginTop: 14,
-            }}
-          >
-            Şu anda hizmet
-            bölgelerinde açık yeni
-            lead bulunmuyor.
+        {opportunityRows.length === 0 ? (
+          <div className={styles.emptyOpportunity}>
+            <div className={styles.emptyVisual}>
+              <span>⌕</span>
+            </div>
+
+            <h3>
+              Şu anda hizmet bölgelerinde açık yeni lead
+              bulunmuyor.
+            </h3>
+
+            <p>
+              Yeni talepler geldiğinde bu alanda
+              listelenecek.
+            </p>
+
+            {creditBalance <= 0 ? (
+              <Link
+                href="/panel/abonelik"
+                className={styles.emptyCreditLink}
+              >
+                Bu arada kredini hazırla →
+              </Link>
+            ) : null}
           </div>
         ) : (
-          <div
-            className="panelLeadList"
-            style={{
-              marginTop: 14,
-            }}
-          >
+          <div className={styles.opportunityGrid}>
             {opportunityRows.map(
-              (row) => {
-                const shownName =
-                  maskName(
-                    row.fullName
-                  );
+              (row) => (
+                <article
+                  key={`${row.kind}-${row.id}`}
+                  className={styles.opportunityCard}
+                >
+                  <div className={styles.opportunityIcon}>
+                    🦷
+                  </div>
 
-                const shownPhone =
-                  maskPhone(
-                    row.phone
-                  );
+                  <div className={styles.opportunityMain}>
+                    <div className={styles.opportunityBadges}>
+                      <span className={styles.opportunityBadge}>
+                        {row.kind === "direct"
+                          ? "Size Özel"
+                          : "Yeni Fırsat"}
+                      </span>
 
-                const remaining =
-                  row.kind ===
-                  "marketplace"
-                    ? Math.max(
-                        0,
-                        MARKETPLACE_MAX_PURCHASES -
-                          row.unlockCount
-                      )
-                    : null;
-
-                return (
-                  <div
-                    key={`${row.kind}-${row.id}`}
-                    className="panelLeadRow"
-                  >
-                    <div className="panelLeadMain">
-                      <div className="panelLeadTop">
-                        <div className="panelLeadName">
-                          {shownName}{" "}
-                          <span className="panelLeadSep">
-                            •
-                          </span>{" "}
-                          {shownPhone}
-                        </div>
-
-                        <div className="panelLeadRight">
-                          {isRecent(
-                            row.createdAt,
-                            now
-                          ) ? (
-                            <span className="panelNewBadge">
-                              Yeni
-                            </span>
-                          ) : null}
-
-                          {row.kind ===
-                          "direct" ? (
-                            <span className="panelLeadStatus panelLeadStatusContacted">
-                              Size Özel
-                            </span>
-                          ) : (
-                            <span className="panelLeadStatus panelLeadStatusNew">
-                              Fırsat
-                            </span>
-                          )}
-
-                          <span className="panelLeadTime">
-                            {formatTR(
-                              row.createdAt
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="panelLeadMeta">
-                        <span className="panelChip">
-                          📍 {row.city}
-                        </span>
-
-                        <span className="panelChip panelChipSoft">
-                          🦷{" "}
-                          {row.service}
-                        </span>
-
-                        <span className="panelChip panelChipMuted">
-                          🔒 Açma bedeli:{" "}
-                          {
-                            row.unlockPrice
-                          }{" "}
-                          kredi
-                        </span>
-
-                        {row.kind ===
-                        "marketplace" ? (
-                          <span className="panelChip panelChipMuted">
-                            👥{" "}
-                            {row.unlockCount}
-                            /
-                            {
-                              MARKETPLACE_MAX_PURCHASES
-                            }{" "}
-                            alındı •{" "}
-                            {remaining} yer
-                            kaldı
-                          </span>
-                        ) : (
-                          <span className="panelChip panelChipMuted">
-                            🎯 Bu talep
-                            doğrudan
-                            kliniğinize
-                            gönderildi
-                          </span>
-                        )}
-                      </div>
+                      <span className={styles.priceBadge}>
+                        💎 {row.unlockPrice} Kredi
+                      </span>
                     </div>
 
-                    <div className="panelLeadActions">
-                      <Link
-                        href={`/panel/leadler/${row.id}`}
-                        className="panelBtn"
-                      >
-                        Kilidi Aç →
-                      </Link>
+                    <h3>
+                      {row.service}
+                    </h3>
+
+                    <div className={styles.location}>
+                      📍 {row.city}
+                    </div>
+
+                    <div className={styles.lockedInfo}>
+                      <span className={styles.lockIcon}>
+                        🔒
+                      </span>
+
+                      <div>
+                        <strong>
+                          Hasta iletişim bilgileri gizli
+                        </strong>
+
+                        <p>
+                          Lead açıldıktan sonra hasta adı,
+                          telefonu ve diğer detaylar
+                          görüntülenir.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                );
-              }
+
+                  <div className={styles.opportunityAction}>
+                    <Link
+                      href={`/panel/leadler/${row.id}`}
+                      className={styles.unlockLink}
+                    >
+                      {row.unlockPrice} Kredi ile Lead&apos;i
+                      Aç →
+                    </Link>
+                  </div>
+                </article>
+              ),
             )}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* ==================================================
-          SATIN ALDIKLARIN - FİLTRE / ARAMA
-      ================================================== */}
-
-      <div className="panelCard">
-        <div className="panelCardHead">
-          <div>
-            <div className="panelCardTitle">
-              🔎 Satın Aldıklarında Ara
+      {/* ======================== SEARCH ======================= */}
+      <section className={styles.sectionCard}>
+        <div className={styles.sectionHead}>
+          <div className={styles.sectionTitleArea}>
+            <div className={styles.sectionIcon}>
+              🔎
             </div>
 
-            <div className="panelCardSub">
-              Ad ve telefon araması
-              yalnızca satın aldığın
-              leadlerde çalışır.
-              Kilitli fırsatların ham
-              iletişim bilgileri aramada
-              kullanılmaz.
+            <div>
+              <h2>
+                Satın Aldıklarında Ara
+              </h2>
+
+              <p>
+                Ad ve telefon araması yalnızca satın aldığın
+                leadlerde çalışır.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="panelFilterShell">
-          <div className="panelFilterPills">
+        <div className={styles.filterArea}>
+          <div className={styles.filterPills}>
             <Link
               href={buildHref({
                 status: "",
               })}
               className={
-                statusFilter ===
-                "all"
-                  ? "panelFilterPill panelFilterPillActive"
-                  : "panelFilterPill"
+                statusFilter === "all"
+                  ? `${styles.filterPill} ${styles.filterPillActive}`
+                  : styles.filterPill
               }
             >
               Tümü
@@ -1088,195 +1026,202 @@ export default async function PanelLeadsPage({
                 "won",
                 "lost",
               ] as LeadStatus[]
-            ).map((status) => (
-              <Link
-                key={status}
-                href={buildHref({
-                  status,
-                })}
-                className={
-                  statusFilter ===
-                  status
-                    ? "panelFilterPill panelFilterPillActive"
-                    : "panelFilterPill"
-                }
-              >
-                {
-                  STATUS_LABEL[
-                    status
-                  ]
-                }
-              </Link>
-            ))}
+            ).map(
+              (status) => (
+                <Link
+                  key={status}
+                  href={buildHref({
+                    status,
+                  })}
+                  className={
+                    statusFilter === status
+                      ? `${styles.filterPill} ${styles.filterPillActive}`
+                      : styles.filterPill
+                  }
+                >
+                  {
+                    STATUS_LABEL[
+                      status
+                    ]
+                  }
+                </Link>
+              ),
+            )}
           </div>
 
           <form
             action="/panel/leadler"
             method="GET"
-            className="panelSearchRow"
+            className={styles.searchForm}
           >
-            {statusFilter !==
-            "all" ? (
+            {statusFilter !== "all" ? (
               <input
                 type="hidden"
                 name="status"
-                value={
-                  statusFilter
-                }
+                value={statusFilter}
               />
             ) : null}
 
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Satın aldığın leadlerde ad veya telefon ara…"
-              className="panelInput"
-              autoComplete="off"
-            />
+            <div className={styles.searchInputWrap}>
+              <span aria-hidden>
+                🔍
+              </span>
+
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Satın aldığın leadlerde ad veya telefon ara..."
+                className={styles.searchInput}
+                autoComplete="off"
+              />
+            </div>
 
             <button
               type="submit"
-              className="panelBtnSoft"
+              className={styles.searchBtn}
             >
               Ara
             </button>
 
             <Link
               href="/panel/leadler"
-              className="panelBtnGhost"
+              className={styles.resetBtn}
             >
               Sıfırla
             </Link>
           </form>
         </div>
-      </div>
 
-      {/* ==================================================
-          SATIN ALINMIŞ LEADLER
-      ================================================== */}
-
-      {purchasedRows.length ===
-      0 ? (
-        <div className="panelEmpty">
-          {q ||
-          statusFilter !== "all"
-            ? "Bu arama veya filtrede satın alınmış lead bulunamadı."
-            : "Henüz satın aldığın lead yok."}
-        </div>
-      ) : (
-        <div className="panelCard">
-          <div className="panelCardHead">
-            <div>
-              <div className="panelCardTitle">
-                📋 Satın Aldıkların
-              </div>
-
-              <div className="panelCardSub">
-                Satın aldığın
-                leadlerin iletişim
-                bilgileri açık kalır.
-                Lead tamamen satılsa 
-                bile buradan kaybolmaz.
-              </div>
+        {/* ===================== PURCHASED ===================== */}
+        {purchasedRows.length === 0 ? (
+          <div className={styles.emptyPurchased}>
+            <div className={styles.emptyPurchasedIcon}>
+              ▣
             </div>
 
-            <div className="panelCardHeadRight">
-              <span className="panelPill">
-                Sonuç:{" "}
-                {
-                  purchasedRows.length
-                }
+            <h3>
+              {q ||
+              statusFilter !== "all"
+                ? "Bu arama veya filtrede lead bulunamadı."
+                : "Henüz satın aldığın lead yok."}
+            </h3>
+
+            <p>
+              Açtığın leadler burada listelenecek ve iletişim
+              bilgileri açık kalacak.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.purchasedArea}>
+            <div className={styles.purchasedHeader}>
+              <div>
+                <h3>
+                  Satın Aldığın Leadler
+                </h3>
+
+                <p>
+                  Hasta iletişim bilgileri ve CRM durumu
+                </p>
+              </div>
+
+              <span>
+                {purchasedRows.length} sonuç
               </span>
             </div>
-          </div>
 
-          <div
-            className="panelLeadList"
-            style={{
-              marginTop: 14,
-            }}
-          >
-            {purchasedRows.map(
-              (row) => (
-                <div
-                  key={row.id}
-                  className="panelLeadRow"
-                >
-                  <div className="panelLeadMain">
-                    <div className="panelLeadTop">
-                      <div className="panelLeadName">
+            <div className={styles.purchasedList}>
+              {purchasedRows.map(
+                (row) => (
+                  <article
+                    key={row.id}
+                    className={styles.purchasedRow}
+                  >
+                    <div className={styles.patientAvatar}>
+                      {getInitials(
+                        row.fullName,
+                      )}
+                    </div>
+
+                    <div className={styles.patientInfo}>
+                      <strong>
                         {
                           row.fullName
-                        }{" "}
-                        <span className="panelLeadSep">
-                          •
-                        </span>{" "}
-                        {row.phone}
-                      </div>
+                        }
+                      </strong>
 
-                      <div className="panelLeadRight">
-                        {isRecent(
-                          row.createdAt,
-                          now
-                        ) &&
-                        row.status ===
-                          "new" ? (
-                          <span className="panelNewBadge">
-                            Yeni
-                          </span>
-                        ) : null}
-
-                        <span
-                          className={statusBadgeClass(
-                            row.status
-                          )}
-                        >
-                          {
-                            STATUS_LABEL[
-                              row.status
-                            ]
-                          }
-                        </span>
-
-                        <span className="panelLeadTime">
-                          {formatTR(
-                            row.createdAt
-                          )}
-                        </span>
-                      </div>
+                      <a
+                        href={`tel:${row.phone}`}
+                      >
+                        📞 {row.phone}
+                      </a>
                     </div>
 
-                    <div className="panelLeadMeta">
-                      <span className="panelChip">
+                    <div className={styles.patientLocation}>
+                      <strong>
                         📍 {row.city}
-                      </span>
+                      </strong>
 
-                      <span className="panelChip panelChipSoft">
-                        🦷{" "}
-                        {row.service}
-                      </span>
-
-                      <span className="panelChip panelChipMuted">
-                        ✅ İletişim
-                        bilgileri açık
+                      <span>
+                        🦷 {row.service}
                       </span>
                     </div>
-                  </div>
 
-                  <div className="panelLeadActions">
+                    <div className={styles.patientStatus}>
+                      <span
+                        className={`${styles.statusBadge} ${statusClass(
+                          row.status,
+                        )}`}
+                      >
+                        {
+                          STATUS_LABEL[
+                            row.status
+                          ]
+                        }
+                      </span>
+                    </div>
+
                     <Link
                       href={`/panel/leadler/${row.id}`}
-                      className="panelBtn"
+                      className={styles.detailBtn}
                     >
-                      Detay →
+                      Detay Gör →
                     </Link>
-                  </div>
-                </div>
-              )
-            )}
+                  </article>
+                ),
+              )}
+            </div>
           </div>
+        )}
+      </section>
+
+      {/* ===================== CREDIT CTA ====================== */}
+      <section className={styles.bottomCta}>
+        <div className={styles.bottomCtaVisual}>
+          💎
         </div>
-      )}
+
+        <div className={styles.bottomCtaText}>
+          <span>
+            Lead fırsatlarına hazır ol
+          </span>
+
+          <h2>
+            Kredin bittiğinde fırsatı kaçırma.
+          </h2>
+
+          <p>
+            Hesabında kredi bulundurarak uygun lead geldiğinde
+            iletişim bilgilerini hemen açabilirsin.
+          </p>
+        </div>
+
+        <Link
+          href="/panel/abonelik"
+          className={styles.bottomCtaBtn}
+        >
+          Kredi Paketlerini İncele →
+        </Link>
+      </section>
     </div>
   );
 }
