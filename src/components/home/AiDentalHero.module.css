@@ -899,13 +899,18 @@
   letter-spacing:
     -0.058em;
 
-  line-height: 0.99;
+  /* Ö, Ü, Ğ gibi Türkçe karakterlerin üst işaretlerinin
+     kesilmesini engelleyen güvenli satır yüksekliği */
+  line-height: 1.12;
+
+  overflow: visible;
 }
 
 .title span {
   display: block;
 
   margin-top: 11px;
+  padding-top: 0.08em;
 
   background:
     linear-gradient(
