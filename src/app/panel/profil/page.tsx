@@ -98,6 +98,37 @@ function instagramHandle(
   }
 }
 
+function normalizeEmailInput(
+  value: string,
+): string {
+  return value.trim().toLowerCase();
+}
+
+function isValidEmail(
+  value: string,
+): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    normalizeEmailInput(value),
+  );
+}
+
+function profileErrorMessage(
+  code?: string,
+): string {
+  switch (code) {
+    case "EMAIL_ALREADY_EXISTS":
+      return "Bu e-posta adresi başka bir klinik hesabında kullanılıyor.";
+    case "PASSWORD_REQUIRED":
+      return "E-posta adresini değiştirmek için mevcut şifrenizi girin.";
+    case "WRONG_PASSWORD":
+      return "Mevcut şifreniz yanlış. E-posta adresi değiştirilmedi.";
+    case "VALIDATION_ERROR":
+      return "Bilgileri kontrol edin. Geçerli bir e-posta adresi girdiğinizden emin olun.";
+    default:
+      return "Kaydedilemedi. Lütfen tekrar deneyin.";
+  }
+}
+
 export default function ClinicProfilePage(): JSX.Element {
   const [
     loading,
@@ -140,6 +171,22 @@ export default function ClinicProfilePage(): JSX.Element {
     );
 
   const [
+    email,
+    setEmail,
+  ] =
+    useState<string>(
+      "",
+    );
+
+  const [
+    currentPassword,
+    setCurrentPassword,
+  ] =
+    useState<string>(
+      "",
+    );
+
+  const [
     instagramInput,
     setInstagramInput,
   ] =
@@ -170,6 +217,19 @@ export default function ClinicProfilePage(): JSX.Element {
       [
         instagramInput,
       ],
+    );
+
+  const normalizedEmail =
+    useMemo<string>(
+      () => normalizeEmailInput(email),
+      [email],
+    );
+
+  const emailChanged =
+    Boolean(
+      clinic &&
+        normalizedEmail !==
+          normalizeEmailInput(clinic.email),
     );
 
   const checks =
@@ -241,12 +301,25 @@ export default function ClinicProfilePage(): JSX.Element {
 
   const canSave =
     useMemo<boolean>(
-      () =>
-        name
-          .trim()
-          .length >=
-        2,
+      () => {
+        const baseValid =
+          name.trim().length >= 2 &&
+          isValidEmail(email);
+
+        if (!baseValid) {
+          return false;
+        }
+
+        if (emailChanged) {
+          return currentPassword.trim().length >= 6;
+        }
+
+        return true;
+      },
       [
+        currentPassword,
+        email,
+        emailChanged,
         name,
       ],
     );
@@ -310,6 +383,15 @@ export default function ClinicProfilePage(): JSX.Element {
           setPhone(
             loadedClinic.phone ??
               "",
+          );
+
+          setEmail(
+            loadedClinic.email ??
+              "",
+          );
+
+          setCurrentPassword(
+            "",
           );
 
           setInstagramInput(
@@ -377,6 +459,14 @@ export default function ClinicProfilePage(): JSX.Element {
                       phone:
                         phone.trim(),
 
+                      email:
+                        normalizedEmail,
+
+                      currentPassword:
+                        emailChanged
+                          ? currentPassword
+                          : undefined,
+
                       instagramUrl:
                         normalizedInstagram,
                     },
@@ -397,7 +487,7 @@ export default function ClinicProfilePage(): JSX.Element {
                 "err",
 
               text:
-                "Kaydedilemedi.",
+                profileErrorMessage("code" in data ? data.code : undefined),
             });
 
             return;
@@ -417,6 +507,15 @@ export default function ClinicProfilePage(): JSX.Element {
             data.clinic
               .phone ??
               "",
+          );
+
+          setEmail(
+            data.clinic.email ??
+              "",
+          );
+
+          setCurrentPassword(
+            "",
           );
 
           setInstagramInput(
@@ -448,7 +547,10 @@ export default function ClinicProfilePage(): JSX.Element {
       },
       [
         canSave,
+        currentPassword,
+        emailChanged,
         name,
+        normalizedEmail,
         normalizedInstagram,
         phone,
         saving,
@@ -515,6 +617,15 @@ export default function ClinicProfilePage(): JSX.Element {
           loadedClinic.phone ??
             "",
         );
+
+        setEmail(
+            loadedClinic.email ??
+              "",
+          );
+
+          setCurrentPassword(
+            "",
+          );
 
         setInstagramInput(
           loadedClinic.instagramUrl ??
@@ -1066,50 +1177,81 @@ export default function ClinicProfilePage(): JSX.Element {
                 {/* EMAIL */}
 
                 <div
-                  className={
-                    styles.field
-                  }
+                  className={styles.field}
                 >
                   <div
-                    className={
-                      styles.labelRow
-                    }
+                    className={styles.labelRow}
                   >
-                    <label
-                      htmlFor="clinic-email"
-                    >
+                    <label htmlFor="clinic-email">
                       E-posta
+                      <span>*</span>
                     </label>
 
-                    <span
-                      className={
-                        styles.labelHint
-                      }
-                    >
-                      Değiştirilemez
+                    <span className={styles.labelHint}>
+                      Giriş ve lead bildirim adresi
                     </span>
                   </div>
 
-                  <div
-                    className={`${styles.inputFrame} ${styles.readOnlyFrame}`}
-                  >
-                    <div
-                      className={
-                        styles.inputIcon
-                      }
-                    >
+                  <div className={styles.inputFrame}>
+                    <div className={styles.inputIcon}>
                       ✉
                     </div>
 
                     <input
                       id="clinic-email"
-                      className={`${styles.input} ${styles.readonly}`}
-                      value={
-                        clinic.email
+                      className={styles.input}
+                      value={email}
+                      onChange={(event) =>
+                        setEmail(event.target.value)
                       }
-                      readOnly
+                      placeholder="ornek@klinik.com"
+                      inputMode="email"
+                      autoComplete="email"
                     />
                   </div>
+
+                  <div className={styles.instagramInfo}>
+                    <span>ⓘ</span>
+                    <p>
+                      Bu adres hem klinik paneline girişte hem de
+                      yeni lead bildirimlerinde kullanılır. E-postayı
+                      değiştirirseniz bir sonraki girişte yeni adresinizi
+                      kullanın.
+                    </p>
+                  </div>
+
+                  {emailChanged ? (
+                    <div className={styles.field}>
+                      <div className={styles.labelRow}>
+                        <label htmlFor="clinic-current-password">
+                          Mevcut Şifre
+                          <span>*</span>
+                        </label>
+
+                        <span className={styles.requiredBadge}>
+                          E-posta değişikliği için
+                        </span>
+                      </div>
+
+                      <div className={styles.inputFrame}>
+                        <div className={styles.inputIcon}>
+                          🔒
+                        </div>
+
+                        <input
+                          id="clinic-current-password"
+                          className={styles.input}
+                          type="password"
+                          value={currentPassword}
+                          onChange={(event) =>
+                            setCurrentPassword(event.target.value)
+                          }
+                          placeholder="Mevcut hesap şifrenizi girin"
+                          autoComplete="current-password"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* ACTIONS */}
