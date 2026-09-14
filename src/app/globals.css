@@ -8745,3 +8745,63 @@ img { max-width: 100%; height: auto; }
     font-size: 13px;
   }
 }
+
+/* =========================================================
+   FOOTER - 3 KOLON SADE ILETISIM DUZENI
+   ========================================================= */
+
+.siteFooterInner {
+  grid-template-columns:
+    minmax(320px, 1.35fr)
+    minmax(180px, 0.65fr)
+    minmax(240px, 0.90fr) !important;
+
+  gap: 36px !important;
+}
+
+.footerMainColumn {
+  max-width: 560px;
+}
+
+.footerContactTitle {
+  margin-top: 20px !important;
+}
+
+.footerBusinessInfo {
+  margin-top: 8px !important;
+
+  font-size: 13px !important;
+
+  line-height: 1.9 !important;
+}
+
+@media (max-width: 1050px) {
+  .siteFooterInner {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      ) !important;
+
+    gap: 26px !important;
+  }
+
+  .footerMainColumn {
+    grid-column: 1 / -1;
+
+    max-width: none;
+  }
+}
+
+@media (max-width: 650px) {
+  .siteFooterInner {
+    grid-template-columns:
+      1fr !important;
+
+    gap: 24px !important;
+  }
+
+  .footerMainColumn {
+    grid-column: auto;
+  }
+}

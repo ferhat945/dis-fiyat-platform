@@ -106,28 +106,13 @@ export default function RootLayout({
                 <strong>Kesin fiyat muayene sonrası netleşir.</strong>
               </div>
 
-              <div className="footerTitle footerContactTitle">
-                İletişim ve İşletme Bilgileri
-              </div>
+              <div className="footerTitle footerContactTitle">İletişim</div>
 
               <div className="footerBusinessInfo">
-                İşletme Sahibi: <strong>Ferhat Menekşe</strong>
-                <br />
-                Vergi Dairesi: <strong>5 Ocak Vergi Dairesi</strong>
-                <br />
-                Vergi No: <strong>6150625779</strong>
-                <br />
-                Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana
-                <br />
-                Telefon:{" "}
-                <a href="tel:+905319171739" aria-label="Telefon numarası">
-                  0531 917 17 39
-                </a>
+                Konum: <strong>Beşiktaş / İstanbul</strong>
                 <br />
                 E-posta:{" "}
-                <a href="mailto:ferhatmenekse945@gmail.com">
-                  ferhatmenekse945@gmail.com
-                </a>
+                <a href="mailto:disfiyat360@gmail.com">disfiyat360@gmail.com</a>
               </div>
             </div>
 
@@ -169,21 +154,6 @@ export default function RootLayout({
               </div>
             </div>
 
-            <div className="footerPaymentColumn">
-              <div className="footerTitle">Güvenli Online Ödeme</div>
-
-              <p className="footerPaymentText">
-                Klinik kredi paketi ve Premium üyelik ödemeleri güvenli online
-                ödeme altyapısı üzerinden gerçekleştirilir. Kart bilgileri
-                DişFiyat360 sunucularında saklanmaz.
-              </p>
-
-              <div className="footerPaymentBadges">
-                <span>🔒 SSL</span>
-                <span>🛡️ Güvenli ödeme</span>
-                <span>💳 Kartla ödeme</span>
-              </div>
-            </div>
           </div>
 
           <div className="footerBottom">
