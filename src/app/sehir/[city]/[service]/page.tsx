@@ -15,6 +15,7 @@ import {
   faqJsonLd,
 } from "@/lib/seo-jsonld";
 import { getServiceSeoContent } from "@/lib/seo-service-content";
+import { getCityServiceSeoContent } from "@/lib/seo-city-service-content";
 import styles from "./page.module.css";
 
 /*
@@ -209,6 +210,13 @@ export default async function CityServiceLanding({
   const serviceContent =
     getServiceSeoContent(
       c,
+      serviceSlug,
+    );
+
+  const cityServiceContent =
+    getCityServiceSeoContent(
+      c,
+      citySlug,
       serviceSlug,
     );
 
@@ -704,6 +712,81 @@ export default async function CityServiceLanding({
                 ),
               )}
             </ul>
+          </div>
+
+          <div
+            className={
+              styles.contentGrid
+            }
+          >
+            <div
+              className={
+                styles.contentCard
+              }
+            >
+              <div
+                className={
+                  styles.sectionEyebrow
+                }
+              >
+                Karşılaştırma
+              </div>
+
+              <h2>
+                {c} içinde {s} araştırırken
+                nelere dikkat edilmeli?
+              </h2>
+
+              <p>
+                {cityServiceContent.researchIntro}
+              </p>
+            </div>
+
+            <div
+              className={
+                styles.contentCard
+              }
+            >
+              <div
+                className={
+                  styles.sectionEyebrow
+                }
+              >
+                Randevu öncesi
+              </div>
+
+              <h2>
+                Kliniğe hangi konular
+                sorulabilir?
+              </h2>
+
+              <p>
+                {cityServiceContent.clinicQuestionsText}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className={
+              styles.contentCard
+            }
+          >
+            <div
+              className={
+                styles.sectionEyebrow
+              }
+            >
+              Teklifleri değerlendirme
+            </div>
+
+            <h2>
+              {c} {s} teklifleri nasıl
+              karşılaştırılmalı?
+            </h2>
+
+            <p>
+              {cityServiceContent.offerComparisonText}
+            </p>
           </div>
 
           <div
