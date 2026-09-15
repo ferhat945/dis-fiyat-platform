@@ -26,17 +26,13 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "2) Veri Sorumlusu",
+    title: "2) Veri Sorumlusu ve İletişim",
     paragraphs: [
-      "6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında kişisel verileriniz, veri sorumlusu sıfatıyla Ferhat Menekşe tarafından işlenebilir.",
+      "DişFiyat360 kapsamında kişisel veriler, 6698 sayılı Kişisel Verilerin Korunması Kanunu ve ilgili mevzuat doğrultusunda işlenir.",
     ],
     items: [
-      "İşletme sahibi: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
       "İnternet adresi: www.disfiyat360.com",
     ],
   },
@@ -140,15 +136,7 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "11) Yurt Dışına Veri Aktarımı",
-    paragraphs: [
-      "Barındırma, e-posta, güvenlik, analiz, yedekleme veya diğer teknik hizmetlerde yurt dışında bulunan ya da verileri yurt dışında işleyen hizmet sağlayıcıların kullanılması hâlinde kişisel veriler yurt dışına aktarılabilir.",
-      "Yurt dışına aktarım yapılması gereken durumlarda, 6698 sayılı Kanun'un yurt dışına veri aktarımına ilişkin hükümleri ile uygulanabilir güvence yöntemleri dikkate alınır.",
-      "Kullanılan altyapı sağlayıcılarına ve veri akışına göre gerekli aktarım mekanizmaları ayrıca değerlendirilir.",
-    ],
-  },
-  {
-    title: "12) Kişisel Verilerin Saklanma Süresi",
+    title: "11) Kişisel Verilerin Saklanma Süresi",
     paragraphs: [
       "Kişisel veriler, işlendikleri amaç için gerekli olan süre ve ilgili mevzuatta öngörülen yasal saklama süreleri boyunca muhafaza edilir.",
       "Saklama süresi belirlenirken işlemin amacı, sözleşme ilişkisi, kullanıcı veya klinik hesabının durumu, olası uyuşmazlıklar, zamanaşımı süreleri, mali yükümlülükler ve yetkili kurum talepleri dikkate alınır.",
@@ -156,7 +144,7 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "13) Kişisel Verilerin Güvenliği",
+    title: "11) Kişisel Verilerin Güvenliği",
     paragraphs: [
       "DişFiyat360, kişisel verilerin hukuka aykırı olarak işlenmesini ve erişilmesini önlemek, verilerin güvenli şekilde muhafaza edilmesini sağlamak amacıyla işin niteliğine uygun teknik ve idari tedbirler almaya çalışır.",
     ],
@@ -171,21 +159,21 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "14) Çerezler ve Benzeri Teknolojiler",
+    title: "11) Çerezler ve Benzeri Teknolojiler",
     paragraphs: [
       "Platformun çalışması, oturumların yönetilmesi, tercihlerin hatırlanması, güvenliğin sağlanması ve kullanım performansının ölçülmesi amacıyla çerezler veya benzeri teknolojiler kullanılabilir.",
       "Zorunlu olmayan çerezlerin kullanılması hâlinde, uygulanabilir mevzuat doğrultusunda kullanıcı tercihleri dikkate alınır. Çerezler hakkında ayrıntılı bilgiye Çerez Politikası sayfasından ulaşabilirsiniz.",
     ],
   },
   {
-    title: "15) Ticari Elektronik İletiler",
+    title: "11) Ticari Elektronik İletiler",
     paragraphs: [
       "Telefon veya e-posta bilgilerinin teklif talebine dönüş yapılması, destek sağlanması veya hizmetin yürütülmesi amacıyla kullanılması ticari ileti izni anlamına gelmez.",
       "Kampanya, tanıtım veya pazarlama amaçlı ticari elektronik ileti gönderilecekse, gerekli olduğu durumlarda ayrıca iletişim izni alınır ve kullanıcıya ileti tercihlerini yönetme imkânı sunulur.",
     ],
   },
   {
-    title: "16) İlgili Kişinin Hakları",
+    title: "11) İlgili Kişinin Hakları",
     paragraphs: [
       "Kişisel verisi işlenen kişiler, 6698 sayılı Kanun'un 11. maddesi kapsamında veri sorumlusuna başvurarak aşağıdaki haklarını kullanabilir:",
     ],
@@ -193,7 +181,7 @@ const POLICY_BLOCKS: PolicyBlock[] = [
       "Kişisel verilerinin işlenip işlenmediğini öğrenme",
       "Kişisel verileri işlenmişse buna ilişkin bilgi talep etme",
       "Kişisel verilerin işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme",
-      "Kişisel verilerin yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme",
+      "Kişisel verilerin aktarıldığı üçüncü kişileri bilme",
       "Eksik veya yanlış işlenen kişisel verilerin düzeltilmesini isteme",
       "Kanuni şartların oluşması hâlinde kişisel verilerin silinmesini veya yok edilmesini isteme",
       "Düzeltme, silme veya yok etme işlemlerinin verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme",
@@ -202,32 +190,31 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "17) Başvuru Yöntemi",
+    title: "11) Başvuru Yöntemi",
     paragraphs: [
       "Kişisel verilerinize ilişkin talep ve başvurularınızı, kimliğinizi ve talebinizi açıkça belirterek aşağıdaki iletişim kanallarından iletebilirsiniz.",
     ],
     items: [
-      "E-posta: ferhatmenekse945@gmail.com",
-      "Posta veya elden başvuru: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefonla genel bilgi: 0531 917 17 39",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
     ],
   },
   {
-    title: "18) Çocuklara Ait Veriler",
+    title: "11) Çocuklara Ait Veriler",
     paragraphs: [
       "Platform, esas olarak yetişkin kullanıcılar ile diş klinikleri arasında iletişim kurulmasına yönelik olarak faaliyet gösterir.",
       "18 yaşından küçük bir kişi adına talep oluşturulması gereken durumlarda işlemin veli veya yasal temsilci tarafından gerçekleştirilmesi önerilir.",
     ],
   },
   {
-    title: "19) Üçüncü Taraf Bağlantılar",
+    title: "11) Üçüncü Taraf Bağlantılar",
     paragraphs: [
       "Platform üzerinde klinik internet sitelerine, sosyal medya hesaplarına veya başka üçüncü taraf hizmetlere yönlendiren bağlantılar bulunabilir.",
       "Üçüncü tarafların kendi internet sitelerinde gerçekleştirdiği veri işleme faaliyetleri, çerez uygulamaları ve gizlilik politikaları ilgili üçüncü tarafların sorumluluğundadır.",
     ],
   },
   {
-    title: "20) Politika Değişiklikleri",
+    title: "11) Politika Değişiklikleri",
     paragraphs: [
       "Bu Gizlilik Politikası; mevzuat, platform özellikleri, hizmet sağlayıcıları veya kişisel veri işleme süreçlerinde meydana gelen değişikliklere göre güncellenebilir.",
       "Güncel politika internet sitesi üzerinden yayımlandığı tarihten itibaren geçerli olur. Önemli değişikliklerin bulunması hâlinde platform üzerinde ayrıca bilgilendirme yapılabilir.",
@@ -275,29 +262,6 @@ export default function PrivacyPolicyPage(): JSX.Element {
                 <span className="miniItem">🔒 Veri güvenliği</span>
                 <span className="miniItem">📄 Şeffaf bilgilendirme</span>
                 <span className="miniItem">🛡️ Kontrollü erişim</span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
               </div>
 
               <div className="section">
@@ -428,7 +392,7 @@ function ContactCard(): JSX.Element {
           color: "rgba(15,23,42,0.94)",
         }}
       >
-        Veri Sorumlusu İletişim Bilgileri
+        İletişim Bilgileri
       </h2>
 
       <div
@@ -441,43 +405,19 @@ function ContactCard(): JSX.Element {
           lineHeight: 1.7,
         }}
       >
-        <ContactRow label="Veri sorumlusu" value="Ferhat Menekşe" />
-
-        <ContactRow
-          label="Vergi dairesi"
-          value="5 Ocak Vergi Dairesi"
-        />
-
-        <ContactRow
-          label="Vergi numarası"
-          value="6150625779"
-        />
-
-        <ContactRow
-          label="Adres"
-          value="Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana"
-        />
-
         <ContactRow
           label="E-posta"
           value={
             <a
-              href="mailto:ferhatmenekse945@gmail.com"
+              href="mailto:disfiyat360@gmail.com"
               style={contactLinkStyle}
             >
-              ferhatmenekse945@gmail.com
+              disfiyat360@gmail.com
             </a>
           }
         />
 
-        <ContactRow
-          label="Telefon"
-          value={
-            <a href="tel:+905319171739" style={contactLinkStyle}>
-              0531 917 17 39
-            </a>
-          }
-        />
+        <ContactRow label="Konum" value="Beşiktaş / İstanbul" />
 
         <ContactRow
           label="İnternet adresi"

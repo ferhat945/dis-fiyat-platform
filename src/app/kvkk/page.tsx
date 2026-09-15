@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KVKK_TEXT_VERSION } from "@/lib/kvkk";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `KVKK Aydınlatma Metni (${KVKK_TEXT_VERSION}) | DişFiyat360`,
+  title: "KVKK Aydınlatma Metni | DişFiyat360",
   description:
     "DişFiyat360 teklif formu, klinik hesabı ve platform kullanımı kapsamında işlenen kişisel verilere ilişkin KVKK aydınlatma metni.",
   alternates: {
@@ -249,9 +248,7 @@ export default function KvkkPage(): JSX.Element {
               >
                 <div>
                   <div className="kicker">
-                    🔒 KVKK Aydınlatma Metni{" "}
-                    <span style={{ opacity: 0.7 }}>•</span>{" "}
-                    {KVKK_TEXT_VERSION}
+                    🔒 KVKK Aydınlatma Metni
                   </div>
 
                   <h1
@@ -302,38 +299,6 @@ export default function KvkkPage(): JSX.Element {
                     Ana Sayfa →
                   </Link>
                 </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Metin sürümü:
-                </strong>{" "}
-                {KVKK_TEXT_VERSION}
-                <br />
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
               </div>
 
               <div

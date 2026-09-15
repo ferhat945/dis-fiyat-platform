@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "İletişim | DişFiyat360",
   description:
-    "DişFiyat360 iletişim, destek, klinik üyeliği, ödeme ve kurumsal bilgileri.",
+    "DişFiyat360 iletişim, destek, klinik üyeliği, ödeme ve kurumsal iletişim bilgileri.",
   alternates: {
     canonical: "/iletisim",
   },
@@ -18,7 +18,7 @@ export default function ContactPage(): JSX.Element {
         <div className="container">
           <div className="heroShell">
             <div className="heroInner">
-              <div className="kicker">📞 İletişim</div>
+              <div className="kicker">💬 İletişim</div>
 
               <h1
                 className="h1"
@@ -69,36 +69,23 @@ export default function ContactPage(): JSX.Element {
                     }}
                   >
                     <InfoCard
-                      title="Telefon"
-                      description="Genel bilgi ve destek talepleri için"
-                    >
-                      <a
-                        href="tel:+905319171739"
-                        style={linkStyle}
-                        aria-label="DişFiyat360 telefon numarası"
-                      >
-                        0531 917 17 39
-                      </a>
-                    </InfoCard>
-
-                    <InfoCard
                       title="E-posta"
-                      description="Yazılı destek ve resmi talepler için"
+                      description="Destek, iş birliği ve resmi talepler için"
                     >
                       <a
-                        href="mailto:ferhatmenekse945@gmail.com"
+                        href="mailto:disfiyat360@gmail.com"
                         style={linkStyle}
                         aria-label="DişFiyat360 e-posta adresi"
                       >
-                        ferhatmenekse945@gmail.com
+                        disfiyat360@gmail.com
                       </a>
                     </InfoCard>
 
                     <InfoCard
-                      title="Adres"
-                      description="İşletme ve başvuru adresi"
+                      title="Konum"
+                      description="DişFiyat360 iletişim konumu"
                     >
-                      Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana
+                      Beşiktaş / İstanbul
                     </InfoCard>
 
                     <InfoCard
@@ -114,27 +101,16 @@ export default function ContactPage(): JSX.Element {
                         www.disfiyat360.com
                       </a>
                     </InfoCard>
-
-                    <InfoCard
-                      title="İşletme Sahibi"
-                      description="Platform hizmet sağlayıcısı"
-                    >
-                      Ferhat Menekşe
-                    </InfoCard>
-
-                    <InfoCard
-                      title="Vergi Bilgileri"
-                      description="Kurumsal ve mali bilgiler"
-                    >
-                      5 Ocak Vergi Dairesi
-                      <br />
-                      Vergi No: 6150625779
-                    </InfoCard>
                   </div>
                 </div>
               </div>
 
-              <div className="section" style={{ paddingTop: 0 }}>
+              <div
+                className="section"
+                style={{
+                  paddingTop: 0,
+                }}
+              >
                 <div
                   className="sectionBox"
                   style={{
@@ -156,27 +132,32 @@ export default function ContactPage(): JSX.Element {
                     </InfoCard>
 
                     <InfoCard title="Ödeme Desteği">
-                      Başarısız ödeme, mükerrer tahsilat, paket aktivasyonu veya
-                      işlem kaydıyla ilgili taleplerinizde ödeme tarihi ve
-                      işlem bilgileriyle birlikte iletişime geçebilirsiniz.
+                      Ödeme bildirimi, paket aktivasyonu veya işlem kaydıyla
+                      ilgili taleplerinizde işlem tarihi ve ilgili bilgilerle
+                      birlikte bizimle iletişime geçebilirsiniz.
                     </InfoCard>
 
                     <InfoCard title="KVKK Başvuruları">
                       Kişisel verilerinize ilişkin bilgi, düzeltme, silme veya
                       diğer başvurularınızı kimliğinizi ve talebinizi açıkça
-                      belirterek e-posta veya posta yoluyla iletebilirsiniz.
+                      belirterek e-posta üzerinden iletebilirsiniz.
                     </InfoCard>
 
                     <InfoCard title="İş Birlikleri">
                       Diş klinikleri, kurumsal hizmet sağlayıcıları ve iş
-                      ortaklığı teklifleri için e-posta üzerinden iletişime
-                      geçebilirsiniz.
+                      ortaklığı teklifleri için e-posta üzerinden bizimle
+                      iletişime geçebilirsiniz.
                     </InfoCard>
                   </div>
                 </div>
               </div>
 
-              <div className="section" style={{ paddingTop: 0 }}>
+              <div
+                className="section"
+                style={{
+                  paddingTop: 0,
+                }}
+              >
                 <div
                   className="finalCta"
                   style={{
@@ -195,30 +176,42 @@ export default function ContactPage(): JSX.Element {
                     </h2>
 
                     <p className="finalDesc">
-                      DişFiyat360 bir diş kliniği veya sağlık hizmeti sağlayıcısı
-                      değildir. Platform üzerinden teşhis, muayene, tedavi,
-                      reçete veya kesin tedavi fiyatı sunulmaz. Sağlık hizmeti,
-                      tedavi planı ve fiyatlandırma ilgili klinik tarafından
-                      belirlenir.
+                      DişFiyat360 bir diş kliniği veya sağlık hizmeti
+                      sağlayıcısı değildir. Platform üzerinden teşhis, muayene,
+                      tedavi, reçete veya kesin tedavi fiyatı sunulmaz. Sağlık
+                      hizmeti, tedavi planı ve fiyatlandırma ilgili klinik
+                      tarafından belirlenir.
                     </p>
                   </div>
 
-                  <Link href="/hakkimizda" className="btn btnPrimary">
+                  <Link
+                    href="/hakkimizda"
+                    className="btn btnPrimary"
+                  >
                     Hakkımızda →
                   </Link>
                 </div>
               </div>
 
               <div className="ctaRow">
-                <Link href="/hakkimizda" className="btn btnSoft">
+                <Link
+                  href="/hakkimizda"
+                  className="btn btnSoft"
+                >
                   Hakkımızda →
                 </Link>
 
-                <Link href="/gizlilik-politikasi" className="btn btnGhost">
+                <Link
+                  href="/gizlilik-politikasi"
+                  className="btn btnGhost"
+                >
                   Gizlilik Politikası →
                 </Link>
 
-                <Link href="/" className="btn btnPrimary">
+                <Link
+                  href="/"
+                  className="btn btnPrimary"
+                >
                   Ana Sayfa →
                 </Link>
               </div>

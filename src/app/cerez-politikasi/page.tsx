@@ -77,17 +77,13 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
   },
   {
-    title: "2) Veri Sorumlusu",
+    title: "2) İletişim ve Politika Kapsamı",
     paragraphs: [
-      "DişFiyat360 internet sitesi üzerinden çerezler aracılığıyla gerçekleştirilebilecek kişisel veri işleme faaliyetleri bakımından veri sorumlusu Ferhat Menekşe'dir.",
+      "DişFiyat360 kapsamında çerezler ve benzeri teknolojiler, bu politikada açıklanan amaçlar ve ilgili mevzuat doğrultusunda kullanılabilir.",
     ],
     items: [
-      "İşletme sahibi: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
       "İnternet adresi: www.disfiyat360.com",
     ],
   },
@@ -199,9 +195,9 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
     items: [
       "Bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması",
-      "Veri sorumlusunun hukuki yükümlülüğünü yerine getirebilmesi için zorunlu olması",
+      "Hukuki yükümlülüklerin yerine getirilebilmesi için zorunlu olması",
       "Bir hakkın tesisi, kullanılması veya korunması için zorunlu olması",
-      "İlgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla veri sorumlusunun meşru menfaatleri için zorunlu olması",
+      "İlgili kişinin temel hak ve özgürlüklerine zarar vermemek kaydıyla meşru menfaatler kapsamında gerekli olması",
       "İnternet sitesinin ve kullanıcı hesaplarının güvenliğinin sağlanması",
       "Gerekli durumlarda kullanıcının açık tercihi veya açık rızasının bulunması",
     ],
@@ -271,15 +267,7 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
   },
   {
-    title: "19) Yurt Dışına Veri Aktarımı",
-    paragraphs: [
-      "Barındırma, güvenlik, e-posta, analiz, yedekleme veya diğer teknik hizmetlerin yurt dışında bulunan veya yurt dışında veri işleyen hizmet sağlayıcılardan alınması hâlinde çerezler aracılığıyla toplanan bazı teknik veriler yurt dışına aktarılabilir.",
-      "Yurt dışına kişisel veri aktarımı yapılması gereken durumlarda, yürürlükteki kişisel verilerin korunması mevzuatında öngörülen şartlar ve uygun güvence yöntemleri dikkate alınır.",
-      "Kullanılan hizmet sağlayıcıları ve teknik veri akışları değiştikçe aktarım süreçleri yeniden değerlendirilebilir.",
-    ],
-  },
-  {
-    title: "20) Çerezlerin Saklanma Süresi",
+    title: "19) Çerezlerin Saklanma Süresi",
     paragraphs: [
       "Çerezler, kullanım amaçları için gerekli olan süre boyunca saklanır.",
       "Oturum çerezleri genellikle tarayıcı oturumu sona erdiğinde silinir. Kalıcı çerezlerin süresi ise çerezin amacı ve kullanılan hizmete göre değişebilir.",
@@ -287,7 +275,7 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
   },
   {
-    title: "21) Kişisel Verilerin Güvenliği",
+    title: "19) Kişisel Verilerin Güvenliği",
     paragraphs: [
       "DişFiyat360, çerezler aracılığıyla işlenen kişisel verilerin hukuka aykırı şekilde erişilmesini, değiştirilmesini veya açıklanmasını önlemek amacıyla uygun teknik ve idari tedbirleri almaya çalışır.",
     ],
@@ -302,7 +290,7 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
   },
   {
-    title: "22) İlgili Kişinin Hakları",
+    title: "19) İlgili Kişinin Hakları",
     paragraphs: [
       "Çerezler aracılığıyla kişisel verisi işlenen kişiler, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun 11. maddesi kapsamındaki haklarını kullanabilir.",
     ],
@@ -320,18 +308,17 @@ const POLICY_BLOCKS: CookiePolicyBlock[] = [
     ],
   },
   {
-    title: "23) Başvuru Yöntemi",
+    title: "19) Başvuru Yöntemi",
     paragraphs: [
       "Çerezler ve kişisel verilerin işlenmesine ilişkin soru, talep veya başvurularınızı kimliğinizi ve talebinizi açıkça belirterek aşağıdaki iletişim kanalları üzerinden iletebilirsiniz.",
     ],
     items: [
-      "E-posta: ferhatmenekse945@gmail.com",
-      "Posta veya elden başvuru: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefonla genel bilgi: 0531 917 17 39",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
     ],
   },
   {
-    title: "24) Politika Değişiklikleri",
+    title: "19) Politika Değişiklikleri",
     paragraphs: [
       "Bu Çerez Politikası; mevzuat değişiklikleri, internet sitesinde kullanılan teknolojiler, üçüncü taraf hizmet sağlayıcıları veya DişFiyat360 hizmetlerinde yapılan değişikliklere göre güncellenebilir.",
       "Politikanın güncel hâli internet sitesi üzerinden yayımlandığı tarihten itibaren geçerli olur.",
@@ -380,17 +367,6 @@ export default function CookiePolicyPage(): JSX.Element {
                 <span className="miniItem">🍪 Şeffaf çerez kullanımı</span>
                 <span className="miniItem">⚙️ Tercih yönetimi</span>
                 <span className="miniItem">🔒 Güvenli oturum</span>
-              </div>
-
-              <div style={updateBoxStyle}>
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
               </div>
 
               <div className="section">
@@ -679,7 +655,7 @@ function ContactCard(): JSX.Element {
           color: "rgba(15,23,42,0.94)",
         }}
       >
-        Veri Sorumlusu İletişim Bilgileri
+        İletişim Bilgileri
       </h2>
 
       <p
@@ -704,40 +680,19 @@ function ContactCard(): JSX.Element {
           lineHeight: 1.7,
         }}
       >
-        <ContactRow label="Veri sorumlusu" value="Ferhat Menekşe" />
-
-        <ContactRow
-          label="Vergi dairesi"
-          value="5 Ocak Vergi Dairesi"
-        />
-
-        <ContactRow label="Vergi numarası" value="6150625779" />
-
-        <ContactRow
-          label="Adres"
-          value="Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana"
-        />
-
         <ContactRow
           label="E-posta"
           value={
             <a
-              href="mailto:ferhatmenekse945@gmail.com"
+              href="mailto:disfiyat360@gmail.com"
               style={contactLinkStyle}
             >
-              ferhatmenekse945@gmail.com
+              disfiyat360@gmail.com
             </a>
           }
         />
 
-        <ContactRow
-          label="Telefon"
-          value={
-            <a href="tel:+905319171739" style={contactLinkStyle}>
-              0531 917 17 39
-            </a>
-          }
-        />
+        <ContactRow label="Konum" value="Beşiktaş / İstanbul" />
 
         <ContactRow
           label="İnternet adresi"
@@ -794,17 +749,6 @@ function ContactRow({
   );
 }
 
-const updateBoxStyle: CSSProperties = {
-  marginTop: 14,
-  padding: 14,
-  borderRadius: 18,
-  border: "1px solid rgba(79,70,229,0.16)",
-  background:
-    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-  color: "rgba(15,23,42,0.72)",
-  fontWeight: 750,
-  lineHeight: 1.7,
-};
 
 const contactLinkStyle: CSSProperties = {
   color: "inherit",

@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "İptal ve İade Politikası | DişFiyat360",
   description:
-    "DişFiyat360 kredi paketleri, Premium üyelik ve diğer dijital hizmetlere ilişkin iptal ve iade esasları.",
+    "DişFiyat360 kredi paketleri ve diğer dijital hizmetlere ilişkin iptal ve iade esasları.",
   alternates: {
     canonical: "/iptal-iade",
   },
@@ -20,19 +20,18 @@ const POLICY_BLOCKS: PolicyBlock[] = [
   {
     title: "1) Politikanın Kapsamı",
     paragraphs: [
-      "Bu İptal ve İade Politikası, DişFiyat360 üzerinden kliniklere sunulan kredi paketleri, Premium üyelik, panel erişimi, dijital görünürlük ve diğer çevrim içi hizmetlere ilişkin iptal, inceleme ve iade esaslarını açıklar.",
+      "Bu İptal ve İade Politikası, DişFiyat360 üzerinden kliniklere sunulan kredi paketleri, panel erişimi, dijital görünürlük ve diğer çevrim içi hizmetlere ilişkin iptal, inceleme ve iade esaslarını açıklar.",
       "DişFiyat360 üzerinden fiziksel ürün veya doğrudan sağlık hizmeti satışı yapılmaz.",
     ],
   },
   {
-    title: "2) Satıcı ve Hizmet Sağlayıcı Bilgileri",
+    title: "2) Platform ve İletişim",
+    paragraphs: [
+      "DişFiyat360 üzerinden sunulan dijital hizmetlere ilişkin genel iletişim bilgileri aşağıdadır.",
+    ],
     items: [
-      "İşletme sahibi: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
       "İnternet adresi: www.disfiyat360.com",
     ],
   },
@@ -40,23 +39,23 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     title: "3) Hizmetlerin Niteliği",
     paragraphs: [
       "Kredi paketleri, klinik panelinde kliniğe yönlendirilmiş uygun kullanıcı taleplerinin iletişim bilgilerini görüntülemek için kullanılabilen dijital kullanım haklarıdır.",
-      "Premium üyelik, satın alma sırasında belirtilen üyelik süresi boyunca uygun lead dağıtımlarında standart kliniklere göre öncelik ve ilan edilen diğer dijital avantajları sağlar.",
+      "dijital hizmet, satın alma sırasında belirtilen hizmet süresi boyunca uygun lead dağıtımlarında standart kliniklere göre öncelik ve ilan edilen diğer dijital avantajları sağlar.",
       "Satın alınan hizmetler kesin hasta, randevu, tedavi, satış, ciro veya gelir garantisi içermez.",
     ],
   },
   {
     title: "4) Sipariş Öncesi Bilgilendirme",
     paragraphs: [
-      "Klinik, ödeme işlemini tamamlamadan önce satın aldığı paketin adı, kapsamı, kredi miktarı, üyelik süresi, toplam bedeli, aktivasyon şekli ve yenileme koşulları hakkında bilgilendirilir.",
+      "Klinik, ödeme işlemini tamamlamadan önce satın aldığı paketin adı, kapsamı, kredi miktarı, hizmet süresi, toplam bedeli, aktivasyon şekli ve yenileme koşulları hakkında bilgilendirilir.",
       "Ödeme işleminin tamamlanması, sipariş sırasında gösterilen paket bilgilerinin ve uygulanabilir sözleşme metinlerinin kabul edildiği anlamına gelir.",
     ],
   },
   {
     title: "5) İptal ve Cayma Koşulları",
     paragraphs: [
-      "Satın alınan kredi paketi veya Premium üyelik henüz klinik hesabına tanımlanmamış ve hizmet kullanıma sunulmamışsa, klinik satın alma tarihinden itibaren 14 gün içinde yazılı olarak iptal ve iade talebinde bulunabilir.",
-      "Kredi paketinin veya Premium üyeliğin klinik hesabına tanımlanarak hizmetin kullanıma sunulması ve kliniğin hizmetten yararlanmaya başlaması hâlinde cayma hakkı sona erer. Kullanılmış krediler, görüntülenmiş leadler ve kullanılmış dijital hizmet hakları için iptal veya iade yapılmaz.",
-      "İptal ve iade talepleri ferhatmenekse945@gmail.com adresine yazılı olarak iletilmelidir.",
+      "Satın alınan kredi paketi veya diğer dijital hizmet henüz klinik hesabına tanımlanmamış ve hizmet kullanıma sunulmamışsa, klinik satın alma tarihinden itibaren 14 gün içinde yazılı olarak iptal ve iade talebinde bulunabilir.",
+      "Kredi paketinin veya  üyeliğin klinik hesabına tanımlanarak hizmetin kullanıma sunulması ve kliniğin hizmetten yararlanmaya başlaması hâlinde cayma hakkı sona erer. Kullanılmış krediler, görüntülenmiş leadler ve kullanılmış dijital hizmet hakları için iptal veya iade yapılmaz.",
+      "İptal ve iade talepleri disfiyat360@gmail.com adresine yazılı olarak iletilmelidir.",
     ],
   },
   {
@@ -76,23 +75,15 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "8) Premium Üyeliğin Aktive Edilmesi",
+    title: "8) Otomatik Yenileme",
     paragraphs: [
-      "Premium üyelik, klinik hesabında Premium statüsünün aktif hâle getirilmesiyle başlar.",
-      "Premium üyeliğin aktif edildiği ve kliniğin Premium avantajlarından yararlanmaya başladığı durumlarda hizmet kullanıma sunulmuş sayılır.",
-      "Üyelik süresinin bir bölümünün kullanılmamış olması tek başına orantılı veya otomatik iade hakkı oluşturmaz.",
-    ],
-  },
-  {
-    title: "9) Otomatik Yenileme",
-    paragraphs: [
-      "DişFiyat360 üzerinde aksi açıkça belirtilmedikçe kredi paketleri ve Premium üyelikler otomatik olarak yenilenmez.",
+      "DişFiyat360 üzerinde aksi açıkça belirtilmedikçe kredi paketleri ve dijital hizmet otomatik olarak yenilenmez.",
       "Yeni dönem veya ek kredi paketi için klinik tarafından yeni bir satın alma işlemi gerçekleştirilmesi gerekir.",
       "İleride otomatik yenileme özelliği sunulması hâlinde yenileme, iptal ve ödeme koşulları satın alma öncesinde ayrıca açıklanır.",
     ],
   },
   {
-    title: "10) Lead Hizmetlerine İlişkin Esaslar",
+    title: "9) Lead Hizmetlerine İlişkin Esaslar",
     paragraphs: [
       "Lead, bir kullanıcının belirli bir şehir ve diş hizmeti için iletişim veya teklif talebi oluşturmasıdır.",
       "Bir kredinin kullanılması, kliniğe yönlendirilmiş leadin iletişim bilgilerinin görüntülenmesi hakkını sağlar.",
@@ -101,7 +92,7 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "11) Teknik Sorunlar",
+    title: "10) Teknik Sorunlar",
     paragraphs: [
       "Satıcı kaynaklı teknik bir sorun nedeniyle satın alınan hizmetin makul süre içinde kullanıma sunulamaması hâlinde, öncelikle sorunun giderilmesi veya hizmet süresinin telafi edilmesi amaçlanır.",
       "Sorunun giderilememesi ve hizmetin sunulamaması hâlinde, kullanılmayan hizmet bedeli için kısmi veya tam iade değerlendirilebilir.",
@@ -109,28 +100,28 @@ const POLICY_BLOCKS: PolicyBlock[] = [
     ],
   },
   {
-    title: "12) Mükerrer veya Hatalı Tahsilat",
+    title: "11) Mükerrer veya Hatalı Tahsilat",
     paragraphs: [
       "Aynı sipariş için birden fazla tahsilat yapılması, sipariş tutarından farklı bir bedel alınması veya ödemenin başarılı olmasına rağmen hizmetin hiç tanımlanmaması durumunda kullanıcı destek birimine başvurabilir.",
       "Ödeme kayıtları incelendikten sonra fazla veya hatalı tahsil edildiği doğrulanan tutar için düzeltme veya iade işlemi başlatılır.",
     ],
   },
   {
-    title: "13) Kampanyalı ve İndirimli Satışlar",
+    title: "12) Kampanyalı ve İndirimli Satışlar",
     paragraphs: [
       "Kampanya, kupon, indirim veya özel fiyatla satın alınan hizmetlerde iade değerlendirmesi, fiilen ödenen tutar üzerinden yapılır.",
       "Kampanya kapsamında ücretsiz verilen krediler, ek süreler veya promosyon hakları nakde çevrilemez ve bunlar için ayrıca iade yapılmaz.",
     ],
   },
   {
-    title: "14) Hesabın Askıya Alınması veya Kapatılması",
+    title: "13) Hesabın Askıya Alınması veya Kapatılması",
     paragraphs: [
       "Klinik hesabının yanıltıcı bilgi, hukuka aykırı kullanım, kişisel verilerin amacı dışında kullanılması, platform güvenliğinin ihlali, yetkisiz erişim girişimi veya kullanım koşullarının ciddi şekilde ihlal edilmesi nedeniyle askıya alınması ya da kapatılması hâlinde kullanılmayan hizmetler için iade yapılmayabilir.",
       "Yanlışlıkla uygulandığı düşünülen hesap işlemleri için klinik, destek kanalları üzerinden inceleme talep edebilir.",
     ],
   },
   {
-    title: "15) İade Başvurusu",
+    title: "14) İade Başvurusu",
     paragraphs: [
       "İptal veya iade talebinin incelenebilmesi için talebin yazılı olarak iletilmesi önerilir.",
     ],
@@ -138,37 +129,29 @@ const POLICY_BLOCKS: PolicyBlock[] = [
       "Klinik veya hesap adı",
       "Satın alma işleminde kullanılan e-posta adresi",
       "Ödeme tarihi",
-      "Satın alınan paket veya üyelik",
+      "Satın alınan paket veya hizmet",
       "Ödenen tutar",
       "Varsa sipariş veya ödeme referansı",
       "İptal veya iade talebinin gerekçesi",
     ],
   },
   {
-    title: "16) Başvuru Kanalları",
-    items: [
-      "E-posta: ferhatmenekse945@gmail.com",
-      "Telefon: 0531 917 17 39",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-    ],
-  },
-  {
-    title: "17) İade Yöntemi",
+    title: "15) İade Yöntemi",
     paragraphs: [
       "İade talebinin kabul edilmesi hâlinde iade işlemi, talebin onaylanmasından itibaren en geç 14 gün içinde başlatılır ve teknik olarak mümkün olduğu ölçüde ödemenin gerçekleştirildiği ödeme yöntemine yapılır.",
       "Bankaların, kart kuruluşlarının veya ödeme altyapılarının işlem süreleri nedeniyle iade tutarının karta veya hesaba yansıması ayrıca zaman alabilir.",
-      "İade işlemi tamamlandığında, iade edilen işleme ilişkin kullanılmamış kredi bakiyesi, Premium üyelik süresi veya diğer ilgili dijital kullanım hakları klinik hesabından geri alınabilir.",
+      "İade işlemi tamamlandığında, iade edilen işleme ilişkin kullanılmamış kredi bakiyesi, dijital hizmet süresi veya diğer ilgili dijital kullanım hakları klinik hesabından geri alınabilir.",
     ],
   },
   {
-    title: "18) Emredici Mevzuat",
+    title: "16) Emredici Mevzuat",
     paragraphs: [
       "Bu politika, tarafların statüsüne ve işlemin niteliğine göre uygulanması zorunlu olan emredici mevzuat hükümlerini ortadan kaldırmaz.",
       "Kanunen vazgeçilemeyen bir hakkın bulunması hâlinde ilgili mevzuat hükümleri öncelikle uygulanır.",
     ],
   },
   {
-    title: "19) Politika Değişiklikleri",
+    title: "17) Politika Değişiklikleri",
     paragraphs: [
       "Bu politika, hizmet modelinde, ödeme altyapısında veya ilgili süreçlerde meydana gelen değişikliklere göre güncellenebilir.",
       "Güncel politika internet sitesinde yayımlandığı tarihten itibaren geçerli olur.",
@@ -202,7 +185,7 @@ export default function RefundPolicyPage(): JSX.Element {
                 }}
               >
                 Bu politika, DişFiyat360 üzerinden sunulan kredi paketleri,
-                Premium üyelik, panel erişimi ve diğer dijital hizmetlere
+                dijital hizmet, panel erişimi ve diğer dijital hizmetlere
                 ilişkin iptal ve iade süreçlerini açıklar.
               </p>
 
@@ -215,29 +198,6 @@ export default function RefundPolicyPage(): JSX.Element {
                 <span className="miniItem">💳 Güvenli ödeme süreci</span>
                 <span className="miniItem">📄 Şeffaf koşullar</span>
                 <span className="miniItem">🔍 Talep incelemesi</span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
               </div>
 
               <div className="section">

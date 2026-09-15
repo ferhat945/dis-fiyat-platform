@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Teslimat ve İade Şartları | DişFiyat360",
   description:
-    "DişFiyat360 dijital kredi paketleri ve Premium üyelik hizmetlerinin teslimat, aktivasyon, iptal ve iade şartları.",
+    "DişFiyat360 dijital kredi paketleri ve dijital hizmetlerin teslimat, aktivasyon, iptal ve iade şartları.",
   alternates: {
     canonical: "/teslimat-iade",
   },
@@ -20,19 +20,18 @@ const POLICY_SECTIONS: PolicySection[] = [
   {
     title: "1) Kapsam",
     paragraphs: [
-      "Bu Teslimat ve İade Şartları, DişFiyat360 üzerinden kliniklere sunulan kredi paketleri, Premium üyelik, klinik paneli, dijital görünürlük ve diğer elektronik hizmetlerin teslimat, aktivasyon, iptal ve iade süreçlerini açıklar.",
+      "Bu Teslimat ve İade Şartları, DişFiyat360 üzerinden kliniklere sunulan kredi paketleri, klinik paneli, dijital görünürlük ve diğer elektronik hizmetlerin teslimat, aktivasyon, iptal ve iade süreçlerini açıklar.",
       "DişFiyat360 üzerinden fiziksel ürün, kargo ile gönderilen ürün veya doğrudan sağlık hizmeti satışı yapılmaz.",
     ],
   },
   {
-    title: "2) Hizmet Sağlayıcı Bilgileri",
+    title: "2) Platform ve İletişim",
+    paragraphs: [
+      "DişFiyat360 üzerinden sunulan dijital hizmetlere ilişkin genel iletişim bilgileri aşağıdadır.",
+    ],
     items: [
-      "İşletme sahibi: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
       "İnternet adresi: www.disfiyat360.com",
     ],
   },
@@ -40,16 +39,16 @@ const POLICY_SECTIONS: PolicySection[] = [
     title: "3) Satılan Hizmetlerin Niteliği",
     paragraphs: [
       "DişFiyat360 üzerinden satılan ürünler, fiziksel ürün değil elektronik ortamda sunulan dijital hizmetlerdir.",
-      "Satışa sunulan hizmetler; lead iletişim bilgilerini görüntülemeye yarayan kredi paketleri, süreli Premium üyelik, klinik paneli özellikleri, dijital görünürlük ve platform kullanım haklarından oluşabilir.",
+      "Satışa sunulan hizmetler; lead iletişim bilgilerini görüntülemeye yarayan kredi paketleri, süreli dijital hizmet, klinik paneli özellikleri, dijital görünürlük ve platform kullanım haklarından oluşabilir.",
       "DişFiyat360 üzerinden diş tedavisi, muayene, teşhis, reçete veya başka bir sağlık hizmeti satılmaz.",
     ],
   },
   {
     title: "4) Dijital Teslimat Yöntemi",
     paragraphs: [
-      "Satın alınan hizmet fiziksel olarak kargolanmaz. Teslimat; başarılı ödeme doğrulamasından sonra kredi bakiyesinin klinik hesabına yüklenmesi, Premium üyeliğin aktif edilmesi veya satın alınan dijital özelliğin kullanıma açılması yoluyla elektronik ortamda gerçekleştirilir.",
+      "Satın alınan hizmet fiziksel olarak kargolanmaz. Teslimat; başarılı ödeme doğrulamasından sonra kredi bakiyesinin klinik hesabına yüklenmesi,  üyeliğin aktif edilmesi veya satın alınan dijital özelliğin kullanıma açılması yoluyla elektronik ortamda gerçekleştirilir.",
       "Kredi paketi, satın alınan kredi miktarının klinik hesabında görünmesiyle teslim edilmiş sayılır.",
-      "Premium üyelik, Premium statüsünün ve pakete dâhil hakların klinik hesabına tanımlanmasıyla teslim edilmiş sayılır.",
+      "dijital hizmet, dijital hizmetin ve pakete dâhil hakların klinik hesabına tanımlanmasıyla teslim edilmiş sayılır.",
     ],
   },
   {
@@ -73,7 +72,7 @@ const POLICY_SECTIONS: PolicySection[] = [
   {
     title: "7) Hizmetin Başlangıcı",
     paragraphs: [
-      "Kredilerin hesaba yüklenmesi, Premium üyeliğin aktive edilmesi veya dijital hizmetin erişime açılmasıyla hizmetin ifasına başlanır.",
+      "Kredilerin hesaba yüklenmesi,  üyeliğin aktive edilmesi veya dijital hizmetin erişime açılmasıyla hizmetin ifasına başlanır.",
       "Alıcının hesabına daha sonra giriş yapması veya hizmeti daha sonra kullanması, elektronik teslimatın gerçekleşmediği anlamına gelmez.",
     ],
   },
@@ -86,15 +85,7 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "9) Premium Üyeliğin Teslimatı",
-    paragraphs: [
-      "Premium üyelik, başarılı ödeme onayından sonra klinik hesabında Premium statüsünün aktif edilmesiyle başlar.",
-      "Premium üyeliğe dâhil kredi veya başka dijital haklar bulunuyorsa bunlar da satın alma ekranında belirtilen kapsamda hesaba tanımlanır.",
-      "Premium üyelik, belirli sayıda lead, kesin hasta, randevu, tedavi, satış veya gelir garantisi vermez.",
-    ],
-  },
-  {
-    title: "10) Teslimat Sorunları",
+    title: "9) Teslimat Sorunları",
     paragraphs: [
       "Ödeme başarılı olduğu hâlde hizmet hesabınıza tanımlanmadıysa ödeme tarihi, paket adı, hesap e-postası ve varsa işlem referansıyla destek birimine başvurabilirsiniz.",
       "İnceleme sonucunda ödeme doğrulanırsa hizmet aktive edilir.",
@@ -102,14 +93,14 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "11) Aktivasyon Öncesi İptal",
+    title: "10) Aktivasyon Öncesi İptal",
     paragraphs: [
       "Ödeme tamamlanmış ancak satın alınan hizmet henüz klinik hesabına tanımlanmamışsa iptal talebi incelenebilir.",
       "Hizmet aktive edilmeden yapılan taleplerde ödemenin doğrulanması, işlemin başka bir hesaba tanımlanmamış olması ve teknik süreçlerin uygunluğu dikkate alınarak tam iade yapılabilir.",
     ],
   },
   {
-    title: "12) Kredi Paketlerinde İade",
+    title: "11) Kredi Paketlerinde İade",
     paragraphs: [
       "Kredi paketi hesaba tanımlandıktan sonra hiçbir kredi kullanılmamışsa iade talebi işlemin şartlarına göre ayrıca değerlendirilebilir.",
       "Herhangi bir lead iletişim bilgisinin görüntülenmesi hâlinde ilgili kredi kullanılmış sayılır.",
@@ -118,15 +109,7 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "13) Premium Üyelikte İade",
-    paragraphs: [
-      "Premium üyelik aktif edilerek dijital avantajlardan yararlanılmaya başlanmışsa hizmet kullanıma sunulmuş sayılır.",
-      "Üyelik süresinin bir bölümünün kullanılmamış olması tek başına otomatik veya orantılı iade hakkı oluşturmaz.",
-      "Hizmet sağlayıcı kaynaklı olarak Premium üyeliğin hiç sunulamaması hâlinde iade veya uygun telafi yöntemi değerlendirilebilir.",
-    ],
-  },
-  {
-    title: "14) Lead Hizmetine İlişkin Özel Şart",
+    title: "12) Lead Hizmetine İlişkin Özel Şart",
     paragraphs: [
       "Lead, bir kullanıcının belirli bir şehir ve diş hizmeti için platform üzerinden oluşturduğu iletişim veya teklif talebidir.",
       "Bir kredi, kliniğe yönlendirilmiş lead kaydının iletişim bilgilerini görüntüleme hakkı sağlar.",
@@ -135,14 +118,14 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "15) Mükerrer veya Hatalı Tahsilat",
+    title: "13) Mükerrer veya Hatalı Tahsilat",
     paragraphs: [
       "Aynı sipariş için birden fazla tahsilat yapılması, sipariş tutarından farklı bir bedel tahsil edilmesi veya ödemenin başarılı olmasına rağmen hizmetin hiç tanımlanmaması durumunda klinik destek birimine başvurabilir.",
       "Ödeme kayıtları incelendikten sonra mükerrer veya hatalı olduğu doğrulanan tutar için düzeltme ya da iade işlemi başlatılır.",
     ],
   },
   {
-    title: "16) Teknik Sorunlar",
+    title: "14) Teknik Sorunlar",
     paragraphs: [
       "Hizmet sağlayıcı kaynaklı teknik bir sorun nedeniyle satın alınan hizmetin makul süre içinde sunulamaması hâlinde öncelikle sorunun giderilmesi veya hizmet süresinin telafi edilmesi amaçlanır.",
       "Sorunun giderilememesi ve hizmetin sunulamaması hâlinde kullanılmayan hizmet bedeli için kısmi veya tam iade değerlendirilebilir.",
@@ -150,7 +133,7 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "17) İade Başvurusu İçin Gereken Bilgiler",
+    title: "15) İade Başvurusu İçin Gereken Bilgiler",
     items: [
       "Klinik veya işletme adı",
       "Klinik hesabında kullanılan e-posta adresi",
@@ -162,7 +145,7 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "18) İade Yöntemi",
+    title: "16) İade Yöntemi",
     paragraphs: [
       "Kabul edilen iadeler, teknik olarak mümkün olduğu ölçüde ödemenin yapıldığı ödeme aracına gerçekleştirilir.",
       "İadenin karta veya hesaba yansıma süresi, ödeme kuruluşunun ve bankanın işlem sürelerine göre değişebilir.",
@@ -170,15 +153,7 @@ const POLICY_SECTIONS: PolicySection[] = [
     ],
   },
   {
-    title: "19) Başvuru Kanalları",
-    items: [
-      "E-posta: ferhatmenekse945@gmail.com",
-      "Telefon: 0531 917 17 39",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-    ],
-  },
-  {
-    title: "20) Emredici Mevzuat",
+    title: "17) Emredici Mevzuat",
     paragraphs: [
       "Bu şartlar, tarafların statüsüne ve işlemin niteliğine göre uygulanması zorunlu olan emredici mevzuat hükümlerini ortadan kaldırmaz.",
       "Kanunen vazgeçilemeyen bir hakkın bulunması hâlinde ilgili mevzuat hükümleri öncelikle uygulanır.",
@@ -212,7 +187,7 @@ export default function DeliveryReturnPage(): JSX.Element {
                   maxWidth: 820,
                 }}
               >
-                Kredi paketleri ve Premium üyelikler fiziksel olarak
+                Kredi paketleri ve dijital hizmet fiziksel olarak
                 gönderilmez. Başarılı ödeme doğrulamasından sonra klinik
                 hesabına elektronik ortamda tanımlanır.
               </p>
@@ -226,29 +201,6 @@ export default function DeliveryReturnPage(): JSX.Element {
                 <span className="miniItem">⚡ Elektronik teslimat</span>
                 <span className="miniItem">💳 Güvenli ödeme</span>
                 <span className="miniItem">↩️ Şeffaf iade süreci</span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                23 Temmuz 2026
               </div>
 
               <div className="section">
@@ -336,7 +288,7 @@ function ImportantNotice(): JSX.Element {
           lineHeight: 1.78,
         }}
       >
-        DişFiyat360 fiziksel ürün göndermez. Satın alınan kredi veya Premium
+        DişFiyat360 fiziksel ürün göndermez. Satın alınan kredi veya 
         üyelik hakkı, başarılı ödeme doğrulamasından sonra klinik hesabına
         elektronik ortamda tanımlanır.
       </p>

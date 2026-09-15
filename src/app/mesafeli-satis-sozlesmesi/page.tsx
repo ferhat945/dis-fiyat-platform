@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Mesafeli Satış ve Dijital Hizmet Sözleşmesi | DişFiyat360",
   description:
-    "DişFiyat360 kredi paketleri, Premium üyelik, klinik paneli ve diğer dijital hizmetlere ilişkin satış ve kullanım sözleşmesi.",
+    "DişFiyat360 kredi paketleri, klinik paneli ve diğer dijital hizmetlere ilişkin satış ve kullanım sözleşmesi.",
   alternates: {
     canonical: "/mesafeli-satis-sozlesmesi",
   },
@@ -20,15 +20,11 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
   {
     title: "1) Taraflar",
     paragraphs: [
-      "İşbu Mesafeli Satış ve Dijital Hizmet Sözleşmesi, aşağıda bilgileri bulunan hizmet sağlayıcı ile DişFiyat360 platformu üzerinden kredi paketi, Premium üyelik, panel erişimi veya başka bir dijital hizmet satın alan gerçek ya da tüzel kişi arasında elektronik ortamda kurulmaktadır.",
+      "İşbu Mesafeli Satış ve Dijital Hizmet Sözleşmesi, aşağıda bilgileri bulunan hizmet sağlayıcı ile DişFiyat360 platformu üzerinden kredi paketi, panel erişimi veya başka bir dijital hizmet satın alan gerçek ya da tüzel kişi arasında elektronik ortamda kurulmaktadır.",
     ],
     items: [
-      "Hizmet sağlayıcı / Satıcı: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "Platform: DişFiyat360",
+      "E-posta: disfiyat360@gmail.com",
       "İnternet adresi: www.disfiyat360.com",
       "Alıcı: DişFiyat360 üzerinden ücretli dijital hizmet satın alan klinik, işletme, şirket, sağlık kuruluşu veya bunların yetkili temsilcisidir.",
     ],
@@ -37,20 +33,20 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     title: "2) Tanımlar",
     items: [
       "Platform: www.disfiyat360.com alan adı ve buna bağlı DişFiyat360 dijital hizmetlerini ifade eder.",
-      "Hizmet sağlayıcı: DişFiyat360 platformunun işletmecisi Ferhat Menekşe'yi ifade eder.",
+      "Platform hizmeti: DişFiyat360 üzerinden sunulan dijital hizmetleri ifade eder.",
       "Alıcı: Platform üzerinden ücretli dijital hizmet satın alan gerçek veya tüzel kişiyi ifade eder.",
       "Klinik hesabı: Alıcının DişFiyat360 üzerinde oluşturduğu veya yetkili olduğu işletme hesabını ifade eder.",
       "Lead: Bir kullanıcının belirli bir şehir ve diş hizmeti için platform üzerinden oluşturduğu iletişim veya teklif talebini ifade eder.",
       "Kredi: Uygun bir leadin iletişim bilgilerini görüntülemek için kullanılabilen dijital kullanım hakkını ifade eder.",
       "Kredi paketi: Belirli sayıda kredi kullanım hakkı içeren ücretli dijital paketi ifade eder.",
-      "Premium üyelik: Satın alma ekranında belirtilen süre boyunca uygun lead dağıtımlarında standart hesaplara göre öncelik ve ilan edilen diğer dijital avantajları sağlayan üyelik türünü ifade eder.",
-      "Dijital hizmet: Kredi paketi, Premium üyelik, panel erişimi, dijital görünürlük, profil yönetimi, lead görüntüleme ve platform üzerinden sunulan diğer çevrim içi hizmetleri ifade eder.",
+      "dijital hizmet: Satın alma ekranında belirtilen süre boyunca uygun lead dağıtımlarında standart hesaplara göre öncelik ve ilan edilen diğer dijital avantajları sağlayan üyelik türünü ifade eder.",
+      "Dijital hizmet: Kredi paketi, dijital hizmet, panel erişimi, dijital görünürlük, profil yönetimi, lead görüntüleme ve platform üzerinden sunulan diğer çevrim içi hizmetleri ifade eder.",
     ],
   },
   {
     title: "3) Sözleşmenin Konusu",
     paragraphs: [
-      "İşbu sözleşmenin konusu, alıcının DişFiyat360 platformu üzerinden elektronik ortamda sipariş verdiği kredi paketi, Premium üyelik, klinik paneli erişimi, dijital görünürlük, lead yönetimi veya diğer dijital hizmetlerin satışına, aktivasyonuna, kullanımına, ödemesine, iptaline ve tarafların hak ve yükümlülüklerine ilişkin esasların belirlenmesidir.",
+      "İşbu sözleşmenin konusu, alıcının DişFiyat360 platformu üzerinden elektronik ortamda sipariş verdiği kredi paketi, dijital hizmet, klinik paneli erişimi, dijital görünürlük, lead yönetimi veya diğer dijital hizmetlerin satışına, aktivasyonuna, kullanımına, ödemesine, iptaline ve tarafların hak ve yükümlülüklerine ilişkin esasların belirlenmesidir.",
       "Satın alınan hizmetin adı, kapsamı, süresi, miktarı ve toplam bedeli ödeme öncesinde alıcıya gösterilen sipariş özeti ile belirlenir.",
     ],
   },
@@ -131,14 +127,14 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     title: "12) Hizmetin Aktivasyonu",
     paragraphs: [
       "Satın alınan dijital hizmet, ödemenin başarılı olarak doğrulanmasından sonra sistem tarafından otomatik olarak veya gerekli kontrollerin ardından makul süre içinde klinik hesabına tanımlanır.",
-      "Kredi paketi, kredilerin klinik hesabına eklenmesiyle; Premium üyelik ise klinik hesabında Premium statüsünün aktif hâle getirilmesiyle kullanıma sunulmuş sayılır.",
+      "Kredi paketi, kredilerin klinik hesabına eklenmesiyle; dijital hizmet ise klinik hesabında ilgili dijital hizmetin aktif hâle getirilmesiyle kullanıma sunulmuş sayılır.",
       "Teknik veya güvenlik kontrolü gerektiren durumlarda aktivasyon işlemi geçici olarak bekletilebilir.",
     ],
   },
   {
     title: "13) Hizmetin Başlangıcı",
     paragraphs: [
-      "Dijital hizmetin klinik hesabına tanımlanması, panel erişiminin açılması, kredi bakiyesinin yüklenmesi veya Premium üyeliğin aktive edilmesiyle hizmetin ifasına başlanmış sayılır.",
+      "Dijital hizmetin klinik hesabına tanımlanması, panel erişiminin açılması, kredi bakiyesinin yüklenmesi veya  üyeliğin aktive edilmesiyle hizmetin ifasına başlanmış sayılır.",
       "Alıcının hesabına giriş yapmaması veya hizmeti fiilen kullanmaması, aktive edilmiş hizmetin başlamadığı anlamına gelmez.",
     ],
   },
@@ -177,32 +173,24 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "18) Premium Üyelik",
+    title: "18) Üyelik ve Paket Süresi",
     paragraphs: [
-      "Premium üyelik, satın alma ekranında belirtilen süre boyunca uygun lead dağıtımlarında standart kliniklere göre öncelik ve ilan edilen diğer dijital avantajları sağlar.",
-      "Premium üyelik, tüm leadlerin yalnızca Premium kliniğe gönderileceği, belirli sayıda lead sağlanacağı veya belirli bir gelir elde edileceği anlamına gelmez.",
-      "Lead dağıtımı; kullanıcının seçtiği şehir ve hizmet, klinik kapsamı, klinik aktifliği, üyelik durumu, kota ve sistem kuralları dikkate alınarak gerçekleştirilir.",
-    ],
-  },
-  {
-    title: "19) Üyelik ve Paket Süresi",
-    paragraphs: [
-      "Premium üyelik veya süreli başka bir hizmet, satın alma ekranında belirtilen süre boyunca geçerlidir.",
+      "dijital hizmet veya süreli başka bir hizmet, satın alma ekranında belirtilen süre boyunca geçerlidir.",
       "Süre, hizmetin aktive edildiği tarih ve saatten itibaren başlar.",
       "Satın alma ekranında 30 günlük kullanım belirtilmişse hizmet, aktivasyon tarihinden itibaren 30 gün boyunca geçerlidir.",
       "Takvim aylarının farklı gün sayılarına sahip olması nedeniyle 30 günlük hizmet, her durumda bir sonraki takvim ayının aynı gününde sona erecek şekilde yorumlanmaz.",
     ],
   },
   {
-    title: "20) Otomatik Yenileme",
+    title: "18) Otomatik Yenileme",
     paragraphs: [
-      "Aksi satın alma ekranında açıkça belirtilmedikçe DişFiyat360 kredi paketleri ve Premium üyelikler otomatik olarak yenilenmez.",
+      "Aksi satın alma ekranında açıkça belirtilmedikçe DişFiyat360 kredi paketleri ve diğer dijital hizmetler otomatik olarak yenilenmez.",
       "Hizmet süresi sona erdiğinde yeni dönem için alıcının yeniden satın alma işlemi gerçekleştirmesi gerekir.",
       "İleride otomatik yenileme özelliği sunulursa yenileme bedeli, ödeme dönemi ve iptal yöntemi satın alma öncesinde ayrıca açıklanır ve gerekli onay alınır.",
     ],
   },
   {
-    title: "21) Alıcının Yükümlülükleri",
+    title: "18) Alıcının Yükümlülükleri",
     items: [
       "Hesap, şirket, klinik, ödeme ve fatura bilgilerini doğru vermek",
       "Klinik hesabının kullanıcı adı ve şifresini korumak",
@@ -217,7 +205,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "22) Lead Verilerinin Kullanılması",
+    title: "18) Lead Verilerinin Kullanılması",
     paragraphs: [
       "Klinik, kendisine iletilen lead bilgilerini yalnızca kullanıcının oluşturduğu talebe dönüş yapmak, bilgi vermek ve kullanıcının istemesi hâlinde randevu sürecini yürütmek amacıyla kullanabilir.",
       "Lead bilgilerinin satılması, yetkisiz üçüncü kişilere aktarılması, kullanıcı talebiyle ilgisi olmayan pazarlama faaliyetlerinde kullanılması veya hukuka aykırı bir veri tabanına eklenmesi yasaktır.",
@@ -225,7 +213,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "23) Hizmet Sağlayıcının Yükümlülükleri",
+    title: "18) Hizmet Sağlayıcının Yükümlülükleri",
     items: [
       "Ödemesi başarıyla tamamlanan hizmeti makul süre içinde aktive etmek",
       "Alıcının satın aldığı paket veya üyelik kapsamını hesabına tanımlamak",
@@ -236,7 +224,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "24) Sağlık Hizmeti Sunulmadığına İlişkin Bilgilendirme",
+    title: "18) Sağlık Hizmeti Sunulmadığına İlişkin Bilgilendirme",
     paragraphs: [
       "DişFiyat360 bir diş kliniği, hastane, sağlık kuruluşu veya sağlık hizmeti sağlayıcısı değildir.",
       "Platform üzerinden tıbbi teşhis, tedavi planı, reçete, muayene veya kesin tedavi fiyatı sunulmaz.",
@@ -244,7 +232,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "25) Kliniklerin Bağımsızlığı",
+    title: "18) Kliniklerin Bağımsızlığı",
     paragraphs: [
       "Platformda yer alan klinikler, DişFiyat360'dan bağımsız hizmet sağlayıcılardır.",
       "Klinik ile kullanıcı arasında kurulacak muayene, tedavi, ödeme veya başka bir sağlık hizmeti ilişkisine DişFiyat360 taraf değildir.",
@@ -252,7 +240,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "26) Cayma Hakkı ve Ticari Alımlar",
+    title: "18) Cayma Hakkı ve Ticari Alımlar",
     paragraphs: [
       "DişFiyat360'ın ücretli hizmetleri esas olarak ticari veya mesleki amaçla hareket eden klinik ve işletmelere sunulmaktadır.",
       "Alıcının satın alma işlemini ticari veya mesleki faaliyeti kapsamında gerçekleştirmesi hâlinde tüketicilere özgü cayma hakkı hükümleri uygulanmayabilir.",
@@ -260,24 +248,24 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "27) Dijital Hizmetin Derhâl Başlatılması",
+    title: "18) Dijital Hizmetin Derhâl Başlatılması",
     paragraphs: [
       "Alıcı, satın alma ekranında hizmetin ödeme sonrasında derhâl veya kısa süre içinde aktive edileceği konusunda bilgilendirilir.",
-      "Kredi paketinin hesaba tanımlanması, Premium üyeliğin aktive edilmesi veya dijital hizmetin kullanıma açılmasıyla hizmetin ifasına başlanır.",
+      "Kredi paketinin hesaba tanımlanması,  üyeliğin aktive edilmesi veya dijital hizmetin kullanıma açılmasıyla hizmetin ifasına başlanır.",
       "Alıcının tüketici sayıldığı ve ilgili mevzuat uyarınca ayrıca onay alınmasının gerektiği durumlarda, dijital hizmetin cayma süresi sona ermeden başlatılmasına ilişkin onay satın alma ekranında ayrıca alınabilir.",
     ],
   },
   {
-    title: "28) İptal ve İade",
+    title: "18) İptal ve İade",
     paragraphs: [
-      "İptal ve iade talepleri, satın alınan hizmetin aktive edilip edilmediği, kredilerin kullanılıp kullanılmadığı, Premium üyelik avantajlarından yararlanılıp yararlanılmadığı, mükerrer tahsilat ve teknik sorunlar dikkate alınarak incelenir.",
+      "İptal ve iade talepleri, satın alınan hizmetin aktive edilip edilmediği, kredilerin kullanılıp kullanılmadığı, dijital hizmet avantajlarından yararlanılıp yararlanılmadığı, mükerrer tahsilat ve teknik sorunlar dikkate alınarak incelenir.",
       "Kullanılmış kredi, görüntülenmiş lead veya yararlanılmış dijital hizmet için kural olarak iade yapılmaz.",
       "Mükerrer ödeme, yanlış tahsilat veya hizmet sağlayıcı kaynaklı olarak hizmetin hiç sunulamaması durumlarında kısmi veya tam iade yapılabilir.",
       "Ayrıntılı koşullar İptal ve İade Politikası sayfasında yer almaktadır.",
     ],
   },
   {
-    title: "29) İade Başvurusu",
+    title: "18) İade Başvurusu",
     paragraphs: [
       "İptal veya iade talebinin incelenebilmesi için alıcının aşağıdaki bilgilerle birlikte hizmet sağlayıcıya başvurması gerekir:",
     ],
@@ -291,22 +279,22 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "30) İadenin Yapılması",
+    title: "18) İadenin Yapılması",
     paragraphs: [
       "İade talebinin kabul edilmesi hâlinde iade, teknik olarak mümkün olduğu ölçüde ödemenin gerçekleştirildiği ödeme aracına yapılır.",
       "Bankaların ve ödeme altyapılarının işlem süreleri nedeniyle iade tutarının karta veya hesaba yansıması ek süre alabilir.",
-      "İade tamamlandığında ilgili kredi, Premium üyelik süresi veya dijital kullanım hakkı klinik hesabından geri alınabilir.",
+      "İade tamamlandığında ilgili kredi, dijital hizmet süresi veya dijital kullanım hakkı klinik hesabından geri alınabilir.",
     ],
   },
   {
-    title: "31) Mükerrer ve Hatalı Tahsilat",
+    title: "18) Mükerrer ve Hatalı Tahsilat",
     paragraphs: [
       "Aynı sipariş için birden fazla tahsilat yapılması veya sipariş ekranında gösterilen tutardan farklı bir tutarın tahsil edilmesi hâlinde alıcı hizmet sağlayıcıyla iletişime geçebilir.",
       "Ödeme ve banka kayıtları incelendikten sonra mükerrer ya da hatalı olduğu doğrulanan tahsilat düzeltilir veya iade edilir.",
     ],
   },
   {
-    title: "32) Kampanyalar ve Promosyonlar",
+    title: "18) Kampanyalar ve Promosyonlar",
     paragraphs: [
       "Kampanya, indirim, kupon veya özel fiyatla satın alınan hizmetlerde işlem, alıcının fiilen ödediği tutar üzerinden değerlendirilir.",
       "Ücretsiz verilen promosyon kredileri, deneme süreleri veya ek dijital haklar nakde çevrilemez.",
@@ -314,7 +302,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "33) Hesabın Askıya Alınması veya Kapatılması",
+    title: "18) Hesabın Askıya Alınması veya Kapatılması",
     paragraphs: [
       "Alıcının yanıltıcı bilgi vermesi, lead verilerini amacı dışında kullanması, üçüncü kişilere ait bilgileri izinsiz kullanması, platform güvenliğini ihlal etmesi veya sözleşme koşullarına ciddi şekilde aykırı davranması hâlinde hesabı geçici olarak askıya alınabilir.",
       "Ciddi veya tekrarlanan ihlallerde hesap kapatılabilir ve platform erişimi engellenebilir.",
@@ -322,7 +310,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "34) Hizmet Kesintileri",
+    title: "18) Hizmet Kesintileri",
     paragraphs: [
       "Bakım, güncelleme, güvenlik müdahalesi, internet kesintisi, veri merkezi sorunu, banka sistemi arızası veya üçüncü taraf altyapı kesintileri nedeniyle platform geçici olarak kullanılamayabilir.",
       "Hizmet sağlayıcı, platformun güvenli ve düzenli şekilde çalışması için makul çaba gösterir ancak hizmetin her zaman kesintisiz ve hatasız çalışacağını garanti etmez.",
@@ -330,14 +318,14 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "35) Mücbir Sebep",
+    title: "18) Mücbir Sebep",
     paragraphs: [
       "Doğal afet, savaş, terör, salgın, genel internet kesintisi, enerji kesintisi, kamu otoritesi kararı, siber saldırı, veri merkezi arızası, banka veya ödeme sistemi kesintisi ve tarafların makul kontrolü dışında gelişen benzeri durumlar mücbir sebep olarak değerlendirilebilir.",
       "Mücbir sebep nedeniyle yükümlülüklerin geçici olarak yerine getirilememesinden etkilenen taraf, durumun koşullarına göre sorumlu tutulmayabilir.",
     ],
   },
   {
-    title: "36) Fikri Mülkiyet Hakları",
+    title: "18) Fikri Mülkiyet Hakları",
     paragraphs: [
       "DişFiyat360 adı, logosu, yazılımı, tasarımı, veri tabanı yapısı, metinleri ve özgün içerikleri üzerindeki haklar, aksi açıkça belirtilmedikçe hizmet sağlayıcıya veya ilgili hak sahibine aittir.",
       "Alıcıya yalnızca satın aldığı hizmet süresince ve hizmetin amacıyla sınırlı bir kullanım hakkı verilir.",
@@ -345,7 +333,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "37) Kişisel Verilerin Korunması",
+    title: "18) Kişisel Verilerin Korunması",
     paragraphs: [
       "Kişisel veriler, DişFiyat360 KVKK Aydınlatma Metni, Gizlilik Politikası ve Çerez Politikası kapsamında işlenir.",
       "Alıcı, klinik hesabı üzerinden eriştiği kullanıcı bilgilerini yalnızca ilgili talep kapsamında ve yürürlükteki kişisel verilerin korunması kurallarına uygun olarak kullanmalıdır.",
@@ -353,14 +341,14 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "38) Ticari Elektronik İletiler",
+    title: "18) Ticari Elektronik İletiler",
     paragraphs: [
       "Kullanıcıya yalnızca oluşturduğu talebe dönüş yapmak amacıyla iletişim kurulması, sınırsız pazarlama izni anlamına gelmez.",
       "Alıcı, ticari elektronik ileti gönderirken yürürlükteki mevzuata, iletişim izinlerine ve kullanıcının tercihine uymakla sorumludur.",
     ],
   },
   {
-    title: "39) Sorumluluğun Sınırı",
+    title: "18) Sorumluluğun Sınırı",
     paragraphs: [
       "DişFiyat360, klinik ile kullanıcı arasında kurulacak sağlık hizmeti, tedavi, randevu, ödeme veya başka bir sözleşmenin tarafı değildir.",
       "DişFiyat360, bir leadin randevuya, hastaya, tedaviye, satışa veya gelire dönüşeceğini garanti etmez.",
@@ -369,21 +357,21 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "40) Delil ve Elektronik Kayıtlar",
+    title: "18) Delil ve Elektronik Kayıtlar",
     paragraphs: [
       "Taraflar arasında doğabilecek uyuşmazlıklarda, hukuka uygun şekilde tutulan sipariş, ödeme, aktivasyon, hesap, kredi kullanımı, lead görüntüleme, e-posta, sistem ve güvenlik kayıtları delil olarak değerlendirilebilir.",
       "Bu hüküm, tarafların kanunen sahip olduğu başka delil sunma haklarını ortadan kaldırmaz.",
     ],
   },
   {
-    title: "41) Bildirimler",
+    title: "18) Bildirimler",
     paragraphs: [
       "Alıcıya ilişkin sipariş, ödeme, aktivasyon, güvenlik ve hizmet bildirimleri, klinik hesabında kayıtlı e-posta adresine veya platform içi bildirim kanallarına gönderilebilir.",
       "Alıcı, iletişim ve hesap bilgilerinin güncel tutulmasından sorumludur.",
     ],
   },
   {
-    title: "42) Sözleşmenin Kurulması ve Saklanması",
+    title: "18) Sözleşmenin Kurulması ve Saklanması",
     paragraphs: [
       "Alıcının satın alma ekranında gerekli sözleşme onaylarını vermesi ve ödeme işlemini tamamlamasıyla sözleşme elektronik ortamda kurulur.",
       "Sipariş ve sözleşme onay kayıtları, yasal ve operasyonel gereklilikler doğrultusunda elektronik ortamda saklanabilir.",
@@ -391,14 +379,14 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "43) Sözleşmenin Bütünlüğü",
+    title: "18) Sözleşmenin Bütünlüğü",
     paragraphs: [
       "Sipariş ekranında gösterilen paket bilgileri, ödeme özeti, Kullanım Koşulları, İptal ve İade Politikası, Gizlilik Politikası ve ilgili diğer metinler işbu sözleşmeyle birlikte değerlendirilir.",
       "Siparişe özgü paket adı, tutar, kredi miktarı ve süre bilgilerinde sipariş ekranında alıcı tarafından onaylanan kayıtlar esas alınır.",
     ],
   },
   {
-    title: "44) Sözleşmede Değişiklik",
+    title: "18) Sözleşmede Değişiklik",
     paragraphs: [
       "Hizmet sağlayıcı, mevzuat, iş modeli, teknik altyapı veya hizmet kapsamındaki değişiklikler nedeniyle bu sözleşmeyi güncelleyebilir.",
       "Güncellenen sözleşme, internet sitesinde yayımlandığı tarihten sonraki yeni siparişler bakımından uygulanır.",
@@ -406,7 +394,7 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "45) Uyuşmazlıkların Çözümü",
+    title: "18) Uyuşmazlıkların Çözümü",
     paragraphs: [
       "Taraflar, uyuşmazlık hâlinde öncelikle iletişim kanalları üzerinden uzlaşma sağlamaya çalışır.",
       "Ticari veya mesleki amaçla gerçekleştirilen işletmeler arası işlemlerde görevli ve yetkili mahkeme ile icra daireleri, yürürlükteki usul ve ticaret mevzuatına göre belirlenir.",
@@ -414,21 +402,20 @@ const CONTRACT_BLOCKS: ContractBlock[] = [
     ],
   },
   {
-    title: "46) Yürürlük",
+    title: "18) Yürürlük",
     paragraphs: [
       "İşbu sözleşme, alıcının satın alma ekranında sözleşmeyi okuyup kabul ettiğini onaylaması ve ödeme işlemini tamamlamasıyla yürürlüğe girer.",
       "Sözleşmenin alıcı tarafından onaylanmaması hâlinde ücretli satın alma işlemi tamamlanmaz.",
     ],
   },
   {
-    title: "47) İletişim",
+    title: "18) İletişim",
     paragraphs: [
       "Sözleşme, ödeme, paket aktivasyonu, iptal, iade veya destek talepleriniz için aşağıdaki iletişim kanallarını kullanabilirsiniz.",
     ],
     items: [
-      "E-posta: ferhatmenekse945@gmail.com",
-      "Telefon: 0531 917 17 39",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
     ],
   },
 ];
@@ -462,7 +449,7 @@ export default function DistanceSalesPage(): JSX.Element {
                 }}
               >
                 Bu sözleşme, DişFiyat360 üzerinden kliniklere sunulan kredi
-                paketleri, Premium üyelik, klinik paneli, dijital görünürlük,
+                paketleri, dijital hizmet, klinik paneli, dijital görünürlük,
                 lead yönetimi ve diğer çevrim içi hizmetlere ilişkin satış ve
                 kullanım koşullarını düzenler.
               </p>
@@ -476,29 +463,6 @@ export default function DistanceSalesPage(): JSX.Element {
                 <span className="miniItem">🏢 B2B dijital hizmet</span>
                 <span className="miniItem">💳 Güvenli ödeme</span>
                 <span className="miniItem">📄 Şeffaf sözleşme</span>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
               </div>
 
               <div className="section">
@@ -610,7 +574,7 @@ function ImportantNotice(): JSX.Element {
         }}
       >
         DişFiyat360 sağlık hizmeti sunmaz. Satın alınan hizmet; kredi paketi,
-        Premium üyelik, panel erişimi, dijital görünürlük ve lead yönetimi gibi
+        dijital hizmet, panel erişimi, dijital görünürlük ve lead yönetimi gibi
         çevrim içi hizmetlerden oluşur. Lead yönlendirilmesi kesin hasta,
         randevu, tedavi veya gelir garantisi sağlamaz.
       </p>
@@ -649,7 +613,7 @@ function OrderNotice(): JSX.Element {
           lineHeight: 1.78,
         }}
       >
-        Satın alınan paketin adı, kredi miktarı, Premium üyelik süresi, toplam
+        Satın alınan paketin adı, kredi miktarı, dijital hizmet süresi, toplam
         bedeli ve aktivasyon bilgileri ödeme öncesindeki sipariş özetinde
         gösterilir. Sipariş ekranında onaylanan bilgiler, bu sözleşmenin
         siparişe özgü ayrılmaz parçasıdır.

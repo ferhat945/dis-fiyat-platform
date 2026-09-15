@@ -25,14 +25,13 @@ const TERMS_BLOCKS: TermsBlock[] = [
     ],
   },
   {
-    title: "2) Platform Hizmet Sağlayıcısı",
+    title: "2) Platform ve İletişim",
+    paragraphs: [
+      "DişFiyat360, diş klinikleri ile kullanıcılar arasında dijital iletişim ve talep süreçlerini destekleyen bir platformdur.",
+    ],
     items: [
-      "İşletme sahibi: Ferhat Menekşe",
-      "Vergi dairesi: 5 Ocak Vergi Dairesi",
-      "Vergi numarası: 6150625779",
-      "Adres: Dumlupınar Mahallesi, 38007 Sokak No:4, Seyhan / Adana",
-      "Telefon: 0531 917 17 39",
-      "E-posta: ferhatmenekse945@gmail.com",
+      "E-posta: disfiyat360@gmail.com",
+      "Konum: Beşiktaş / İstanbul",
       "İnternet adresi: www.disfiyat360.com",
     ],
   },
@@ -213,7 +212,7 @@ const TERMS_BLOCKS: TermsBlock[] = [
   {
     title: "24) İletişim",
     paragraphs: [
-      "Bu Kullanım Koşulları hakkında soru veya taleplerinizi ferhatmenekse945@gmail.com adresine iletebilir veya 0531 917 17 39 numaralı telefondan iletişime geçebilirsiniz.",
+      "Bu Kullanım Koşulları hakkında soru veya taleplerinizi disfiyat360@gmail.com adresine iletebilirsiniz.",
     ],
   },
 ];
@@ -259,28 +258,7 @@ export default function TermsPage(): JSX.Element {
                 <span className="miniItem">🔒 Güvenli platform</span>
               </div>
 
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: 14,
-                  borderRadius: 18,
-                  border: "1px solid rgba(79,70,229,0.16)",
-                  background:
-                    "linear-gradient(135deg, rgba(238,242,255,0.92), rgba(255,255,255,0.84))",
-                  color: "rgba(15,23,42,0.72)",
-                  fontWeight: 750,
-                  lineHeight: 1.7,
-                }}
-              >
-                <strong
-                  style={{
-                    color: "rgba(15,23,42,0.92)",
-                  }}
-                >
-                  Son güncelleme:
-                </strong>{" "}
-                17 Temmuz 2026
-              </div>
+
 
               <div className="section">
                 <div
