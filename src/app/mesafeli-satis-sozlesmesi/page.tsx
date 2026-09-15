@@ -489,38 +489,6 @@ export default function DistanceSalesPage(): JSX.Element {
                 </div>
               </div>
 
-              <div className="section" style={{ paddingTop: 0 }}>
-                <div
-                  className="finalCta"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(124,58,237,0.06))",
-                  }}
-                >
-                  <div>
-                    <h2
-                      className="finalTitle"
-                      style={{
-                        fontSize: 18,
-                      }}
-                    >
-                      Lead Garantisi Bulunmaz
-                    </h2>
-
-                    <p className="finalDesc">
-                      Kredi kullanımı, kliniğe yönlendirilmiş bir kullanıcının
-                      iletişim bilgilerini görüntüleme hakkı sağlar. Leadin
-                      randevuya, hastaya, tedaviye veya gelire dönüşeceği garanti
-                      edilmez.
-                    </p>
-                  </div>
-
-                  <Link href="/panel/abonelik" className="btn btnPrimary">
-                    Paketleri İncele →
-                  </Link>
-                </div>
-              </div>
-
               <div className="ctaRow">
                 <Link href="/teslimat-iade" className="btn btnSoft">
                   Teslimat ve İade Şartları →
