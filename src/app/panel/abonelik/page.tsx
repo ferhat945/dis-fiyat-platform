@@ -996,7 +996,7 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
           display: grid;
           grid-template-columns:
             repeat(
-              3,
+              2,
               minmax(0,1fr)
             );
           gap: 12px;
@@ -1700,14 +1700,6 @@ export default async function PanelSubscriptionPage(): Promise<JSX.Element> {
             standart kliniklere göre öncelik sağlar.
           </div>
 
-          <div className="infoItem">
-            <strong>
-              ℹ️ Garanti değildir
-            </strong>
-
-            Lead kaydı kesin hasta, randevu, tedavi,
-            satış veya gelir garantisi anlamına gelmez.
-          </div>
         </div>
       </section>
 
