@@ -5,13 +5,26 @@ import {
   useState,
 } from "react";
 
+type CreditTransactionRow = {
+  id: string;
+  amount: number;
+  type: string;
+  note: string | null;
+  balanceBefore: number | null;
+  balanceAfter: number | null;
+  deliveredAt: Date | string | null;
+  createdAt: Date | string;
+};
+
 type ClinicRow = {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   isActive: boolean;
-  createdAt: Date;
+  creditBalance: number;
+  creditTransactions: CreditTransactionRow[];
+  createdAt: Date | string;
 };
 
 type ClinicsRes = {
@@ -32,7 +45,7 @@ type PatchRes = {
 };
 
 function formatDate(
-  value: Date
+  value: Date | string
 ): string {
   return new Intl.DateTimeFormat(
     "tr-TR",
@@ -41,6 +54,36 @@ function formatDate(
       timeStyle: "short",
     }
   ).format(new Date(value));
+}
+
+function formatCreditType(type: string): string {
+  const normalized = type.trim().toLowerCase();
+
+  if (normalized === "purchase") {
+    return "Paket yükleme";
+  }
+
+  if (normalized === "lead_unlock") {
+    return "Lead satın alma";
+  }
+
+  if (normalized === "premium_monthly_credit") {
+    return "Aylık kredi";
+  }
+
+  if (normalized === "refund") {
+    return "Kredi iadesi";
+  }
+
+  if (normalized === "admin_adjustment") {
+    return "Admin düzeltmesi";
+  }
+
+  return type || "Kredi hareketi";
+}
+
+function creditAmountLabel(amount: number): string {
+  return amount > 0 ? `+${amount}` : String(amount);
 }
 
 export default function AdminClinicsClient({
@@ -590,13 +633,15 @@ export default function AdminClinicsClient({
             <table
               className="adminTable"
               style={{
-                minWidth: 850,
+                minWidth: 1260,
               }}
             >
               <thead>
                 <tr>
                   <th>Klinik</th>
                   <th>İletişim</th>
+                  <th>Kredi</th>
+                  <th>Kredi Hareketleri</th>
                   <th>Kayıt Tarihi</th>
                   <th>Durum</th>
                   <th>İşlem</th>
@@ -724,6 +769,157 @@ export default function AdminClinicsClient({
                           {clinic.phone ??
                             "Telefon yok"}
                         </div>
+                      </td>
+
+                      <td>
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: 4,
+                          }}
+                        >
+                          <span
+                            className={
+                              clinic.creditBalance > 0
+                                ? "adminBadge adminBadgeSuccess"
+                                : "adminBadge adminBadgeNeutral"
+                            }
+                            style={{
+                              width: "fit-content",
+                            }}
+                          >
+                            💎 {clinic.creditBalance} kredi
+                          </span>
+
+                          <span
+                            style={{
+                              color: "#98a2b3",
+                              fontSize: 8,
+                            }}
+                          >
+                            Güncel bakiye
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        {clinic.creditTransactions.length === 0 ? (
+                          <span
+                            style={{
+                              color: "#98a2b3",
+                              fontSize: 9,
+                            }}
+                          >
+                            Hareket yok
+                          </span>
+                        ) : (
+                          <details>
+                            <summary
+                              style={{
+                                cursor: "pointer",
+                                color: "#5148e5",
+                                fontSize: 9,
+                                fontWeight: 800,
+                                userSelect: "none",
+                              }}
+                            >
+                              Son {clinic.creditTransactions.length} hareketi gör
+                            </summary>
+
+                            <div
+                              style={{
+                                marginTop: 8,
+                                minWidth: 360,
+                                display: "grid",
+                                gap: 6,
+                              }}
+                            >
+                              {clinic.creditTransactions.map((transaction) => (
+                                <div
+                                  key={transaction.id}
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "105px 1fr 54px 64px",
+                                    gap: 8,
+                                    alignItems: "center",
+                                    padding: "7px 8px",
+                                    border: "1px solid #eef0f4",
+                                    borderRadius: 9,
+                                    background: "#fafbfc",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color: "#667085",
+                                      fontSize: 8,
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {formatDate(transaction.createdAt)}
+                                  </span>
+
+                                  <div
+                                    style={{
+                                      minWidth: 0,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        color: "#344054",
+                                        fontSize: 8,
+                                        fontWeight: 800,
+                                      }}
+                                    >
+                                      {formatCreditType(transaction.type)}
+                                    </div>
+
+                                    {transaction.note ? (
+                                      <div
+                                        title={transaction.note}
+                                        style={{
+                                          marginTop: 2,
+                                          maxWidth: 180,
+                                          overflow: "hidden",
+                                          color: "#98a2b3",
+                                          fontSize: 7,
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        {transaction.note}
+                                      </div>
+                                    ) : null}
+                                  </div>
+
+                                  <strong
+                                    style={{
+                                      color:
+                                        transaction.amount >= 0
+                                          ? "#067647"
+                                          : "#b42318",
+                                      fontSize: 9,
+                                      textAlign: "right",
+                                    }}
+                                  >
+                                    {creditAmountLabel(transaction.amount)}
+                                  </strong>
+
+                                  <span
+                                    style={{
+                                      color: "#475467",
+                                      fontSize: 8,
+                                      fontWeight: 750,
+                                      textAlign: "right",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {transaction.balanceAfter ?? "—"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </td>
 
                       <td>

@@ -1,4 +1,3 @@
-// src/app/api/admin/leads/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminApi } from "@/lib/admin-api";
@@ -18,11 +17,14 @@ type LeadRow = {
   status: string;
   createdAt: Date;
 
-  assignedClinic: null | {
+  unlockCount: number;
+  assignedClinics: Array<{
     id: string;
     name: string;
     email: string;
-  };
+    unlockedAt: Date | null;
+    unlockPrice: number;
+  }>;
 };
 
 type Resp =
@@ -47,12 +49,19 @@ export async function GET(req: Request): Promise<NextResponse<Resp>> {
         intent: true,
         source: true,
         status: true,
+        unlockCount: true,
         createdAt: true,
 
-        // ✅ atama bilgisi (LeadAssignment -> Clinic)
+        // Admin ekranında yalnızca gerçekten satın alınmış/açılmış assignment'ları göster.
         assignments: {
-          take: 1,
+          where: { unlocked: true },
+          orderBy: [
+            { unlockedAt: "asc" },
+            { createdAt: "asc" },
+          ],
           select: {
+            unlockedAt: true,
+            unlockPrice: true,
             clinic: {
               select: { id: true, name: true, email: true },
             },
@@ -72,8 +81,15 @@ export async function GET(req: Request): Promise<NextResponse<Resp>> {
       intent: l.intent,
       source: l.source,
       status: l.status,
+      unlockCount: l.unlockCount,
       createdAt: l.createdAt,
-      assignedClinic: l.assignments[0]?.clinic ?? null,
+      assignedClinics: l.assignments.map((assignment) => ({
+        id: assignment.clinic.id,
+        name: assignment.clinic.name,
+        email: assignment.clinic.email,
+        unlockedAt: assignment.unlockedAt,
+        unlockPrice: assignment.unlockPrice,
+      })),
     }));
 
     return NextResponse.json({ ok: true, leads: out }, { status: 200 });

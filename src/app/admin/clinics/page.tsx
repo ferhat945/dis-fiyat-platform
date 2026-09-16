@@ -19,6 +19,21 @@ export default async function AdminClinicsPage(): Promise<JSX.Element> {
         email: true,
         phone: true,
         isActive: true,
+        creditBalance: true,
+        creditTransactions: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            amount: true,
+            type: true,
+            note: true,
+            balanceBefore: true,
+            balanceAfter: true,
+            deliveredAt: true,
+            createdAt: true,
+          },
+        },
         createdAt: true,
       },
     });

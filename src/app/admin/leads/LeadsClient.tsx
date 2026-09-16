@@ -9,6 +9,8 @@ type AssignedClinic = {
   id: string;
   name: string;
   email: string;
+  unlockedAt: string | null;
+  unlockPrice: number;
 };
 
 type Lead = {
@@ -23,7 +25,8 @@ type Lead = {
   source: string | null;
   status: string;
   createdAt: string;
-  assignedClinic: AssignedClinic | null;
+  unlockCount: number;
+  assignedClinics: AssignedClinic[];
 };
 
 type LeadsResp =
@@ -308,9 +311,7 @@ export default function LeadsClient(): JSX.Element {
       return leads.filter(
         (lead) => {
           const assigned =
-            Boolean(
-              lead.assignedClinic
-            );
+            lead.assignedClinics.length > 0;
 
           if (
             filter ===
@@ -342,10 +343,12 @@ export default function LeadsClient(): JSX.Element {
             lead.status,
             lead.intent,
             lead.source ?? "",
-            lead.assignedClinic
-              ?.name ?? "",
-            lead.assignedClinic
-              ?.email ?? "",
+            ...lead.assignedClinics.map(
+              (clinic) => clinic.name
+            ),
+            ...lead.assignedClinics.map(
+              (clinic) => clinic.email
+            ),
             lead.id,
           ]
             .join(" ")
@@ -369,9 +372,7 @@ export default function LeadsClient(): JSX.Element {
       () =>
         leads.filter(
           (lead) =>
-            Boolean(
-              lead.assignedClinic
-            )
+            lead.assignedClinics.length > 0
         ).length,
       [leads]
     );
@@ -771,7 +772,7 @@ export default function LeadsClient(): JSX.Element {
                   <th>İletişim</th>
                   <th>Kaynak</th>
                   <th>Durum</th>
-                  <th>Klinik</th>
+                  <th>Satın Alan Klinikler</th>
                   <th>Tarih</th>
                   <th>Lead ID</th>
                 </tr>
@@ -781,9 +782,22 @@ export default function LeadsClient(): JSX.Element {
                 {filtered.map(
                   (lead) => {
                     const assigned =
-                      Boolean(
-                        lead.assignedClinic
+                      lead.assignedClinics.length > 0;
+
+                    const isDirect =
+                      lead.source === "clinic_direct";
+
+                    const soldCount =
+                      Math.min(
+                        3,
+                        Math.max(
+                          lead.unlockCount,
+                          lead.assignedClinics.length
+                        )
                       );
+
+                    const isClosed =
+                      !isDirect && soldCount >= 3;
 
                     return (
                       <tr
@@ -970,54 +984,131 @@ export default function LeadsClient(): JSX.Element {
                         </td>
 
                         <td>
-                          {assigned &&
-                          lead.assignedClinic ? (
-                            <div>
-                              <span className="adminBadge adminBadgeSuccess">
-                                Atandı
+                          <div
+                            style={{
+                              display: "grid",
+                              gap: 6,
+                              minWidth: 235,
+                            }}
+                          >
+                            {isDirect ? (
+                              <span
+                                className={
+                                  assigned
+                                    ? "adminBadge adminBadgeSuccess"
+                                    : "adminBadge adminBadgeWarning"
+                                }
+                                style={{ width: "fit-content" }}
+                              >
+                                {assigned
+                                  ? "Direkt / Özel Lead"
+                                  : "Direkt Lead — Atanmadı"}
                               </span>
+                            ) : (
+                              <span
+                                className={
+                                  isClosed
+                                    ? "adminBadge adminBadgeSuccess"
+                                    : assigned
+                                      ? "adminBadge adminBadgeInfo"
+                                      : "adminBadge adminBadgeWarning"
+                                }
+                                style={{ width: "fit-content" }}
+                              >
+                                {soldCount}/3
+                                {isClosed
+                                  ? " — Kapandı"
+                                  : " — Açık"}
+                              </span>
+                            )}
 
-                              <div
+                            {lead.assignedClinics.length > 0 ? (
+                              <details>
+                                <summary
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "#5148e5",
+                                    fontSize: 8,
+                                    fontWeight: 800,
+                                    userSelect: "none",
+                                  }}
+                                >
+                                  {lead.assignedClinics.length} klinik satın aldı
+                                </summary>
+
+                                <div
+                                  style={{
+                                    marginTop: 7,
+                                    display: "grid",
+                                    gap: 6,
+                                  }}
+                                >
+                                  {lead.assignedClinics.map(
+                                    (clinic, clinicIndex) => (
+                                      <div
+                                        key={`${lead.id}-${clinic.id}`}
+                                        style={{
+                                          padding: "7px 8px",
+                                          border: "1px solid #eef0f4",
+                                          borderRadius: 9,
+                                          background: "#fafbfc",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            gap: 8,
+                                            alignItems: "center",
+                                          }}
+                                        >
+                                          <strong
+                                            style={{
+                                              color: "#344054",
+                                              fontSize: 8,
+                                            }}
+                                          >
+                                            {clinicIndex + 1}. {clinic.name}
+                                          </strong>
+
+                                          <span
+                                            style={{
+                                              color: "#667085",
+                                              fontSize: 7,
+                                              whiteSpace: "nowrap",
+                                            }}
+                                          >
+                                            {clinic.unlockedAt
+                                              ? formatTR(clinic.unlockedAt)
+                                              : "Açılma zamanı yok"}
+                                          </span>
+                                        </div>
+
+                                        <div
+                                          style={{
+                                            marginTop: 3,
+                                            color: "#98a2b3",
+                                            fontSize: 7,
+                                          }}
+                                        >
+                                          {clinic.email} · {clinic.unlockPrice} kredi
+                                        </div>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </details>
+                            ) : (
+                              <span
                                 style={{
-                                  marginTop:
-                                    5,
-                                  color:
-                                    "#344054",
-                                  fontSize:
-                                    9,
-                                  fontWeight:
-                                    700,
+                                  color: "#98a2b3",
+                                  fontSize: 8,
                                 }}
                               >
-                                {
-                                  lead
-                                    .assignedClinic
-                                    .name
-                                }
-                              </div>
-
-                              <div
-                                style={{
-                                  marginTop:
-                                    2,
-                                  color:
-                                    "#98a2b3",
-                                  fontSize:
-                                    8,
-                                }}
-                              >
-                                {
-                                  lead
-                                    .assignedClinic
-                                    .email
-                                }
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="adminBadge adminBadgeWarning">
-                              Atanmadı
-                            </span>
-                          )}
+                                Henüz satın alan klinik yok.
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td>
