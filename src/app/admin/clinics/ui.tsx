@@ -44,6 +44,24 @@ type PatchRes = {
   code?: string;
 };
 
+type CreditAdjustRes =
+  | {
+      ok: true;
+      clinic: {
+        id: string;
+        creditBalance: number;
+      };
+      transaction: CreditTransactionRow;
+    }
+  | {
+      ok: false;
+      code: string;
+    };
+
+type CreditAdjustMode =
+  | "add"
+  | "remove";
+
 function formatDate(
   value: Date | string
 ): string {
@@ -86,6 +104,41 @@ function creditAmountLabel(amount: number): string {
   return amount > 0 ? `+${amount}` : String(amount);
 }
 
+function creditAdjustErrorLabel(
+  code: string
+): string {
+  if (
+    code ===
+    "INSUFFICIENT_CREDIT_BALANCE"
+  ) {
+    return "Klinik bakiyesi bu kadar kredi düşmek için yetersiz.";
+  }
+
+  if (
+    code ===
+    "CREDIT_BALANCE_CHANGED_RETRY"
+  ) {
+    return "Kredi bakiyesi işlem sırasında değişti. Lütfen yenileyip tekrar dene.";
+  }
+
+  if (code === "CLINIC_NOT_FOUND") {
+    return "Klinik bulunamadı.";
+  }
+
+  if (
+    code ===
+    "INVALID_CREDIT_ADJUSTMENT"
+  ) {
+    return "Kredi miktarı veya açıklama geçersiz. Miktar 1 veya daha büyük, açıklama en az 3 karakter olmalı.";
+  }
+
+  if (code === "UNAUTHORIZED_ADMIN") {
+    return "Admin oturumu geçersiz. Lütfen yeniden giriş yap.";
+  }
+
+  return code || "CREDIT_ADJUSTMENT_FAILED";
+}
+
 export default function AdminClinicsClient({
   initialClinics,
 }: {
@@ -126,6 +179,18 @@ export default function AdminClinicsClient({
     useState(false);
 
   const [changingId, setChangingId] =
+    useState<string | null>(null);
+
+  const [creditModeByClinic, setCreditModeByClinic] =
+    useState<Record<string, CreditAdjustMode>>({});
+
+  const [creditAmountByClinic, setCreditAmountByClinic] =
+    useState<Record<string, string>>({});
+
+  const [creditNoteByClinic, setCreditNoteByClinic] =
+    useState<Record<string, string>>({});
+
+  const [creditChangingId, setCreditChangingId] =
     useState<string | null>(null);
 
   const filteredClinics =
@@ -351,6 +416,162 @@ export default function AdminClinicsClient({
       );
     } finally {
       setChangingId(null);
+    }
+  }
+
+  async function adjustCredits(
+    clinic: ClinicRow
+  ): Promise<void> {
+    if (creditChangingId) {
+      return;
+    }
+
+    const mode =
+      creditModeByClinic[clinic.id] ??
+      "add";
+
+    const amountText =
+      creditAmountByClinic[clinic.id] ??
+      "";
+
+    const parsedAmount =
+      Number(amountText);
+
+    const note =
+      (creditNoteByClinic[clinic.id] ??
+        "").trim();
+
+    if (
+      !Number.isInteger(parsedAmount) ||
+      parsedAmount <= 0 ||
+      parsedAmount > 100000
+    ) {
+      setErr(
+        "Kredi miktarı 1 ile 100000 arasında tam sayı olmalı."
+      );
+      setSuccess(null);
+      return;
+    }
+
+    if (note.length < 3) {
+      setErr(
+        "Kredi düzeltmesi için en az 3 karakterlik açıklama zorunludur."
+      );
+      setSuccess(null);
+      return;
+    }
+
+    const signedAmount =
+      mode === "add"
+        ? parsedAmount
+        : -parsedAmount;
+
+    const balanceAfter =
+      clinic.creditBalance +
+      signedAmount;
+
+    if (balanceAfter < 0) {
+      setErr(
+        `${clinic.name} kliniğinin bakiyesi ${clinic.creditBalance}. ${parsedAmount} kredi düşülemez.`
+      );
+      setSuccess(null);
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        [
+          `${clinic.name} için ${signedAmount > 0 ? "+" : ""}${signedAmount} kredi uygulanacak.`,
+          `Mevcut bakiye: ${clinic.creditBalance}`,
+          `Yeni bakiye: ${balanceAfter}`,
+          `Açıklama: ${note}`,
+          "",
+          "İşlemi onaylıyor musun?",
+        ].join("\n")
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setErr(null);
+    setSuccess(null);
+    setCreditChangingId(clinic.id);
+
+    try {
+      const response =
+        await fetch(
+          `/api/admin/clinics/${encodeURIComponent(clinic.id)}/credits`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              amount: signedAmount,
+              note,
+            }),
+          }
+        );
+
+      const json =
+        (await response.json()) as CreditAdjustRes;
+
+      if (!response.ok || !json.ok) {
+        const code =
+          "code" in json
+            ? json.code
+            : "CREDIT_ADJUSTMENT_FAILED";
+
+        setErr(
+          creditAdjustErrorLabel(code)
+        );
+        return;
+      }
+
+      setClinics((previous) =>
+        previous.map((item) =>
+          item.id === clinic.id
+            ? {
+                ...item,
+                creditBalance:
+                  json.clinic
+                    .creditBalance,
+                creditTransactions: [
+                  json.transaction,
+                  ...item.creditTransactions,
+                ].slice(0, 20),
+              }
+            : item
+        )
+      );
+
+      setCreditAmountByClinic(
+        (previous) => ({
+          ...previous,
+          [clinic.id]: "",
+        })
+      );
+
+      setCreditNoteByClinic(
+        (previous) => ({
+          ...previous,
+          [clinic.id]: "",
+        })
+      );
+
+      setSuccess(
+        `${clinic.name}: ${signedAmount > 0 ? "+" : ""}${signedAmount} kredi uygulandı. Yeni bakiye ${json.clinic.creditBalance}.`
+      );
+    } catch (error) {
+      setErr(
+        error instanceof Error
+          ? error.message
+          : "NETWORK_ERROR"
+      );
+    } finally {
+      setCreditChangingId(null);
     }
   }
 
@@ -775,7 +996,8 @@ export default function AdminClinicsClient({
                         <div
                           style={{
                             display: "grid",
-                            gap: 4,
+                            gap: 6,
+                            minWidth: 230,
                           }}
                         >
                           <span
@@ -799,6 +1021,175 @@ export default function AdminClinicsClient({
                           >
                             Güncel bakiye
                           </span>
+
+                          <details>
+                            <summary
+                              style={{
+                                cursor: "pointer",
+                                color: "#5148e5",
+                                fontSize: 9,
+                                fontWeight: 800,
+                                userSelect: "none",
+                              }}
+                            >
+                              Kredi ekle / çıkar
+                            </summary>
+
+                            <div
+                              style={{
+                                marginTop: 8,
+                                padding: 9,
+                                display: "grid",
+                                gap: 8,
+                                border: "1px solid #e7eaf0",
+                                borderRadius: 10,
+                                background: "#fafbfc",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "1fr 1fr",
+                                  gap: 6,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  className={
+                                    (creditModeByClinic[clinic.id] ?? "add") === "add"
+                                      ? "adminButton adminButtonPrimary"
+                                      : "adminButton adminButtonSecondary"
+                                  }
+                                  onClick={() =>
+                                    setCreditModeByClinic(
+                                      (previous) => ({
+                                        ...previous,
+                                        [clinic.id]: "add",
+                                      })
+                                    )
+                                  }
+                                  disabled={
+                                    creditChangingId === clinic.id
+                                  }
+                                  style={{
+                                    minHeight: 34,
+                                    padding: "6px 8px",
+                                    fontSize: 8,
+                                  }}
+                                >
+                                  + Kredi Ekle
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className={
+                                    (creditModeByClinic[clinic.id] ?? "add") === "remove"
+                                      ? "adminButton adminButtonPrimary"
+                                      : "adminButton adminButtonSecondary"
+                                  }
+                                  onClick={() =>
+                                    setCreditModeByClinic(
+                                      (previous) => ({
+                                        ...previous,
+                                        [clinic.id]: "remove",
+                                      })
+                                    )
+                                  }
+                                  disabled={
+                                    creditChangingId === clinic.id
+                                  }
+                                  style={{
+                                    minHeight: 34,
+                                    padding: "6px 8px",
+                                    fontSize: 8,
+                                  }}
+                                >
+                                  − Kredi Düş
+                                </button>
+                              </div>
+
+                              <input
+                                type="number"
+                                min={1}
+                                max={100000}
+                                step={1}
+                                className="adminInput"
+                                placeholder="Kredi miktarı (örn. 10)"
+                                value={
+                                  creditAmountByClinic[clinic.id] ?? ""
+                                }
+                                onChange={(event) =>
+                                  setCreditAmountByClinic(
+                                    (previous) => ({
+                                      ...previous,
+                                      [clinic.id]: event.target.value,
+                                    })
+                                  )
+                                }
+                                disabled={
+                                  creditChangingId === clinic.id
+                                }
+                                style={{
+                                  minHeight: 36,
+                                }}
+                              />
+
+                              <input
+                                className="adminInput"
+                                placeholder="Açıklama zorunlu (Havale, Promosyon...)"
+                                value={
+                                  creditNoteByClinic[clinic.id] ?? ""
+                                }
+                                onChange={(event) =>
+                                  setCreditNoteByClinic(
+                                    (previous) => ({
+                                      ...previous,
+                                      [clinic.id]: event.target.value,
+                                    })
+                                  )
+                                }
+                                disabled={
+                                  creditChangingId === clinic.id
+                                }
+                                maxLength={500}
+                                style={{
+                                  minHeight: 36,
+                                }}
+                              />
+
+                              <div
+                                style={{
+                                  color: "#98a2b3",
+                                  fontSize: 7,
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                İşlem CreditTransaction kaydına “admin_adjustment” olarak yazılır. Kredi düşümü bakiyeyi 0 ın altına indiremez.
+                              </div>
+
+                              <button
+                                type="button"
+                                className="adminButton adminButtonPrimary"
+                                onClick={() =>
+                                  void adjustCredits(clinic)
+                                }
+                                disabled={
+                                  creditChangingId === clinic.id ||
+                                  !(creditAmountByClinic[clinic.id] ?? "").trim() ||
+                                  (creditNoteByClinic[clinic.id] ?? "").trim().length < 3
+                                }
+                                style={{
+                                  minHeight: 36,
+                                }}
+                              >
+                                {creditChangingId === clinic.id
+                                  ? "İşleniyor..."
+                                  : (creditModeByClinic[clinic.id] ?? "add") === "add"
+                                    ? "Krediyi Ekle →"
+                                    : "Krediyi Düş →"}
+                              </button>
+                            </div>
+                          </details>
                         </div>
                       </td>
 
